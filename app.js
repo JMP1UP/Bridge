@@ -1552,6 +1552,7 @@ class App {
   // Renders matching dashboard lists
   renderTeacherMatching() {
     this.switchMatchingSubtab(this.currentMatchingSubtab || 'pair');
+    this.renderMatchingMetrics();
     const colEn = document.getElementById('match-col-en');
     const students = window.db.getStudents();
 
@@ -1628,6 +1629,149 @@ class App {
 
     // Refresh proposals tables
     this.renderMatchProposals();
+  }
+
+  // Renders visual school metrics panel at the top of the Matching screen
+  renderMatchingMetrics() {
+    const summaryContainer = document.getElementById('matching-metrics-summary');
+    if (!summaryContainer) return;
+
+    const schools = window.db.getSchools();
+    const students = window.db.getStudents();
+    const matches = window.db.getMatches();
+
+    const ownSchoolId = 'school_1';
+    const ownSchool = window.db.getSchool(ownSchoolId);
+    if (!ownSchool) return;
+
+    const myStudents = students.filter(s => s.schoolId === ownSchoolId);
+    const totalMyStudents = myStudents.length;
+    const matchedMyStudents = myStudents.filter(s => s.matchStatus === 'matched').length;
+    const overallMatchRate = totalMyStudents > 0 ? Math.round((matchedMyStudents / totalMyStudents) * 100) : 0;
+    const totalPendingProposals = matches.filter(m => !m.active && m.status === 'Proposed' && (m.proposedBySchoolId === ownSchoolId || m.pendingApprovalFromSchoolId === ownSchoolId)).length;
+
+    // Build the grid
+    let html = `<div class="matching-metrics-grid">`;
+
+    // 1. Overview Card
+    html += `
+      <div class="metric-card overview-link" style="cursor: default;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+          <h4 style="font-family: var(--font-title); font-weight: 700; font-size: 0.95rem; margin: 0; color: var(--text-primary);">${ownSchool.name}</h4>
+          <span style="font-size: 1.25rem;">📊</span>
+        </div>
+        <div style="font-size: 1.5rem; font-weight: 800; font-family: var(--font-title); color: var(--accent); margin: 0.25rem 0;">
+          ${overallMatchRate}% <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">Paired Rate</span>
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem; font-weight: 500;">
+          ${matchedMyStudents} of ${totalMyStudents} students paired
+        </div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem;">
+          ${totalPendingProposals} pending request${totalPendingProposals === 1 ? '' : 's'}
+        </div>
+        <div class="metric-progress-track">
+          <div class="metric-progress-fill" style="width: 0%;" data-value="${overallMatchRate}%"></div>
+        </div>
+      </div>
+    `;
+
+    // 2. Partner Schools Cards
+    const partnerSchools = schools.filter(s => s.id !== ownSchoolId);
+    partnerSchools.forEach(partner => {
+      // Active count
+      const activeCount = matches.filter(m => {
+        if (!m.active && m.status !== 'Active') return false;
+        const s1 = students.find(s => s.id === m.studentIds[0]);
+        const s2 = students.find(s => s.id === m.studentIds[1]);
+        if (!s1 || !s2) return false;
+        return (s1.schoolId === ownSchoolId && s2.schoolId === partner.id) ||
+               (s1.schoolId === partner.id && s2.schoolId === ownSchoolId);
+      }).length;
+
+      // Pending count
+      const pendingCount = matches.filter(m => {
+        if (m.active || m.status === 'Active') return false;
+        return (m.proposedBySchoolId === ownSchoolId && m.pendingApprovalFromSchoolId === partner.id) ||
+               (m.proposedBySchoolId === partner.id && m.pendingApprovalFromSchoolId === ownSchoolId);
+      }).length;
+
+      let statusClass = 'inactive-link';
+      let statusText = 'No Connection';
+      let badgeStyle = 'background: rgba(255,255,255,0.05); color: var(--text-muted);';
+
+      if (activeCount > 0) {
+        statusClass = 'active-link';
+        statusText = 'Active Link';
+        badgeStyle = 'background: rgba(16, 185, 129, 0.12); color: var(--success);';
+      } else if (pendingCount > 0) {
+        statusClass = 'pending-link';
+        statusText = 'Pending Proposal';
+        badgeStyle = 'background: rgba(245, 158, 11, 0.12); color: var(--warning);';
+      }
+
+      const partnerPercent = totalMyStudents > 0 ? Math.round((activeCount / totalMyStudents) * 100) : 0;
+      
+      const logoHtml = partner.logoUrl 
+        ? `<img src="${partner.logoUrl}" alt="${partner.name}" style="height: 24px; width: 24px; object-fit: contain; border-radius: 4px;">`
+        : `<div style="height: 24px; width: 24px; border-radius: 4px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700;">${partner.name.split(' ').map(w => w[0]).join('').substring(0, 2)}</div>`;
+
+      html += `
+        <div class="metric-card ${statusClass}" onclick="app.selectPartnerSchool('${partner.id}')" title="Click to select this partner school">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; gap: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 140px;">
+              ${logoHtml}
+              <h4 style="font-family: var(--font-title); font-weight: 700; font-size: 0.95rem; margin: 0; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden;">${partner.name}</h4>
+            </div>
+            <span style="font-size: 0.65rem; font-weight: 600; padding: 0.15rem 0.45rem; border-radius: 6px; ${badgeStyle}">${statusText}</span>
+          </div>
+          <div style="font-size: 1.5rem; font-weight: 800; font-family: var(--font-title); color: ${activeCount > 0 ? 'var(--success)' : 'var(--text-secondary)'}; margin: 0.25rem 0;">
+            ${activeCount} <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">Paired Student${activeCount === 1 ? '' : 's'}</span>
+          </div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem; font-weight: 500; display: flex; justify-content: space-between;">
+            <span>${partnerPercent}% of roster</span>
+            ${pendingCount > 0 ? `<span style="color: var(--warning); font-size: 0.75rem;">⚡ ${pendingCount} pending</span>` : ''}
+          </div>
+          <div class="metric-progress-track">
+            <div class="metric-progress-fill" style="width: 0%;" data-value="${partnerPercent}%"></div>
+          </div>
+        </div>
+      `;
+    });
+
+    html += `</div>`;
+    summaryContainer.innerHTML = html;
+
+    // Trigger animation helper
+    setTimeout(() => {
+      summaryContainer.querySelectorAll('.metric-progress-fill').forEach(fill => {
+        fill.style.width = fill.getAttribute('data-value');
+      });
+    }, 50);
+  }
+
+  // Interactive connection: clicking a partner card selects the school and highlights it
+  selectPartnerSchool(schoolId) {
+    const selectEl = document.getElementById('partner-school-select');
+    if (!selectEl) return;
+    
+    // Switch to pair tab if we are on requests tab
+    this.switchMatchingSubtab('pair');
+    
+    // Select the school
+    selectEl.value = schoolId;
+    
+    // Trigger the update change
+    this.updateSelectedPartnerSchoolInfo();
+    
+    // Highlight the card
+    const cardEl = document.getElementById('partner-school-info-card');
+    if (cardEl) {
+      cardEl.classList.remove('pulse-highlight');
+      // trigger reflow to restart animation
+      void cardEl.offsetWidth;
+      cardEl.classList.add('pulse-highlight');
+      cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   }
 
   // Create proposed match from teacher portal
