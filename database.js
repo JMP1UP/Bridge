@@ -131,6 +131,10 @@ const defaultDatabase = {
   ],
   schoolRequests: [
     { id: 'req_1', name: 'Oakridge Academy', country: 'United Kingdom', city: 'London', language: 'en', code: 'OAK-UK', coordinatorName: 'Mr. David Green', coordinatorEmail: 'david@oakridge.edu', status: 'Pending', requestedAt: '2026-06-21T09:00:00Z' }
+  ],
+  coordinatorMessages: [
+    { id: 'cmsg_1', senderId: 'coord_2', receiverId: 'coord_1', text: "Hello Mrs. Smith, I have approved the exchange proposals from our side. Looking forward to our students connecting!", timestamp: '2026-06-20T10:00:00Z', read: true },
+    { id: 'cmsg_2', senderId: 'coord_1', receiverId: 'coord_2', text: "Wonderful, Herr Wagner! I will review and match them today. Let me know if you have any questions.", timestamp: '2026-06-20T10:30:00Z', read: true }
   ]
 };
 
@@ -151,8 +155,9 @@ class LocalDB {
     const isMissingBiog = data && data.students && data.students.some(s => s.personalBiogStatus === undefined);
     const isMissingResolvedFlags = data && data.flags && data.flags.length < 3;
     const isOldProposedMatchSeed = data && data.matches && data.matches.some(m => m.id === 'match_5' && m.studentIds[0] !== null);
+    const isMissingCoordMessages = data && !data.coordinatorMessages;
 
-    if (!data || hasOldName || isMissingTables || isMissingPhotos || isMissingBiog || isMissingResolvedFlags || isOldProposedMatchSeed) {
+    if (!data || hasOldName || isMissingTables || isMissingPhotos || isMissingBiog || isMissingResolvedFlags || isOldProposedMatchSeed || isMissingCoordMessages) {
       localStorage.setItem(DB_KEY, JSON.stringify(defaultDatabase));
     }
   }
@@ -197,6 +202,7 @@ class LocalDB {
   getCoordinator(id) { return this.getCoordinators().find(c => c.id === id); }
   getSchoolRequests() { return this.getTable('schoolRequests'); }
   getSchoolRequest(id) { return this.getSchoolRequests().find(r => r.id === id); }
+  getCoordinatorMessages() { return this.getTable('coordinatorMessages'); }
 
   // Action helpers
   addSchoolRequest(req) {
@@ -628,6 +634,21 @@ class LocalDB {
     data.settings = { ...data.settings, ...newSettings };
     this.save(data);
     this.addLog('Settings Updated', `System configuration modified.`, 'Admin');
+  }
+  
+  addCoordinatorMessage(senderId, receiverId, text) {
+    const list = this.getCoordinatorMessages();
+    const newMsg = {
+      id: 'cmsg_' + Date.now(),
+      senderId,
+      receiverId,
+      text,
+      timestamp: new Date().toISOString(),
+      read: false
+    };
+    list.push(newMsg);
+    this.saveTable('coordinatorMessages', list);
+    return newMsg;
   }
 }
 

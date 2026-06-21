@@ -107,6 +107,10 @@
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
               <span data-localize="news_article_review">Editorial Desk</span>
             </a></li>
+            <li><a class="nav-link" data-tab="teach-messages">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+              <span data-localize="staff_messages">Staff Messages</span>
+            </a></li>
             <li><a class="nav-link" data-tab="teach-settings">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
               <span data-localize="global_settings">School Settings</span>
@@ -729,6 +733,58 @@
           </div>
           <div style="display: flex; justify-content: flex-end;">
             <button class="btn btn-primary" id="save-teacher-settings-btn">Save Configuration</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Staff Messages / Coordinator Chat Tab -->
+      <section class="tab-view-panel" id="view-teach-messages" style="display: none;">
+        <div class="panel chat-layout">
+          <!-- Chat sidebar -->
+          <div class="chat-sidebar">
+            <div class="chat-sidebar-header">
+              <span data-localize="staff_messages">Staff Messages</span>
+            </div>
+            <div class="chat-list" id="teacher-chat-list">
+              <!-- Chat list populated by JS -->
+            </div>
+          </div>
+
+          <!-- Chat body -->
+          <div class="chat-main" id="teacher-chat-body">
+            <!-- Empty state -->
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-secondary); text-align: center; padding: 2rem;" id="teacher-chat-empty-state">
+              <span style="font-size: 3rem;">✉️</span>
+              <h3 style="margin-top: 1rem;" data-localize="no_conversation">No Conversation Selected</h3>
+              <p style="font-size: 0.85rem;" data-localize="select_coordinator">Select a coordinator from the list to start chatting.</p>
+            </div>
+
+            <!-- Active chat feed -->
+            <div id="teacher-chat-active-state" style="display: none; flex-direction: column; height: 100%;">
+              <!-- Chat Header -->
+              <div class="chat-header">
+                <div class="chat-partner-info">
+                  <div class="user-avatar" id="teacher-chat-partner-avatar">?</div>
+                  <div>
+                    <h4 id="teacher-chat-partner-name">Partner Name</h4>
+                    <span class="user-role" id="teacher-chat-partner-school">School, Country</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Message Feed -->
+              <div class="chat-feed" id="teacher-chat-message-feed">
+                <!-- Messages bubbles -->
+              </div>
+
+              <!-- Chat Input compose area -->
+              <div class="chat-input-area" id="teacher-chat-compose-area">
+                <div class="chat-input-row">
+                  <textarea class="chat-input" id="teacher-chat-textarea" placeholder="Type your message here..."></textarea>
+                  <button class="btn btn-primary" id="teacher-chat-send-btn">Send</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

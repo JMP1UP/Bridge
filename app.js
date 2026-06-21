@@ -82,6 +82,7 @@ class App {
     this.selectedAssignMatchId = null;
     this.selectedAssignStudentId = null;
     this.onboardingSchoolsExpanded = false;
+    this.activeCoordinatorId = null;
     
     // Bind listeners
     window.addEventListener('DOMContentLoaded', () => this.init());
@@ -167,6 +168,19 @@ class App {
         this.sendMessage();
       }
     });
+
+    // Coordinator messaging listeners
+    const teachSendBtn = document.getElementById('teacher-chat-send-btn');
+    const teachTextarea = document.getElementById('teacher-chat-textarea');
+    if (teachSendBtn && teachTextarea) {
+      teachSendBtn.addEventListener('click', () => this.sendTeacherMessage());
+      teachTextarea.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          this.sendTeacherMessage();
+        }
+      });
+    }
 
     // Translation helper draft compose
     document.getElementById('translate-compose-btn').addEventListener('click', () => this.draftTranslation());
@@ -496,6 +510,7 @@ class App {
       this.renderTeacherSafeguarding();
       this.renderTeacherEditorDesk();
       this.populateTeacherSettings();
+      this.renderTeacherMessages();
     } else if (this.currentRole === 'admin') {
       this.renderAdminDashboard();
       this.renderAdminSchools();
@@ -2672,8 +2687,17 @@ class App {
                   ? '<span class="badge badge-success" style="font-size: 0.65rem; padding: 0.15rem 0.45rem;">Admin</span>' 
                   : '<span class="badge badge-secondary" style="font-size: 0.65rem; padding: 0.15rem 0.45rem;">Staff</span>';
                 
-                const btnLabel = c.isSchoolAdmin ? 'Revoke Admin' : 'Grant Admin';
-                const btnClass = c.isSchoolAdmin ? 'btn-secondary' : 'btn-primary';
+                const isSystemAdmin = this.currentRole === 'admin';
+                const isOwnSchoolTeacher = this.currentRole === 'teacher' && schoolId === 'school_1';
+                
+                let actionsHtml = '';
+                if (isSystemAdmin || isOwnSchoolTeacher) {
+                  const btnLabel = c.isSchoolAdmin ? 'Revoke Admin' : 'Grant Admin';
+                  const btnClass = c.isSchoolAdmin ? 'btn-secondary' : 'btn-primary';
+                  actionsHtml = `<button class="btn ${btnClass} btn-small" style="font-size: 0.65rem; padding: 0.2rem 0.5rem;" onclick="app.toggleCoordinatorAdminInsideModal('${c.id}', '${schoolId}')">${btnLabel}</button>`;
+                } else if (this.currentRole === 'teacher' && schoolId !== 'school_1') {
+                  actionsHtml = `<button class="btn btn-primary btn-small" style="font-size: 0.65rem; padding: 0.2rem 0.5rem;" onclick="app.startCoordinatorChat('${c.id}')">💬 Message</button>`;
+                }
                 
                 return `
                   <tr style="border-bottom: 1px solid var(--panel-border);">
@@ -2681,7 +2705,7 @@ class App {
                     <td style="padding: 0.5rem; color: var(--text-secondary);">${c.email}</td>
                     <td style="padding: 0.5rem;">${adminBadge}</td>
                     <td style="padding: 0.5rem;">
-                      <button class="btn ${btnClass} btn-small" style="font-size: 0.65rem; padding: 0.2rem 0.5rem;" onclick="app.toggleCoordinatorAdminInsideModal('${c.id}', '${schoolId}')">${btnLabel}</button>
+                      ${actionsHtml}
                     </td>
                   </tr>
                 `;
@@ -2761,12 +2785,17 @@ class App {
         </div>
       `;
 
-      rosterSection = `
-        <div style="margin-top: 0.5rem; border-top: 1px dashed var(--panel-border); padding-top: 0.75rem;">
-          <h5 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">Student Roster (${students.length} Students)</h5>
-          ${rosterHtml}
-        </div>
-      `;
+      const isSystemAdmin = this.currentRole === 'admin';
+      const isOwnSchoolTeacher = this.currentRole === 'teacher' && schoolId === 'school_1';
+
+      if (isSystemAdmin || isOwnSchoolTeacher) {
+        rosterSection = `
+          <div style="margin-top: 0.5rem; border-top: 1px dashed var(--panel-border); padding-top: 0.75rem;">
+            <h5 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">Student Roster (${students.length} Students)</h5>
+            ${rosterHtml}
+          </div>
+        `;
+      }
     }
 
     const container = document.getElementById('school-detail-content');
@@ -3017,6 +3046,123 @@ class App {
     if (modal) {
       modal.classList.remove('active');
     }
+  }
+
+  // ================== COORDINATOR CHAT PORTAL HELPERS ==================
+
+  startCoordinatorChat(coordinatorId) {
+    this.activeCoordinatorId = coordinatorId;
+    this.closeModal('school-detail-modal');
+    setTimeout(() => {
+      this.switchTab('teach-messages');
+    }, 150);
+  }
+
+  renderTeacherMessages() {
+    const myId = 'coord_1'; // Mrs. Smith
+    const coordinators = window.db.getCoordinators();
+    const otherCoordinators = coordinators.filter(c => c.id !== myId);
+    
+    const chatListContainer = document.getElementById('teacher-chat-list');
+    const chatEmptyState = document.getElementById('teacher-chat-empty-state');
+    const chatActiveState = document.getElementById('teacher-chat-active-state');
+
+    if (!chatListContainer || !chatEmptyState || !chatActiveState) return;
+
+    chatListContainer.innerHTML = '';
+    
+    if (otherCoordinators.length === 0) {
+      chatListContainer.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-muted); padding: 1rem; text-align: center;">No other coordinators found.</p>`;
+      chatEmptyState.style.display = 'flex';
+      chatActiveState.style.display = 'none';
+      return;
+    }
+
+    // Set first partner as default if none active
+    if (!this.activeCoordinatorId) {
+      this.activeCoordinatorId = otherCoordinators[0].id;
+    }
+
+    otherCoordinators.forEach(coord => {
+      const msgs = window.db.getCoordinatorMessages().filter(m => 
+        (m.senderId === myId && m.receiverId === coord.id) || 
+        (m.senderId === coord.id && m.receiverId === myId)
+      );
+      const lastMsg = msgs[msgs.length - 1];
+      const school = window.db.getSchool(coord.schoolId);
+
+      const item = document.createElement('div');
+      item.className = `chat-item ${this.activeCoordinatorId === coord.id ? 'active' : ''}`;
+      
+      item.innerHTML = `
+        <div class="user-avatar" style="width: 32px; height: 32px; font-size: 0.8rem; background: var(--accent);">
+          ${coord.name.split(' ').map(n => n[0]).join('') || '?'}
+        </div>
+        <div class="chat-item-meta">
+          <div class="chat-item-name">
+            <span>${coord.name} (${school?.code || 'Staff'})</span>
+          </div>
+          <div class="chat-item-preview">${lastMsg ? lastMsg.text : 'Start chatting...'}</div>
+        </div>
+      `;
+
+      item.addEventListener('click', () => {
+        this.activeCoordinatorId = coord.id;
+        this.renderTeacherMessages();
+      });
+
+      chatListContainer.appendChild(item);
+    });
+
+    const activeCoord = coordinators.find(c => c.id === this.activeCoordinatorId);
+    if (activeCoord) {
+      chatEmptyState.style.display = 'none';
+      chatActiveState.style.display = 'flex';
+
+      const partnerSchool = window.db.getSchool(activeCoord.schoolId);
+      document.getElementById('teacher-chat-partner-avatar').textContent = activeCoord.name.split(' ').map(n => n[0]).join('') || '?';
+      document.getElementById('teacher-chat-partner-name').textContent = activeCoord.name;
+      document.getElementById('teacher-chat-partner-school').textContent = `${partnerSchool?.name} • ${partnerSchool?.country}`;
+
+      // Render feed
+      const feed = document.getElementById('teacher-chat-message-feed');
+      feed.innerHTML = '';
+      
+      const msgs = window.db.getCoordinatorMessages().filter(m => 
+        (m.senderId === myId && m.receiverId === activeCoord.id) || 
+        (m.senderId === activeCoord.id && m.receiverId === myId)
+      );
+
+      msgs.forEach(msg => {
+        const row = document.createElement('div');
+        const isSent = msg.senderId === myId;
+        row.className = `message-row ${isSent ? 'sent' : 'received'}`;
+        
+        row.innerHTML = `
+          <div class="message-bubble">
+            <div>${msg.text}</div>
+          </div>
+          <div class="message-meta">
+            ${new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </div>
+        `;
+        feed.appendChild(row);
+      });
+
+      feed.scrollTop = feed.scrollHeight;
+    }
+  }
+
+  sendTeacherMessage() {
+    const textarea = document.getElementById('teacher-chat-textarea');
+    if (!textarea || !textarea.value.trim() || !this.activeCoordinatorId) return;
+
+    const myId = 'coord_1'; // Mrs. Smith
+    const text = textarea.value.trim();
+
+    window.db.addCoordinatorMessage(myId, this.activeCoordinatorId, text);
+    textarea.value = '';
+    this.renderTeacherMessages();
   }
 
   // ================== LOGIN / LOGOUT PORTAL HELPERS ==================

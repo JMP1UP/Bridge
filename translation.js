@@ -65,7 +65,10 @@ const UI_TRANSLATIONS = {
     matched_status: "Matched",
     awaiting_match_status: "Awaiting Match",
     by_author: "By",
-    no_articles_submitted: "No articles submitted yet."
+    no_articles_submitted: "No articles submitted yet.",
+    staff_messages: "Staff Messages",
+    no_conversation: "No Conversation Selected",
+    select_coordinator: "Select a coordinator from the list to start chatting."
   },
   de: {
     stud_dashboard: "Schüler-Dashboard",
@@ -132,7 +135,10 @@ const UI_TRANSLATIONS = {
     matched_status: "Gekoppelt",
     awaiting_match_status: "Warte auf Kopplung",
     by_author: "Von",
-    no_articles_submitted: "Noch keine Beiträge eingereicht."
+    no_articles_submitted: "Noch keine Beiträge eingereicht.",
+    staff_messages: "Lehrer-Nachrichten",
+    no_conversation: "Keine Unterhaltung ausgewählt",
+    select_coordinator: "Wähle eine Lehrkraft aus der Liste aus, um einen Chat zu starten."
   }
 };
 
