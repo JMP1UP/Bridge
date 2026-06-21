@@ -1672,7 +1672,7 @@ class App {
           <span style="font-size: 1.25rem;">📊</span>
         </div>
         <div style="font-size: 1.5rem; font-weight: 800; font-family: var(--font-title); color: var(--accent); margin: 0.25rem 0;">
-          ${overallMatchRate}% <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">Paired Rate</span>
+          ${overallMatchRate}% <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">of students paired</span>
         </div>
         <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem; font-weight: 500;">
           ${matchedMyStudents} of ${totalMyStudents} students paired
@@ -1720,15 +1720,13 @@ class App {
         badgeStyle = 'background: rgba(245, 158, 11, 0.12); color: var(--warning);';
       }
 
-      const partnerPercent = totalMyStudents > 0 ? Math.round((activeCount / totalMyStudents) * 100) : 0;
-      
       const logoHtml = partner.logoUrl 
         ? `<img src="${partner.logoUrl}" alt="${partner.name}" style="height: 24px; width: 24px; object-fit: contain; border-radius: 4px;">`
         : `<div style="height: 24px; width: 24px; border-radius: 4px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700;">${partner.name.split(' ').map(w => w[0]).join('').substring(0, 2)}</div>`;
 
       html += `
         <div class="metric-card ${statusClass}" onclick="app.selectPartnerSchool('${partner.id}')" title="Click to select this partner school">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; gap: 0.5rem;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; gap: 0.5rem;">
             <div style="display: flex; align-items: center; gap: 0.5rem; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 140px;">
               ${logoHtml}
               <h4 style="font-family: var(--font-title); font-weight: 700; font-size: 0.95rem; margin: 0; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden;">${partner.name}</h4>
@@ -1736,14 +1734,12 @@ class App {
             <span style="font-size: 0.65rem; font-weight: 600; padding: 0.15rem 0.45rem; border-radius: 6px; ${badgeStyle}">${statusText}</span>
           </div>
           <div style="font-size: 1.5rem; font-weight: 800; font-family: var(--font-title); color: ${activeCount > 0 ? 'var(--success)' : 'var(--text-secondary)'}; margin: 0.25rem 0;">
-            ${activeCount} <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">Paired Student${activeCount === 1 ? '' : 's'}</span>
+            ${activeCount} <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">active connection${activeCount === 1 ? '' : 's'}</span>
           </div>
-          <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem; font-weight: 500; display: flex; justify-content: space-between;">
-            <span>${partnerPercent}% of roster</span>
-            ${pendingCount > 0 ? `<span style="color: var(--warning); font-size: 0.75rem;">⚡ ${pendingCount} pending</span>` : ''}
-          </div>
-          <div class="metric-progress-track">
-            <div class="metric-progress-fill" style="width: 0%;" data-value="${partnerPercent}%"></div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem; font-weight: 500;">
+            ${pendingCount > 0 
+              ? `<span style="color: var(--warning);">⚡ ${pendingCount} pending request${pendingCount === 1 ? '' : 's'}</span>` 
+              : 'No pending requests'}
           </div>
         </div>
       `;
@@ -3022,7 +3018,7 @@ class App {
       if (isSystemAdmin || isOwnSchoolTeacher) {
         rosterSection = `
           <div style="margin-top: 0.5rem; border-top: 1px dashed var(--panel-border); padding-top: 0.75rem;">
-            <h5 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">Student Roster (${students.length} Students)</h5>
+            <h5 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">Student List (${students.length} Students)</h5>
             ${rosterHtml}
           </div>
         `;
