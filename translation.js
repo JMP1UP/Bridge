@@ -69,12 +69,16 @@ const UI_TRANSLATIONS = {
     staff_messages: "Staff Messages",
     no_conversation: "No Conversation Selected",
     select_coordinator: "Select a coordinator from the list to start chatting.",
-    active_exchanges_label: "Active Exchanges",
-    paired_students_text: "{count} students connected",
-    chat_history_label: "Chat History",
-    messages_exchanged_text: "{count} messages exchanged",
-    shared_publications_label: "Shared Publications",
-    published_articles_text: "{count} articles published"
+    engagement_metrics_title: "Our Exchange Journey",
+    global_statistics_title: "Bridge Community Stats",
+    active_exchanges_label: "Global Pen Pals",
+    paired_students_text: "{count} active pen pals!",
+    chat_history_label: "Our Chat Messages",
+    messages_exchanged_text_singular: "1 friendly message shared!",
+    messages_exchanged_text_plural: "{count} friendly messages shared!",
+    shared_publications_label: "Cultural Discoveries",
+    published_articles_text_singular: "1 story published!",
+    published_articles_text_plural: "{count} stories published!"
   },
   de: {
     stud_dashboard: "Schüler-Dashboard",
@@ -145,12 +149,16 @@ const UI_TRANSLATIONS = {
     staff_messages: "Lehrer-Nachrichten",
     no_conversation: "Keine Unterhaltung ausgewählt",
     select_coordinator: "Wähle eine Lehrkraft aus der Liste aus, um einen Chat zu starten.",
-    active_exchanges_label: "Aktive Kopplungen",
-    paired_students_text: "{count} Schüler verbunden",
-    chat_history_label: "Chat-Verlauf",
-    messages_exchanged_text: "{count} Nachrichten ausgetauscht",
-    shared_publications_label: "Gemeinsame Beiträge",
-    published_articles_text: "{count} Beiträge veröffentlicht"
+    engagement_metrics_title: "Unsere Austausch-Reise",
+    global_statistics_title: "Bridge Community-Statistik",
+    active_exchanges_label: "Brieffreunde weltweit",
+    paired_students_text: "{count} aktive Brieffreunde!",
+    chat_history_label: "Unsere Nachrichten",
+    messages_exchanged_text_singular: "1 Nachricht geteilt!",
+    messages_exchanged_text_plural: "{count} Nachrichten geteilt!",
+    shared_publications_label: "Kulturelle Entdeckungen",
+    published_articles_text_singular: "1 Beitrag veröffentlicht!",
+    published_articles_text_plural: "{count} Beiträge veröffentlicht!"
   }
 };
 

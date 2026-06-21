@@ -602,13 +602,20 @@ class App {
         a.status === 'Approved' && (a.schoolId === 'school_1' || a.schoolId === 'school_2')
       ).length;
 
-      const pairedStudentsText = (translations.paired_students_text || "{count} students connected").replace('{count}', pairedCount);
-      const messagesExchangedText = (translations.messages_exchanged_text || "{count} messages exchanged").replace('{count}', msgCount);
-      const publishedArticlesText = (translations.published_articles_text || "{count} articles published").replace('{count}', artCount);
+      const pairedStudentsText = (translations.paired_students_text || "{count} active pen pals!").replace('{count}', pairedCount);
+      
+      const messagesExchangedText = msgCount === 1
+        ? (translations.messages_exchanged_text_singular || "1 friendly message shared!")
+        : (translations.messages_exchanged_text_plural || "{count} friendly messages shared!").replace('{count}', msgCount);
+        
+      const publishedArticlesText = artCount === 1
+        ? (translations.published_articles_text_singular || "1 story published!")
+        : (translations.published_articles_text_plural || "{count} stories published!").replace('{count}', artCount);
 
-      const activeExchangesLabel = translations.active_exchanges_label || "Active Exchanges";
-      const chatHistoryLabel = translations.chat_history_label || "Chat History";
-      const sharedPubsLabel = translations.shared_publications_label || "Shared Publications";
+      const activeExchangesLabel = translations.active_exchanges_label || "Global Pen Pals";
+      const chatHistoryLabel = translations.chat_history_label || "Our Chat Messages";
+      const sharedPubsLabel = translations.shared_publications_label || "Cultural Discoveries";
+      const engagementMetricsTitle = translations.engagement_metrics_title || "Our Exchange Journey";
 
       welcomeContainer.innerHTML = `
         <div style="display: flex; gap: 1.5rem; align-items: center; margin-top: 1rem;">
@@ -625,7 +632,7 @@ class App {
 
         <!-- Exchange Engagement Metrics Grid -->
         <div style="margin-top: 1.5rem; border-top: 1px solid var(--panel-border); padding-top: 1.25rem;">
-          <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;">📊 Exchange Engagement Metrics</h4>
+          <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.05em; margin-bottom: 0.75rem;">📊 ${engagementMetricsTitle}</h4>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
             <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--panel-border); padding: 0.75rem 1rem; border-radius: 12px; display: flex; flex-direction: column; gap: 0.25rem;">
               <span style="font-size: 0.75rem; font-weight: 600; color: var(--secondary);">${activeExchangesLabel}</span>
@@ -659,11 +666,15 @@ class App {
       const pairedCount = activeMatches.length * 2;
       const artCount = window.db.getArticles().filter(a => a.status === 'Approved').length;
 
-      const pairedStudentsText = (translations.paired_students_text || "{count} students connected").replace('{count}', pairedCount);
-      const publishedArticlesText = (translations.published_articles_text || "{count} articles published").replace('{count}', artCount);
+      const pairedStudentsText = (translations.paired_students_text || "{count} active pen pals!").replace('{count}', pairedCount);
+      
+      const publishedArticlesText = artCount === 1
+        ? (translations.published_articles_text_singular || "1 story published!")
+        : (translations.published_articles_text_plural || "{count} stories published!").replace('{count}', artCount);
 
-      const activeExchangesLabel = translations.active_exchanges_label || "Active Exchanges";
-      const sharedPubsLabel = translations.shared_publications_label || "Shared Publications";
+      const activeExchangesLabel = translations.active_exchanges_label || "Global Pen Pals";
+      const sharedPubsLabel = translations.shared_publications_label || "Cultural Discoveries";
+      const globalStatisticsTitle = translations.global_statistics_title || "Bridge Community Stats";
 
       welcomeContainer.innerHTML = `
         <div style="margin-top: 1rem;">
@@ -676,7 +687,7 @@ class App {
 
         <!-- Global Engagement Metrics Grid -->
         <div style="margin-top: 1.5rem; border-top: 1px solid var(--panel-border); padding-top: 1.25rem;">
-          <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;">📊 Global Exchange Statistics</h4>
+          <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.05em; margin-bottom: 0.75rem;">📊 ${globalStatisticsTitle}</h4>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
             <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--panel-border); padding: 0.75rem 1rem; border-radius: 12px; display: flex; flex-direction: column; gap: 0.25rem;">
               <span style="font-size: 0.75rem; font-weight: 600; color: var(--secondary);">${activeExchangesLabel}</span>
