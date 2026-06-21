@@ -1,0 +1,2955 @@
+// Custom alert system to replace ugly browser alerts with premium modal notifications
+(function() {
+  const nativeAlert = window.alert;
+  window.alert = function(message) {
+    // Create modern premium alert modal
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay active';
+    overlay.style.zIndex = '10000';
+    overlay.style.transition = 'opacity 0.2s ease-out';
+    overlay.style.opacity = '1';
+
+    const content = document.createElement('div');
+    content.className = 'modal-content';
+    content.style.maxWidth = '420px';
+    content.style.textAlign = 'center';
+    content.style.padding = '2rem';
+    content.style.borderRadius = '24px';
+    content.style.border = '1px solid var(--panel-border)';
+    content.style.background = 'var(--bg-color)';
+    content.style.boxShadow = '0 20px 50px rgba(0,0,0,0.5)';
+    content.style.transform = 'translateY(0)';
+    content.style.transition = 'transform 0.2s ease-out';
+
+    // Determine icon based on message content
+    let icon = '🌐';
+    if (message.toLowerCase().includes('success') || message.toLowerCase().includes('approved') || message.toLowerCase().includes('confirmed') || message.toLowerCase().includes('registered')) {
+      icon = '✅';
+    } else if (message.toLowerCase().includes('warning') || message.toLowerCase().includes('safety') || message.toLowerCase().includes('paused') || message.toLowerCase().includes('concern') || message.toLowerCase().includes('flagged') || message.toLowerCase().includes('uncomfortable')) {
+      icon = '🚨';
+    } else if (message.toLowerCase().includes('copy') || message.toLowerCase().includes('copied') || message.toLowerCase().includes('link')) {
+      icon = '📋';
+    }
+
+    content.innerHTML = `
+      <div style="font-size: 2.75rem; margin-bottom: 1rem; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));">${icon}</div>
+      <h3 style="font-family: var(--font-title); font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">System Notification</h3>
+      <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.75rem; font-family: var(--font-body);">${message}</p>
+      <div style="display: flex; justify-content: center;">
+        <button class="btn btn-primary" style="padding: 0.65rem 2.5rem; min-width: 120px; border-radius: 10px; font-weight: 600;">Dismiss</button>
+      </div>
+    `;
+
+    overlay.appendChild(content);
+    document.body.appendChild(overlay);
+
+    const closeBtn = content.querySelector('button');
+    closeBtn.focus();
+
+    const closeAlert = () => {
+      overlay.style.opacity = '0';
+      content.style.transform = 'translateY(-20px)';
+      setTimeout(() => {
+        overlay.remove();
+      }, 200);
+    };
+
+    closeBtn.addEventListener('click', closeAlert);
+    
+    // Close on pressing Escape or Enter
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' || e.key === 'Enter') {
+        e.preventDefault();
+        window.removeEventListener('keydown', handleKeyDown);
+        closeAlert();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+  };
+})();
+
+// Application logic and coordinator for Pen Pal Platform
+
+class App {
+  constructor() {
+    this.currentRole = 'student'; // 'student', 'teacher', 'admin'
+    this.currentStudentId = 'stud_1'; // Harry Potter by default
+    this.activeMatchId = null;
+    this.interfaceLang = 'en';
+    this.theme = 'dark';
+    this.currentMatchingSubtab = 'pair';
+    this.tempAssignments = {};
+    this.selectedAssignMatchId = null;
+    this.selectedAssignStudentId = null;
+    this.onboardingSchoolsExpanded = false;
+    
+    // Bind listeners
+    window.addEventListener('DOMContentLoaded', () => this.init());
+  }
+
+  init() {
+    // Load initial user state
+    this.updateUserBadge();
+    this.renderNavigation();
+    
+    // Setup tabs
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        const tabId = link.getAttribute('data-tab');
+        this.switchTab(tabId);
+      });
+    });
+
+    // Theme Toggle
+    document.getElementById('theme-toggle-btn').addEventListener('click', () => this.toggleTheme());
+    
+    // Localization
+    const langSelect = document.getElementById('ui-lang-selector');
+    langSelect.addEventListener('change', (e) => {
+      this.setLanguage(e.target.value);
+    });
+
+    // Developer Panel role selectors
+    document.querySelectorAll('.dev-role-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.dev-role-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const role = btn.getAttribute('data-dev-role');
+        const studentId = btn.getAttribute('data-dev-id');
+        this.switchRole(role, studentId);
+      });
+    });
+
+    // Collapse Developer console
+    const devToggle = document.getElementById('dev-toggle-collapse');
+    const devBody = document.getElementById('dev-panel-body');
+    devToggle.addEventListener('click', () => {
+      if (devBody.style.display === 'none') {
+        devBody.style.display = 'flex';
+        devToggle.textContent = 'Collapse ▲';
+      } else {
+        devBody.style.display = 'none';
+        devToggle.textContent = 'Expand ▼';
+      }
+    });
+
+    // Reset database action
+    document.getElementById('dev-reset-db-btn').addEventListener('click', () => {
+      window.db.reset();
+      this.init();
+      alert('Local Storage Database has been reset to defaults.');
+    });
+
+    // Article submit listener
+    const artForm = document.getElementById('article-submission-form');
+    artForm.addEventListener('submit', (e) => this.handleArticleSubmit(e));
+
+    // Message sending listeners
+    document.getElementById('chat-send-btn').addEventListener('click', () => this.sendMessage());
+    document.getElementById('chat-textarea').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        this.sendMessage();
+      }
+    });
+
+    // Translation helper draft compose
+    document.getElementById('translate-compose-btn').addEventListener('click', () => this.draftTranslation());
+
+    // Report safety concern form listener
+    document.getElementById('student-report-btn').addEventListener('click', () => this.openModal('report-concern-modal'));
+    document.getElementById('report-concern-form').addEventListener('submit', (e) => this.handleReportConcern(e));
+
+    // Teacher Student roster actions
+    document.getElementById('invite-student-btn').addEventListener('click', () => this.openInviteModal());
+    document.getElementById('invite-student-form').addEventListener('submit', (e) => this.handleInviteStudent(e));
+    
+    // Bulk student upload roster actions
+    document.getElementById('bulk-upload-btn').addEventListener('click', () => this.openBulkModal());
+    document.getElementById('bulk-upload-form').addEventListener('submit', (e) => this.handleBulkUpload(e));
+
+    // Teacher matching action
+    document.getElementById('propose-match-btn').addEventListener('click', () => this.proposeMatch());
+    document.getElementById('partner-school-select').addEventListener('change', () => this.updateSelectedPartnerSchoolInfo());
+
+    // Teacher settings action
+    document.getElementById('save-teacher-settings-btn').addEventListener('click', () => this.saveTeacherSettings());
+
+    // School profile change & submit listeners
+    const logoSelect = document.getElementById('school-logo-select');
+    const logoPreview = document.getElementById('school-logo-preview');
+    logoSelect.addEventListener('change', (e) => {
+      logoPreview.src = e.target.value;
+      logoPreview.style.display = e.target.value ? 'block' : 'none';
+    });
+
+    const photoSelect = document.getElementById('school-photo-select');
+    const photoPreview = document.getElementById('school-photo-preview');
+    photoSelect.addEventListener('change', (e) => {
+      photoPreview.src = e.target.value;
+      photoPreview.style.display = e.target.value ? 'block' : 'none';
+    });
+
+    const profileForm = document.getElementById('school-profile-form');
+    profileForm.addEventListener('submit', (e) => this.handleSchoolProfileSubmit(e));
+
+    // Confirm assignment button click listener
+    document.getElementById('confirm-assign-btn').addEventListener('click', () => this.saveStudentAssignment());
+
+    // Article photograph upload listener
+    const artPhotoInput = document.getElementById('art-photo-input');
+    const artPhotoPreview = document.getElementById('article-photo-preview');
+    const artPhotoPlaceholder = document.getElementById('article-photo-placeholder');
+    this.currentArticlePhotoDataUrl = '';
+    artPhotoInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        if (file.size > 1.5 * 1024 * 1024) {
+          alert('Image file is too large. Please select an image smaller than 1.5MB.');
+          artPhotoInput.value = '';
+          this.currentArticlePhotoDataUrl = '';
+          artPhotoPreview.style.display = 'none';
+          artPhotoPlaceholder.style.display = 'block';
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          this.currentArticlePhotoDataUrl = event.target.result;
+          artPhotoPreview.src = event.target.result;
+          artPhotoPreview.style.display = 'block';
+          artPhotoPlaceholder.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+      } else {
+        this.currentArticlePhotoDataUrl = '';
+        artPhotoPreview.style.display = 'none';
+        artPhotoPlaceholder.style.display = 'block';
+      }
+    });
+
+    // Admin register school action
+    document.getElementById('admin-add-school-btn').addEventListener('click', () => this.openModal('add-school-modal'));
+    document.getElementById('add-school-form').addEventListener('submit', (e) => this.handleAddSchool(e));
+
+    // Onboarding school request form listener
+    document.getElementById('request-school-registration-form').addEventListener('submit', (e) => this.handleSchoolRegistrationRequest(e));
+
+    // Auto-generate school code ID on onboarding form
+    const reqSchoolName = document.getElementById('req-school-name');
+    const reqSchoolCountry = document.getElementById('req-school-country');
+    const reqSchoolCode = document.getElementById('req-school-code');
+    
+    if (reqSchoolName && reqSchoolCountry && reqSchoolCode) {
+      const updateGeneratedCode = () => {
+        const name = reqSchoolName.value.trim();
+        const country = reqSchoolCountry.value.trim();
+        if (!name) {
+          reqSchoolCode.value = '';
+          return;
+        }
+        let code = name.replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase();
+        if (country) {
+          const countryLower = country.toLowerCase().trim();
+          let countryCode = '';
+          if (countryLower === 'united kingdom' || countryLower === 'uk' || countryLower === 'england' || countryLower === 'britain') {
+            countryCode = 'UK';
+          } else if (countryLower === 'germany' || countryLower === 'deutschland' || countryLower === 'de') {
+            countryCode = 'DE';
+          } else if (countryLower === 'france' || countryLower === 'fr') {
+            countryCode = 'FR';
+          } else if (countryLower === 'spain' || countryLower === 'espana' || countryLower === 'es') {
+            countryCode = 'ES';
+          } else if (countryLower === 'united states' || countryLower === 'usa' || countryLower === 'us') {
+            countryCode = 'US';
+          } else {
+            countryCode = country.replace(/[^a-zA-Z0-9]/g, '').substring(0, 2).toUpperCase();
+          }
+          if (countryCode) {
+            code += '-' + countryCode;
+          }
+        }
+        reqSchoolCode.value = code;
+      };
+      reqSchoolName.addEventListener('input', updateGeneratedCode);
+      reqSchoolCountry.addEventListener('input', updateGeneratedCode);
+    }
+
+    // Approved schools directory search & expand listeners
+    const onboardingSearch = document.getElementById('onboarding-school-search');
+    if (onboardingSearch) {
+      onboardingSearch.addEventListener('input', () => this.renderNewCoordinatorOnboarding());
+    }
+
+    const onboardingExpandBtn = document.getElementById('onboarding-schools-expand-btn');
+    if (onboardingExpandBtn) {
+      onboardingExpandBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.onboardingSchoolsExpanded = !this.onboardingSchoolsExpanded;
+        onboardingExpandBtn.textContent = this.onboardingSchoolsExpanded ? 'Collapse List' : `Show All Schools`;
+        this.renderNewCoordinatorOnboarding();
+      });
+    }
+
+    // Language Help Writing Widget Tabs
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const helpPanelId = btn.getAttribute('data-help-tab');
+        
+        // Toggle active styling
+        btn.parentElement.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Toggle subtabs
+        document.querySelectorAll('.help-subtab').forEach(pane => pane.style.display = 'none');
+        document.getElementById(helpPanelId).style.display = 'block';
+      });
+    });
+
+    // Load UI data
+    this.refreshUI();
+  }
+
+  // Update current role user card
+  updateUserBadge() {
+    const nameEl = document.getElementById('current-user-name');
+    const roleEl = document.getElementById('current-user-role');
+    const avatarEl = document.getElementById('current-user-avatar');
+
+    if (this.currentRole === 'student') {
+      const stud = window.db.getStudent(this.currentStudentId);
+      if (stud) {
+        nameEl.textContent = stud.name;
+        roleEl.textContent = `${stud.yearGroup} • ${window.db.getSchool(stud.schoolId)?.name}`;
+        avatarEl.textContent = stud.name.split(' ').map(n => n[0]).join('');
+      }
+    } else if (this.currentRole === 'teacher') {
+      const coordinators = window.db.getCoordinators();
+      const coord = coordinators.find(c => c.email === 'smith@leicesterhigh.edu');
+      const isAdmin = coord ? coord.isSchoolAdmin : false;
+      nameEl.textContent = 'Mrs. Smith';
+      roleEl.textContent = `Languages Coordinator ${isAdmin ? '• School Admin' : ''}`;
+      avatarEl.textContent = 'MS';
+    } else if (this.currentRole === 'admin') {
+      nameEl.textContent = 'System Admin';
+      roleEl.textContent = 'Platform Administrator';
+      avatarEl.textContent = 'AD';
+    } else if (this.currentRole === 'new-coordinator') {
+      nameEl.textContent = 'Unregistered Teacher';
+      roleEl.textContent = 'Awaiting School Connect';
+      avatarEl.textContent = 'UT';
+    }
+  }
+
+  // Dynamic Navigation sidebars
+  renderNavigation() {
+    document.getElementById('student-nav').style.display = 'none';
+    document.getElementById('teacher-nav').style.display = 'none';
+    document.getElementById('admin-nav').style.display = 'none';
+    document.getElementById('new-coordinator-nav').style.display = 'none';
+
+    let defaultTab = '';
+    if (this.currentRole === 'student') {
+      document.getElementById('student-nav').style.display = 'flex';
+      const student = window.db.getStudent(this.currentStudentId);
+      const matches = student ? window.db.getMatches().filter(m => m.active && m.studentIds.includes(student.id)) : [];
+      if (matches.length > 0) {
+        defaultTab = 'stud-chat';
+      } else {
+        defaultTab = 'stud-dashboard';
+      }
+    } else if (this.currentRole === 'teacher') {
+      document.getElementById('teacher-nav').style.display = 'flex';
+      defaultTab = 'teach-dashboard';
+    } else if (this.currentRole === 'admin') {
+      document.getElementById('admin-nav').style.display = 'flex';
+      defaultTab = 'admin-dashboard';
+    } else if (this.currentRole === 'new-coordinator') {
+      document.getElementById('new-coordinator-nav').style.display = 'flex';
+      defaultTab = 'new-coord-onboarding';
+    }
+
+    this.switchTab(defaultTab);
+  }
+
+  // Handle Tab switches
+  switchTab(tabId) {
+    // Hide all view panels
+    document.querySelectorAll('.tab-view-panel').forEach(panel => {
+      panel.style.display = 'none';
+    });
+
+    // Deactivate all sidebar nav links
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.classList.remove('active');
+    });
+
+    // Show active panel
+    const targetPanel = document.getElementById(`view-${tabId}`);
+    if (targetPanel) {
+      targetPanel.style.display = 'block';
+    }
+
+    // Activate corresponding link
+    const targetLink = document.querySelector(`.nav-link[data-tab="${tabId}"]`);
+    if (targetLink) {
+      targetLink.classList.add('active');
+    }
+
+    // Set page header title
+    const titleEl = document.getElementById('view-title');
+    const subtitleEl = document.getElementById('view-subtitle');
+
+    const localizedTitle = window.translator.UI_TRANSLATIONS[this.interfaceLang][tabId.replace('-', '_')];
+    titleEl.textContent = localizedTitle || tabId.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+    if (this.currentRole === 'student') {
+      const student = window.db.getStudent(this.currentStudentId);
+      subtitleEl.textContent = `Welcome, ${student?.name || 'Student'}! Connect with your cultural exchange partner.`;
+    } else if (this.currentRole === 'teacher') {
+      subtitleEl.textContent = 'Staff Portal: Monitor safety, review student articles, and pair partners.';
+    } else if (this.currentRole === 'admin') {
+      subtitleEl.textContent = 'Platform Management Dashboard: Audit global actions and register schools.';
+    } else if (this.currentRole === 'new-coordinator') {
+      subtitleEl.textContent = 'Coordinator Onboarding: Connect your school to Bridge to participate.';
+    }
+
+    // Refresh dynamic views on switch
+    this.refreshUI();
+  }
+
+  // Theme support toggle
+  toggleTheme() {
+    const btn = document.getElementById('theme-toggle-btn');
+    if (this.theme === 'dark') {
+      this.theme = 'light';
+      document.documentElement.setAttribute('data-theme', 'light');
+      btn.textContent = '☀️ Light Mode';
+    } else {
+      this.theme = 'dark';
+      document.documentElement.removeAttribute('data-theme');
+      btn.textContent = '🌙 Dark Mode';
+    }
+  }
+
+  // Set Language for localization
+  setLanguage(lang) {
+    this.interfaceLang = lang;
+    
+    // Apply UI translation dictionary definitions
+    document.querySelectorAll('[data-localize]').forEach(el => {
+      const key = el.getAttribute('data-localize');
+      if (window.translator.UI_TRANSLATIONS[lang] && window.translator.UI_TRANSLATIONS[lang][key]) {
+        el.textContent = window.translator.UI_TRANSLATIONS[lang][key];
+      }
+    });
+
+    // Update headings/labels
+    this.switchTab(document.querySelector('.nav-link.active').getAttribute('data-tab'));
+    
+    this.refreshUI();
+  }
+
+  // Developer switches roles
+  switchRole(role, studentId) {
+    this.currentRole = role;
+    if (studentId) {
+      this.currentStudentId = studentId;
+      // Auto-set translation language based on student origin
+      const stud = window.db.getStudent(studentId);
+      if (stud) {
+        this.setLanguage(stud.language);
+        document.getElementById('ui-lang-selector').value = stud.language;
+      }
+    } else {
+      this.setLanguage('en');
+      document.getElementById('ui-lang-selector').value = 'en';
+    }
+    
+    this.activeMatchId = null;
+    this.updateUserBadge();
+    this.renderNavigation();
+  }
+
+  // Main UI refresh selector
+  refreshUI() {
+    // Redraw based on role
+    if (this.currentRole === 'student') {
+      this.renderStudentDashboard();
+      this.renderStudentChat();
+      this.renderLanguageWidget();
+      this.populateStudentSettings();
+    } else if (this.currentRole === 'teacher') {
+      this.renderTeacherDashboard();
+      this.renderStudentRoster();
+      this.renderTeacherMatching();
+      this.renderTeacherSafeguarding();
+      this.renderTeacherEditorDesk();
+      this.populateTeacherSettings();
+    } else if (this.currentRole === 'admin') {
+      this.renderAdminDashboard();
+      this.renderAdminSchools();
+    } else if (this.currentRole === 'new-coordinator') {
+      this.renderNewCoordinatorOnboarding();
+    }
+  }
+
+  // ================== STUDENT PORTAL RENDERERS ==================
+
+  renderStudentDashboard() {
+    const student = window.db.getStudent(this.currentStudentId);
+    if (!student) return;
+
+    // Welcome Card Content
+    const welcomeContainer = document.getElementById('student-welcome-details');
+    const badge = document.getElementById('student-match-badge');
+    
+    // Check pen pal matches
+    const matches = window.db.getMatches().filter(m => m.active && m.studentIds.includes(student.id));
+    
+    if (matches.length > 0) {
+      const partnerId = matches[0].studentIds.find(id => id !== student.id);
+      const partner = window.db.getStudent(partnerId);
+      const school = window.db.getSchool(partner?.schoolId);
+      
+      badge.className = "badge badge-success";
+      badge.textContent = "Matched";
+      
+      welcomeContainer.innerHTML = `
+        <div style="display: flex; gap: 1.5rem; align-items: center; margin-top: 1rem;">
+          <div class="user-avatar" style="width: 60px; height: 60px; font-size: 1.5rem; cursor: pointer;" onclick="app.openStudentDetailModal('${partner?.id}')" title="Click to view partner profile">
+            ${partner?.name.split(' ').map(n => n[0]).join('') || '?'}
+          </div>
+          <div>
+            <h3>Your Pen Pal is <span class="clickable-partner-link" style="cursor: pointer; text-decoration: underline;" onclick="app.openStudentDetailModal('${partner?.id}')" title="Click to view partner profile">${partner?.name || 'Unknown'}</span></h3>
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">🏫 School: <span class="clickable-school-link" onclick="app.openSchoolDetail('${school?.id}')">${school?.name}</span> (${school?.city}, ${school?.country})</p>
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">🎂 Age: ${partner?.age} • Year group: ${partner?.yearGroup}</p>
+            <button class="btn btn-primary btn-small" style="margin-top: 0.5rem;" onclick="app.switchTab('stud-chat')">Send a Message</button>
+          </div>
+        </div>
+      `;
+    } else {
+      badge.className = "badge badge-warning";
+      badge.textContent = "Awaiting Match";
+      welcomeContainer.innerHTML = `
+        <div style="margin-top: 1rem;">
+          <h3>You don't have a pen pal match yet!</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.75rem;">Your languages teacher will match you with a student from a partner school shortly.</p>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-secondary btn-small" onclick="app.switchTab('stud-culture')">Write a Culture Article</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // News Feed rendering
+    const newsContainer = document.getElementById('student-news-feed');
+    const news = window.db.getNews();
+    
+    newsContainer.innerHTML = '';
+    news.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'panel news-card';
+      card.style.padding = '1rem';
+      card.style.background = 'rgba(255,255,255,0.01)';
+      card.style.border = '1px solid var(--panel-border)';
+      
+      // Look up if this news item is for an article and has a photo
+      let photoHtml = '';
+      if (item.title.startsWith('Published: ')) {
+        const artTitle = item.title.replace('Published: ', '').trim();
+        const art = window.db.getArticles().find(a => a.title === artTitle);
+        if (art && art.photoUrl) {
+          photoHtml = `<img src="${art.photoUrl}" alt="${art.title} image" style="width: 100%; height: 140px; object-fit: cover; border-radius: 8px; margin-bottom: 0.75rem;">`;
+        }
+      }
+
+      card.innerHTML = `
+        ${photoHtml}
+        <h4 style="font-weight: 700; font-size: 1rem; margin-bottom: 0.25rem;">${item.title}</h4>
+        <p style="font-size: 0.85rem; color: var(--text-secondary);">${item.content}</p>
+        <div class="news-card-meta">
+          <span>By: ${item.postedBy}</span>
+          <span>${new Date(item.timestamp).toLocaleDateString()}</span>
+        </div>
+      `;
+      newsContainer.appendChild(card);
+    });
+
+    // Submitted Articles status list
+    const articlesContainer = document.getElementById('student-page-articles-list');
+    const studentArticles = window.db.getArticles().filter(a => a.authorId === student.id);
+    
+    articlesContainer.innerHTML = '';
+    if (studentArticles.length === 0) {
+      articlesContainer.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1rem;">No articles submitted yet.</p>`;
+    } else {
+      studentArticles.forEach(art => {
+        const item = document.createElement('div');
+        item.style.padding = '0.75rem';
+        item.style.background = 'rgba(255,255,255,0.02)';
+        item.style.border = '1px solid var(--panel-border)';
+        item.style.borderRadius = '8px';
+        item.style.display = 'flex';
+        item.style.justifyContent = 'space-between';
+        item.style.alignItems = 'center';
+        item.style.cursor = 'pointer';
+        item.title = 'Click to read article';
+        item.addEventListener('click', () => this.openStudentArticleDetail(art.id));
+        
+        let statusBadge = '';
+        if (art.status === 'Approved') statusBadge = '<span class="badge badge-success">Approved</span>';
+        else if (art.status === 'Pending') statusBadge = '<span class="badge badge-warning">Pending</span>';
+        else statusBadge = '<span class="badge badge-danger">Rejected</span>';
+
+        const photoHtml = art.photoUrl
+          ? `<img src="${art.photoUrl}" alt="Article thumb" style="width: 36px; height: 36px; object-fit: cover; border-radius: 6px; margin-right: 0.75rem;">`
+          : '<div style="width: 36px; height: 36px; background: rgba(0,0,0,0.15); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; margin-right: 0.75rem; color: var(--text-muted);">📷</div>';
+
+        item.innerHTML = `
+          <div style="display: flex; align-items: center;">
+            ${photoHtml}
+            <div>
+              <h5 style="font-size: 0.85rem; font-weight: 600; margin: 0;">${art.title}</h5>
+              <span style="font-size: 0.7rem; color: var(--text-muted);">${new Date(art.submittedAt).toLocaleDateString()}</span>
+            </div>
+          </div>
+          <div>${statusBadge}</div>
+        `;
+        articlesContainer.appendChild(item);
+      });
+    }
+  }
+
+  // Populate student account configuration
+  populateStudentSettings() {
+    const student = window.db.getStudent(this.currentStudentId);
+    if (!student) return;
+
+    document.getElementById('stud-setting-name').value = student.name;
+    document.getElementById('stud-setting-school').value = window.db.getSchool(student.schoolId)?.name || 'Unknown';
+    document.getElementById('stud-setting-email').value = student.email;
+
+    // Biography fields
+    const biogInput = document.getElementById('stud-setting-biog');
+    const statusBanner = document.getElementById('stud-biog-status-banner');
+    if (biogInput && statusBanner) {
+      biogInput.value = student.pendingBiog || student.personalBiog || '';
+      
+      if (student.personalBiogStatus === 'Pending') {
+        statusBanner.style.display = 'block';
+        statusBanner.style.padding = '0.5rem 0.75rem';
+        statusBanner.style.borderRadius = '6px';
+        statusBanner.style.background = 'rgba(245, 158, 11, 0.1)';
+        statusBanner.style.border = '1px solid rgba(245, 158, 11, 0.2)';
+        statusBanner.style.color = '#fbbf24';
+        statusBanner.textContent = '⏳ Biography pending teacher review. Partners will not see edits until approved.';
+      } else if (student.personalBiogStatus === 'Approved') {
+        statusBanner.style.display = 'block';
+        statusBanner.style.padding = '0.5rem 0.75rem';
+        statusBanner.style.borderRadius = '6px';
+        statusBanner.style.background = 'rgba(16, 185, 129, 0.1)';
+        statusBanner.style.border = '1px solid rgba(16, 185, 129, 0.2)';
+        statusBanner.style.color = '#34d399';
+        statusBanner.textContent = '✅ Biography approved and visible to your pen pal.';
+      } else if (student.personalBiogStatus === 'Rejected') {
+        statusBanner.style.display = 'block';
+        statusBanner.style.padding = '0.5rem 0.75rem';
+        statusBanner.style.borderRadius = '6px';
+        statusBanner.style.background = 'rgba(239, 68, 68, 0.1)';
+        statusBanner.style.border = '1px solid rgba(239, 68, 68, 0.2)';
+        statusBanner.style.color = '#f87171';
+        statusBanner.textContent = '❌ Biography declined by teacher. Please revise and resubmit.';
+      } else {
+        statusBanner.style.display = 'none';
+      }
+    }
+  }
+
+  saveStudentBiography() {
+    const biogInput = document.getElementById('stud-setting-biog');
+    if (!biogInput) return;
+    const text = biogInput.value.trim();
+    
+    window.db.submitStudentBiog(this.currentStudentId, text);
+    alert('Biography submitted successfully for teacher review.');
+    this.refreshUI();
+  }
+
+  // Renders Student Chat messaging panels
+  renderStudentChat() {
+    const student = window.db.getStudent(this.currentStudentId);
+    if (!student) return;
+
+    const chatListContainer = document.getElementById('student-chat-list');
+    const chatEmptyState = document.getElementById('chat-empty-state');
+    const chatActiveState = document.getElementById('chat-active-state');
+
+    // Get matches for this student
+    const activeMatches = window.db.getMatches().filter(m => m.active && m.studentIds.includes(student.id));
+
+    chatListContainer.innerHTML = '';
+    if (activeMatches.length === 0) {
+      chatListContainer.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-muted); padding: 1rem; text-align: center;">No matched pen pals yet.</p>`;
+      chatEmptyState.style.display = 'flex';
+      chatActiveState.style.display = 'none';
+      return;
+    }
+
+    // Set first match as default if none selected
+    if (!this.activeMatchId) {
+      this.activeMatchId = activeMatches[0].id;
+    }
+
+    activeMatches.forEach(match => {
+      const partnerId = match.studentIds.find(id => id !== student.id);
+      const partner = window.db.getStudent(partnerId);
+      const messages = window.db.getMessages().filter(m => m.matchId === match.id);
+      const lastMsg = messages[messages.length - 1];
+
+      const item = document.createElement('div');
+      item.className = `chat-item ${this.activeMatchId === match.id ? 'active' : ''}`;
+      
+      let badgeStatus = '';
+      if (match.paused) {
+        badgeStatus = `<span class="badge badge-danger btn-small" style="font-size: 0.6rem; padding: 0.1rem 0.35rem;">Paused</span>`;
+      }
+
+      item.innerHTML = `
+        <div class="user-avatar" style="width: 32px; height: 32px; font-size: 0.8rem;">
+          ${partner?.name.split(' ').map(n => n[0]).join('') || '?'}
+        </div>
+        <div class="chat-item-meta">
+          <div class="chat-item-name">
+            <span>${partner?.name || 'Partner'}</span>
+            ${badgeStatus}
+          </div>
+          <div class="chat-item-preview">${lastMsg ? lastMsg.text : 'Start chatting...'}</div>
+        </div>
+      `;
+
+      item.addEventListener('click', () => {
+        this.activeMatchId = match.id;
+        this.renderStudentChat();
+      });
+
+      chatListContainer.appendChild(item);
+    });
+
+    // Render active chat
+    const currentMatch = activeMatches.find(m => m.id === this.activeMatchId);
+    if (currentMatch) {
+      chatEmptyState.style.display = 'none';
+      chatActiveState.style.display = 'flex';
+
+      const partnerId = currentMatch.studentIds.find(id => id !== student.id);
+      const partner = window.db.getStudent(partnerId);
+      const partnerSchool = window.db.getSchool(partner?.schoolId);
+
+      document.getElementById('chat-partner-avatar').textContent = partner?.name.split(' ').map(n => n[0]).join('') || '?';
+      document.getElementById('chat-partner-name').textContent = partner?.name;
+      document.getElementById('chat-partner-school').textContent = `${partnerSchool?.name} • ${partnerSchool?.country}`;
+
+      // Paused Banner and composing settings
+      const safetyBanner = document.getElementById('chat-safety-banner');
+      const composeArea = document.getElementById('chat-compose-area');
+      
+      if (currentMatch.paused) {
+        safetyBanner.style.display = 'flex';
+        composeArea.style.opacity = '0.5';
+        document.getElementById('chat-textarea').disabled = true;
+        document.getElementById('chat-send-btn').disabled = true;
+        document.getElementById('translate-compose-btn').disabled = true;
+      } else {
+        safetyBanner.style.display = 'none';
+        composeArea.style.opacity = '1';
+        document.getElementById('chat-textarea').disabled = false;
+        document.getElementById('chat-send-btn').disabled = false;
+        document.getElementById('translate-compose-btn').disabled = false;
+      }
+
+      // Populate Message Feed bubbles
+      const feed = document.getElementById('chat-message-feed');
+      feed.innerHTML = '';
+      
+      const messages = window.db.getMessages().filter(m => m.matchId === currentMatch.id);
+      messages.forEach(msg => {
+        const row = document.createElement('div');
+        const isSent = msg.senderId === student.id;
+        row.className = `message-row ${isSent ? 'sent' : 'received'}`;
+        
+        let transRow = '';
+        if (msg.translation) {
+          transRow = `<div class="message-translation">📝 ${msg.translation}</div>`;
+        }
+
+        let flaggedMarkup = '';
+        if (msg.flagged) {
+          flaggedMarkup = `<div style="font-size: 0.75rem; color: var(--danger); font-weight: bold; margin-top: 0.25rem;">[Flagged by SafeGuard: ${msg.flagReason}]</div>`;
+        }
+
+        row.innerHTML = `
+          <div class="message-bubble">
+            <div>${msg.text}</div>
+            ${transRow}
+          </div>
+          ${flaggedMarkup}
+          <div class="message-meta">
+            ${new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </div>
+        `;
+        feed.appendChild(row);
+      });
+
+      // Auto-scroll feed to bottom
+      feed.scrollTop = feed.scrollHeight;
+    }
+  }
+
+  // Draft Translation button logic
+  draftTranslation() {
+    const textarea = document.getElementById('chat-textarea');
+    const previewSpan = document.getElementById('compose-translation-preview');
+    const student = window.db.getStudent(this.currentStudentId);
+    
+    if (!textarea.value || !student) return;
+
+    const sourceLang = student.language;
+    const targetLang = sourceLang === 'en' ? 'de' : 'en';
+
+    const translated = window.translator.mockTranslate(textarea.value, sourceLang, targetLang);
+    previewSpan.textContent = `Draft: ${translated}`;
+    previewSpan.setAttribute('data-draft', translated);
+  }
+
+  // Send message implementation
+  sendMessage() {
+    const textarea = document.getElementById('chat-textarea');
+    const previewSpan = document.getElementById('compose-translation-preview');
+    
+    if (!textarea.value.trim() || !this.activeMatchId) return;
+
+    const student = window.db.getStudent(this.currentStudentId);
+    const text = textarea.value.trim();
+    const draftTranslation = previewSpan.getAttribute('data-draft') || '';
+
+    // Save to DB
+    window.db.addMessage(this.activeMatchId, student.id, text, draftTranslation);
+
+    // Clean inputs
+    textarea.value = '';
+    previewSpan.textContent = '';
+    previewSpan.removeAttribute('data-draft');
+
+    // Reload UI
+    this.refreshUI();
+  }
+
+  // Report safety concern form handler
+  handleReportConcern(e) {
+    e.preventDefault();
+    const reason = document.getElementById('report-reason').value;
+    const details = document.getElementById('report-details').value;
+    const student = window.db.getStudent(this.currentStudentId);
+
+    if (!this.activeMatchId || !student) return;
+
+    // Set flag
+    const messages = window.db.getMessages().filter(m => m.matchId === this.activeMatchId);
+    const lastMsg = messages[messages.length - 1];
+    
+    // Create audit log and pause chat
+    window.db.pauseMatch(this.activeMatchId, true);
+    
+    // Register safeguarding alert
+    const flags = window.db.getFlags();
+    const newFlag = {
+      id: 'flag_' + Date.now(),
+      messageId: lastMsg ? lastMsg.id : 'no_msg',
+      status: 'Pending',
+      flaggedAt: new Date().toISOString(),
+      reason: reason,
+      details: details,
+      reportedBy: student.name,
+      reviewedBy: null,
+      reviewedAt: null,
+      actionTaken: null
+    };
+    flags.push(newFlag);
+    window.db.saveTable('flags', flags);
+    window.db.addLog('Safeguarding Report', `Student ${student.name} flagged chat. Reason: ${reason}`, student.name);
+
+    this.closeModal('report-concern-modal');
+    document.getElementById('report-concern-form').reset();
+    
+    alert('Thank you for reporting this concern. Your teachers have been notified and the chat is paused until review.');
+    
+    this.refreshUI();
+  }
+
+  // Language Widget Renders
+  renderLanguageWidget() {
+    const startersContainer = document.getElementById('starters-container');
+    const vocabContainer = document.getElementById('vocab-container');
+    const promptsContainer = document.getElementById('prompts-container');
+
+    // Populate sentence starters
+    startersContainer.innerHTML = '';
+    window.translator.SENTENCE_STARTERS.forEach(starter => {
+      const item = document.createElement('div');
+      item.className = 'starter-item';
+      
+      const studLang = window.db.getStudent(this.currentStudentId)?.language || 'en';
+      const mainPhrase = starter[studLang];
+      const translatePhrase = starter[studLang === 'en' ? 'de' : 'en'];
+
+      item.innerHTML = `
+        <div class="starter-cat">${starter.category}</div>
+        <div class="starter-phrase">${mainPhrase}</div>
+        <div class="starter-translation">${translatePhrase}</div>
+      `;
+
+      item.addEventListener('click', () => {
+        const textarea = document.getElementById('chat-textarea');
+        textarea.value += mainPhrase;
+        textarea.focus();
+        
+        // Trigger auto translation preview
+        const targetLang = studLang === 'en' ? 'de' : 'en';
+        const previewSpan = document.getElementById('compose-translation-preview');
+        previewSpan.textContent = `Draft: ${translatePhrase}`;
+        previewSpan.setAttribute('data-draft', translatePhrase);
+      });
+
+      startersContainer.appendChild(item);
+    });
+
+    // Populate vocab lists
+    vocabContainer.innerHTML = '';
+    window.translator.VOCABULARY_LIST.forEach(vocab => {
+      const item = document.createElement('div');
+      item.className = 'vocab-item';
+      item.innerHTML = `
+        <span><strong>${vocab.en}</strong> = <em>${vocab.de}</em></span>
+        <span class="vocab-tag">${vocab.category}</span>
+      `;
+      vocabContainer.appendChild(item);
+    });
+
+    // Populate prompts
+    promptsContainer.innerHTML = '';
+    window.translator.WRITING_PROMPTS.forEach(prompt => {
+      const item = document.createElement('div');
+      item.style.padding = '0.75rem';
+      item.style.background = 'rgba(255,255,255,0.02)';
+      item.style.border = '1px solid var(--panel-border)';
+      item.style.borderRadius = '8px';
+      item.style.fontSize = '0.85rem';
+      
+      const studLang = window.db.getStudent(this.currentStudentId)?.language || 'en';
+
+      item.innerHTML = `
+        <h4 style="font-weight: 700; color: var(--primary); margin-bottom: 0.25rem;">${prompt.title}</h4>
+        <p>${prompt[studLang]}</p>
+      `;
+      promptsContainer.appendChild(item);
+    });
+  }
+
+  // Handle article submission
+  handleArticleSubmit(e) {
+    e.preventDefault();
+    const title = document.getElementById('art-title').value.trim();
+    const lang = document.getElementById('art-lang').value;
+    const content = document.getElementById('art-content').value.trim();
+    const photoUrl = this.currentArticlePhotoDataUrl || '';
+    const student = window.db.getStudent(this.currentStudentId);
+
+    if (!student) return;
+
+    window.db.addArticle({
+      title,
+      content,
+      language: lang,
+      authorId: student.id,
+      schoolId: student.schoolId,
+      photoUrl
+    });
+
+    alert('Your article has been submitted for teacher review! Once approved, it will appear on the school news feeds.');
+    document.getElementById('article-submission-form').reset();
+    this.currentArticlePhotoDataUrl = '';
+    
+    // Reset photo preview element state
+    document.getElementById('article-photo-preview').style.display = 'none';
+    document.getElementById('article-photo-placeholder').style.display = 'block';
+    
+    this.showArticleForm(false);
+    this.refreshUI();
+  }
+
+
+  // ================== TEACHER / STAFF PORTAL RENDERERS ==================
+
+  renderTeacherDashboard() {
+    const students = window.db.getStudents();
+    const unmatched = students.filter(s => s.matchStatus === 'unmatched');
+    const flags = window.db.getFlags().filter(f => f.status === 'Pending');
+    const pendingArticles = window.db.getArticles().filter(a => a.status === 'Pending');
+    const pendingBiogs = students.filter(s => s.personalBiogStatus === 'Pending');
+
+    document.getElementById('stat-total-students').textContent = students.length;
+    document.getElementById('stat-unmatched-students').textContent = unmatched.length;
+    document.getElementById('stat-flagged-concerns').textContent = flags.length;
+    document.getElementById('stat-pending-articles').textContent = pendingArticles.length + pendingBiogs.length;
+
+    // Toggle red alert styling if there are unresolved flags
+    const flagCard = document.getElementById('stat-flagged-card');
+    const navAlertCount = document.getElementById('flagged-alert-count');
+    
+    if (flags.length > 0) {
+      flagCard.style.background = 'rgba(239, 68, 68, 0.2)';
+      flagCard.style.borderColor = 'var(--danger)';
+      navAlertCount.style.display = 'inline-flex';
+      navAlertCount.textContent = flags.length;
+    } else {
+      flagCard.style.background = 'var(--panel-bg)';
+      flagCard.style.borderColor = 'var(--panel-border)';
+      navAlertCount.style.display = 'none';
+    }
+
+    // Teasers listing
+    const safeguardTeaser = document.getElementById('teacher-safeguarding-teaser');
+    safeguardTeaser.innerHTML = '';
+    
+    if (flags.length === 0) {
+      safeguardTeaser.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1rem;">No safety concerns pending review.</p>`;
+    } else {
+      flags.slice(0, 3).forEach(flag => {
+        const msg = window.db.getMessages().find(m => m.id === flag.messageId);
+        const sender = msg ? window.db.getStudent(msg.senderId) : null;
+        
+        const item = document.createElement('div');
+        item.style.padding = '0.75rem';
+        item.style.background = 'rgba(239, 68, 68, 0.05)';
+        item.style.border = '1px solid rgba(239, 68, 68, 0.15)';
+        item.style.borderRadius = '8px';
+        item.style.display = 'flex';
+        item.style.justifyContent = 'space-between';
+        item.style.alignItems = 'center';
+        
+        item.innerHTML = `
+          <div>
+            <h5 style="font-size: 0.85rem; font-weight: 600; color: #f87171;">Flagged Alert from ${sender ? sender.name : flag.reportedBy || 'Student'}</h5>
+            <p style="font-size: 0.75rem; color: var(--text-secondary); max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">"${msg ? msg.text : flag.reason}"</p>
+          </div>
+          <button class="btn btn-danger btn-small" onclick="app.switchTab('teach-safeguarding')">Review</button>
+        `;
+        safeguardTeaser.appendChild(item);
+      });
+    }
+
+    const articlesTeaser = document.getElementById('teacher-articles-teaser');
+    articlesTeaser.innerHTML = '';
+    
+    if (pendingArticles.length === 0) {
+      articlesTeaser.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1rem;">No articles awaiting review.</p>`;
+    } else {
+      pendingArticles.slice(0, 3).forEach(art => {
+        const author = window.db.getStudent(art.authorId);
+        
+        const item = document.createElement('div');
+        item.style.padding = '0.75rem';
+        item.style.background = 'rgba(255,255,255,0.02)';
+        item.style.border = '1px solid var(--panel-border)';
+        item.style.borderRadius = '8px';
+        item.style.display = 'flex';
+        item.style.justifyContent = 'space-between';
+        item.style.alignItems = 'center';
+        
+        item.innerHTML = `
+          <div>
+            <h5 style="font-size: 0.85rem; font-weight: 600;">"${art.title}"</h5>
+            <span style="font-size: 0.75rem; color: var(--text-secondary);">By ${author ? author.name : 'Student'}</span>
+          </div>
+          <button class="btn btn-secondary btn-small" onclick="app.switchTab('teach-editor')">Approve Desk</button>
+        `;
+        articlesTeaser.appendChild(item);
+      });
+    }
+    
+    this.renderTeacherSchoolSpotlight();
+  }
+
+  // Render own school details and linked partner school connections on staff dashboard
+  renderTeacherSchoolSpotlight() {
+    const schoolId = 'school_1'; // Mrs. Smith's school (Leicester High School)
+    const school = window.db.getSchool(schoolId);
+    const container = document.getElementById('teacher-school-spotlight-content');
+    if (!container || !school) return;
+
+    // 1. Render Left Column: own school details
+    const logoHtml = school.logoUrl 
+      ? `<img src="${school.logoUrl}" alt="${school.name} logo" style="max-height: 48px; border-radius: 6px;">` 
+      : '';
+    const photoHtml = school.photoUrl 
+      ? `<img src="${school.photoUrl}" alt="${school.name} campus" style="width: 100%; height: 150px; object-fit: cover; border-radius: 12px; margin-bottom: 0.75rem;">` 
+      : '<div style="height: 150px; background: rgba(0,0,0,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">No campus photo added</div>';
+
+    const leftCol = `
+      <div style="display: flex; flex-direction: column;">
+        ${photoHtml}
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.5rem;">
+          ${logoHtml}
+          <div>
+            <h4 style="font-weight: 700; font-size: 1.1rem; margin: 0; line-height: 1.2;">${school.name}</h4>
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">${school.city}, ${school.country}</span>
+          </div>
+        </div>
+        <p style="font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary); margin-top: 0.75rem; text-align: justify;">
+          ${school.description || 'No school description provided yet.'}
+        </p>
+      </div>
+    `;
+
+    // 2. Render Right Column: Linked partner schools
+    const students = window.db.getStudents();
+    const myStudents = students.filter(s => s.schoolId === schoolId);
+    const activeMatches = window.db.getMatches().filter(m => m.active && m.studentIds.some(id => myStudents.some(ms => ms.id === id)));
+    
+    const schoolCounts = {};
+    activeMatches.forEach(m => {
+      const partnerId = m.studentIds.find(id => !myStudents.some(ms => ms.id === id));
+      const partner = students.find(s => s.id === partnerId);
+      if (partner && partner.schoolId) {
+        schoolCounts[partner.schoolId] = (schoolCounts[partner.schoolId] || 0) + 1;
+      }
+    });
+
+    const linkedSchools = Object.keys(schoolCounts).map(id => {
+      return {
+        school: window.db.getSchool(id),
+        count: schoolCounts[id]
+      };
+    }).filter(item => item.school !== undefined);
+
+    let linksHtml = '';
+    if (linkedSchools.length === 0) {
+      linksHtml = `
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; border: 1px dashed var(--panel-border); border-radius: 12px; padding: 2rem; color: var(--text-muted); text-align: center;">
+          <span style="font-size: 2.25rem; margin-bottom: 0.5rem;">🔗</span>
+          <h5 style="margin: 0; font-weight: 600;">No Linked Partner Schools</h5>
+          <p style="font-size: 0.75rem; margin-top: 0.25rem;">Use the Matching Tool to pair students and establish international links.</p>
+        </div>
+      `;
+    } else {
+      linksHtml = `
+        <div style="display: flex; flex-direction: column; gap: 1rem; height: 100%;">
+          <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.25rem; border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">
+            Established Connections (${linkedSchools.length})
+          </h4>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem; overflow-y: auto; max-height: 240px;">
+            ${linkedSchools.map(item => {
+              const partnerLogo = item.school.logoUrl 
+                ? `<img src="${item.school.logoUrl}" alt="${item.school.name} logo" style="height: 36px; width: 36px; object-fit: contain; border-radius: 4px;">` 
+                : '<div style="height: 36px; width: 36px; background: rgba(255,255,255,0.05); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">🏫</div>';
+              
+              return `
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border); border-radius: 12px; transition: all 0.2s;">
+                  <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    ${partnerLogo}
+                    <div>
+                      <h5 style="font-weight: 700; font-size: 0.9rem; margin: 0;">${item.school.name}</h5>
+                      <span style="font-size: 0.75rem; color: var(--text-muted);">${item.school.city}, ${item.school.country}</span>
+                    </div>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span class="badge badge-info">${item.count} Linked Student${item.count > 1 ? 's' : ''}</span>
+                    <span class="badge badge-success" style="font-size: 0.65rem;">Active Link</span>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    container.innerHTML = `
+      ${leftCol}
+      <div style="display: flex; flex-direction: column; justify-content: flex-start;">
+        ${linksHtml}
+      </div>
+    `;
+  }
+
+  // Renders teacher list of students
+  renderStudentRoster() {
+    const tbody = document.getElementById('student-roster-tbody');
+    const students = window.db.getStudents().filter(s => s.schoolId === 'school_1');
+    
+    tbody.innerHTML = '';
+    students.forEach(stud => {
+      const school = window.db.getSchool(stud.schoolId);
+      
+      let statusBadge = '';
+      if (stud.matchStatus === 'matched') statusBadge = '<span class="badge badge-success">Matched</span>';
+      else statusBadge = '<span class="badge badge-warning">Unmatched</span>';
+
+      let activeBadge = '';
+      if (stud.invitationStatus === 'Active') activeBadge = '<span class="badge badge-success">Active</span>';
+      else if (stud.invitationStatus === 'Archived') activeBadge = '<span class="badge badge-danger">Archived</span>';
+      else activeBadge = '<span class="badge badge-info">Invited</span>';
+
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td style="font-weight: 600;">${stud.name}<br><span style="font-size: 0.75rem; font-weight: normal; color: var(--text-secondary);">${stud.email}</span></td>
+        <td>${stud.age} • ${stud.gender}</td>
+        <td>${stud.yearGroup}<br><span style="font-size: 0.75rem; color: var(--text-muted);">${school ? school.name : 'Unknown'}</span></td>
+        <td>${statusBadge}</td>
+        <td>
+          <span style="font-size: 0.8rem;">Engagement: <strong>${stud.activityLevel}</strong></span>
+        </td>
+        <td>${activeBadge}</td>
+        <td>
+          <button class="btn btn-secondary btn-small" onclick="app.simulateInviteResend('${stud.id}')" title="Resend Invite Code">Resend invite</button>
+          <button class="btn btn-danger btn-small" onclick="app.removeStudentAccount('${stud.id}')">Archive</button>
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
+
+  // Populate school assign dropdown menus
+  openInviteModal() {
+    const schoolSelect = document.getElementById('new-student-school');
+    const schools = window.db.getSchools();
+    
+    schoolSelect.innerHTML = '';
+    schools.forEach(school => {
+      const option = document.createElement('option');
+      option.value = school.id;
+      option.textContent = `${school.name} (${school.country})`;
+      schoolSelect.appendChild(option);
+    });
+
+    document.getElementById('invite-result-area').style.display = 'none';
+    this.openModal('invite-student-modal');
+  }
+
+  // Populate school assign dropdown menus for bulk invite
+  openBulkModal() {
+    const schoolSelect = document.getElementById('bulk-school');
+    const schools = window.db.getSchools();
+    
+    schoolSelect.innerHTML = '';
+    schools.forEach(school => {
+      const option = document.createElement('option');
+      option.value = school.id;
+      option.textContent = `${school.name} (${school.country})`;
+      schoolSelect.appendChild(option);
+    });
+
+    this.openModal('bulk-upload-modal');
+  }
+
+  // Single invitation creation handler
+  handleInviteStudent(e) {
+    e.preventDefault();
+    const name = document.getElementById('new-student-name').value;
+    const email = document.getElementById('new-student-email').value;
+    const age = parseInt(document.getElementById('new-student-age').value);
+    const gender = document.getElementById('new-student-gender').value;
+    const yearGroup = document.getElementById('new-student-year').value;
+    const schoolId = document.getElementById('new-student-school').value;
+
+    const school = window.db.getSchool(schoolId);
+    
+    // Add student
+    const newStudent = {
+      id: 'stud_' + Date.now(),
+      name,
+      email,
+      age,
+      gender,
+      yearGroup,
+      schoolId,
+      language: school ? school.language : 'en',
+      active: false,
+      matchStatus: 'unmatched',
+      activityLevel: 'None',
+      invitationStatus: 'Invited'
+    };
+
+    window.db.addStudent(newStudent);
+
+    // Show secure invite link results
+    const inviteLink = `${window.location.origin}/signup?token=welcome_${newStudent.id}`;
+    document.getElementById('invite-link-input').value = inviteLink;
+    document.getElementById('invite-result-area').style.display = 'block';
+
+    this.renderStudentRoster();
+  }
+
+  // Copy invitation link to clipboard
+  copyInviteLink() {
+    const input = document.getElementById('invite-link-input');
+    input.select();
+    input.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(input.value);
+    alert('Copied secure sign-up link: ' + input.value);
+  }
+
+  // Process bulk invite upload paste lists
+  handleBulkUpload(e) {
+    e.preventDefault();
+    const emailsText = document.getElementById('bulk-emails').value;
+    const schoolId = document.getElementById('bulk-school').value;
+    const school = window.db.getSchool(schoolId);
+
+    // Split emails
+    const emails = emailsText.split(/[,\n]/).map(em => em.trim()).filter(em => em.includes('@'));
+
+    emails.forEach((email, index) => {
+      // Create name guessing or dummy name
+      const nameTag = email.split('@')[0].split(/[._-]/).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+      
+      const newStudent = {
+        id: 'stud_bulk_' + index + '_' + Date.now(),
+        name: nameTag,
+        email: email,
+        age: 14,
+        gender: 'Other',
+        yearGroup: school?.language === 'de' ? 'Klasse 9' : 'Year 9',
+        schoolId,
+        language: school ? school.language : 'en',
+        active: false,
+        matchStatus: 'unmatched',
+        activityLevel: 'None',
+        invitationStatus: 'Invited'
+      };
+      window.db.addStudent(newStudent);
+    });
+
+    this.closeModal('bulk-upload-modal');
+    document.getElementById('bulk-upload-form').reset();
+    alert(`Successfully processed and invited ${emails.length} students! Welcome emails sent.`);
+    this.refreshUI();
+  }
+
+  // Simulate invite code resend action
+  simulateInviteResend(studentId) {
+    const stud = window.db.getStudent(studentId);
+    if (stud) {
+      window.db.updateStudent(studentId, { invitationStatus: 'Invited' });
+      window.db.addLog('Invitation Resent', `Resent sign-up email invitation to ${stud.name}.`, 'Teacher');
+      this.refreshUI();
+      alert(`Invitation link successfully resent to ${stud.email}`);
+    }
+  }
+
+  // Archive / Delete student account
+  removeStudentAccount(studentId) {
+    const stud = window.db.getStudent(studentId);
+    if (stud && confirm(`Are you sure you want to archive student account: ${stud.name}?`)) {
+      window.db.updateStudent(studentId, { active: false, invitationStatus: 'Archived', matchStatus: 'unmatched' });
+      
+      // Cleanup matches
+      const activeMatches = window.db.getMatches().filter(m => m.active && m.studentIds.includes(studentId));
+      activeMatches.forEach(m => window.db.deleteMatch(m.id));
+
+      window.db.addLog('Student Archived', `Archived account of student ${stud.name}.`, 'Teacher');
+      this.refreshUI();
+    }
+  }
+
+  updateSelectedPartnerSchoolInfo() {
+    const schoolId = document.getElementById('partner-school-select').value;
+    const nameEl = document.getElementById('partner-school-name');
+    const metaEl = document.getElementById('partner-school-meta');
+    const descEl = document.getElementById('partner-school-desc');
+    const countEl = document.getElementById('partner-school-unmatched-count');
+
+    if (!nameEl || !metaEl || !descEl || !countEl) return;
+
+    const school = window.db.getSchool(schoolId);
+    if (school) {
+      nameEl.textContent = school.name;
+      metaEl.textContent = `${school.country} • ${school.city}`;
+      descEl.textContent = school.description || 'No description available for this school.';
+      
+      // Calculate unmatched students count
+      const students = window.db.getStudents();
+      const unmatchedCount = students.filter(s => s.schoolId === schoolId && s.matchStatus === 'unmatched').length;
+      countEl.textContent = unmatchedCount;
+    } else {
+      nameEl.textContent = 'No School Selected';
+      metaEl.textContent = '';
+      descEl.textContent = 'Please choose a partner school from the dropdown to continue.';
+      countEl.textContent = '0';
+    }
+  }
+
+  // Renders matching dashboard lists
+  renderTeacherMatching() {
+    this.switchMatchingSubtab(this.currentMatchingSubtab || 'pair');
+    const colEn = document.getElementById('match-col-en');
+    const students = window.db.getStudents();
+
+    // Leicester High School is school_1
+    const schoolId = 'school_1';
+
+    const myStudents = students.filter(s => s.schoolId === schoolId).sort((a, b) => {
+      if (a.matchStatus === 'unmatched' && b.matchStatus !== 'unmatched') return -1;
+      if (a.matchStatus !== 'unmatched' && b.matchStatus === 'unmatched') return 1;
+      return a.name.localeCompare(b.name);
+    });
+
+    // Reset selection tracking variables
+    this.selectedMatchEn = null;
+    document.getElementById('propose-match-btn').disabled = true;
+
+    colEn.innerHTML = '';
+    myStudents.forEach(stud => {
+      let statusBadge = '';
+      if (stud.matchStatus === 'matched') statusBadge = '<span class="badge badge-success">Matched</span>';
+      else if (stud.matchStatus === 'proposed') statusBadge = '<span class="badge badge-warning">Proposed</span>';
+      else statusBadge = '<span class="badge badge-info">Unmatched</span>';
+
+      const card = document.createElement('div');
+      card.className = `match-card`;
+      card.setAttribute('data-id', stud.id);
+      
+      card.innerHTML = `
+        <div>
+          <h4 style="font-weight:600; font-size: 0.9rem;">${stud.name} (${stud.age} y/o)</h4>
+          <p style="font-size: 0.75rem; color: var(--text-secondary);">${stud.gender} • ${stud.yearGroup}</p>
+        </div>
+        <div>${statusBadge}</div>
+      `;
+
+      // If matched or proposed, make card unselectable
+      if (stud.matchStatus === 'matched' || stud.matchStatus === 'proposed') {
+        card.style.opacity = '0.5';
+        card.style.cursor = 'not-allowed';
+      } else {
+        card.addEventListener('click', () => {
+          colEn.querySelectorAll('.match-card').forEach(c => c.classList.remove('selected'));
+          card.classList.add('selected');
+          this.selectedMatchEn = stud.id;
+          
+          const partnerSchoolSelect = document.getElementById('partner-school-select');
+          document.getElementById('propose-match-btn').disabled = !this.selectedMatchEn || !partnerSchoolSelect.value;
+        });
+      }
+
+      colEn.appendChild(card);
+    });
+
+    // Populate partner school dropdown
+    const partnerSelect = document.getElementById('partner-school-select');
+    const previousVal = partnerSelect.value;
+    partnerSelect.innerHTML = '';
+
+    const schools = window.db.getSchools().filter(s => s.id !== schoolId);
+    schools.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = `${s.name} (${s.country})`;
+      partnerSelect.appendChild(opt);
+    });
+
+    if (previousVal && schools.some(s => s.id === previousVal)) {
+      partnerSelect.value = previousVal;
+    } else if (schools.length > 0) {
+      partnerSelect.value = schools[0].id;
+    }
+
+    this.updateSelectedPartnerSchoolInfo();
+
+    // Refresh proposals tables
+    this.renderMatchProposals();
+  }
+
+  // Create proposed match from teacher portal
+  proposeMatch() {
+    if (!this.selectedMatchEn) return;
+    const partnerSchoolId = document.getElementById('partner-school-select').value;
+    if (!partnerSchoolId) return;
+
+    // Send single-student proposed match, Leicester student is first slot, Goethe is second (null)
+    const proposedStudentIds = [this.selectedMatchEn, null];
+    
+    window.db.proposeMatch('1-to-1', proposedStudentIds, 'school_1', partnerSchoolId);
+    alert('Match proposal submitted! The target partner school coordinator has received the anonymized details and can assign a match.');
+    
+    this.selectedMatchEn = null;
+    this.refreshUI();
+  }
+
+  confirmProposal(matchId) {
+    const assignedStudentId = this.tempAssignments[matchId];
+    if (!assignedStudentId) {
+      alert('Please select a student from your school to assign to this match proposal.');
+      return;
+    }
+
+    window.db.confirmMatch(matchId, assignedStudentId, 'Teacher Mrs. Smith');
+    delete this.tempAssignments[matchId];
+    alert('Match proposal approved! The pen pal link is now active and students can message each other.');
+    this.refreshUI();
+  }
+
+  declineProposal(matchId) {
+    if (confirm('Are you sure you want to decline/withdraw this match suggestion?')) {
+      window.db.declineMatch(matchId, 'Teacher Mrs. Smith');
+      if (this.tempAssignments[matchId]) {
+        delete this.tempAssignments[matchId];
+      }
+      this.refreshUI();
+    }
+  }
+
+  openAssignStudentModal(matchId) {
+    this.selectedAssignMatchId = matchId;
+    this.selectedAssignStudentId = this.tempAssignments[matchId] || null;
+
+    const matches = window.db.getMatches();
+    const match = matches.find(m => m.id === matchId);
+    if (!match) return;
+
+    const partnerStudentId = match.studentIds.find(id => id && window.db.getStudent(id)?.schoolId !== 'school_1');
+    const partnerStudent = partnerStudentId ? window.db.getStudent(partnerStudentId) : null;
+    const partnerSchoolId = match.proposedBySchoolId !== 'school_1' ? match.proposedBySchoolId : match.pendingApprovalFromSchoolId;
+    const partnerSchool = window.db.getSchool(partnerSchoolId);
+
+    const schoolName = partnerSchool ? partnerSchool.name : 'Exchange School';
+    const age = partnerStudent ? `${partnerStudent.age} y/o` : 'Unknown';
+    const gender = partnerStudent ? partnerStudent.gender : 'Unknown';
+    const biog = partnerStudent ? (partnerStudent.personalBiog || 'No biography text available.') : 'No details available.';
+
+    const proposerInfo = document.getElementById('assign-proposer-info');
+    if (proposerInfo) {
+      proposerInfo.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+          <div style="font-size: 2.25rem;">🇩🇪</div>
+          <div>
+            <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary);">${schoolName} Student</div>
+            <div style="font-size: 0.95rem; font-weight: 600; color: var(--secondary);">${age} • ${gender}</div>
+          </div>
+        </div>
+        <div style="font-size: 0.85rem; font-style: italic; background: rgba(0,0,0,0.2); padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); color: var(--text-secondary); margin-top: 0.5rem; line-height: 1.4;">
+          "${biog}"
+        </div>
+      `;
+    }
+
+    const studentsListContainer = document.getElementById('assign-students-list');
+    if (studentsListContainer) {
+      studentsListContainer.innerHTML = '';
+      
+      const allLocalStudents = window.db.getStudents().filter(s => s.schoolId === 'school_1');
+      
+      const sortedStudents = [...allLocalStudents].sort((a, b) => {
+        const aUnmatched = a.matchStatus === 'unmatched';
+        const bUnmatched = b.matchStatus === 'unmatched';
+        if (aUnmatched && !bUnmatched) return -1;
+        if (!aUnmatched && bUnmatched) return 1;
+        return 0;
+      });
+
+      if (sortedStudents.length === 0) {
+        studentsListContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 1rem;">No local students found.</div>`;
+      } else {
+        sortedStudents.forEach(s => {
+          const item = document.createElement('div');
+          item.className = 'assign-student-item';
+          item.setAttribute('data-student-id', s.id);
+          
+          let statusBadge = '';
+          if (s.matchStatus === 'unmatched') {
+            statusBadge = `<span class="badge" style="background: rgba(40, 167, 69, 0.15); color: #28a745; border: 1px solid rgba(40, 167, 69, 0.3);">Unmatched</span>`;
+          } else if (s.matchStatus === 'proposed') {
+            statusBadge = `<span class="badge" style="background: rgba(255, 193, 7, 0.15); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.3);">Proposed Match</span>`;
+          } else if (s.matchStatus === 'matched') {
+            statusBadge = `<span class="badge" style="background: rgba(23, 162, 184, 0.15); color: #17a2b8; border: 1px solid rgba(23, 162, 184, 0.3);">Matched</span>`;
+          }
+
+          const isSelected = this.selectedAssignStudentId === s.id;
+          
+          item.style.display = 'flex';
+          item.style.justifyContent = 'space-between';
+          item.style.alignItems = 'center';
+          item.style.padding = '0.75rem 1rem';
+          item.style.borderRadius = '8px';
+          item.style.background = isSelected ? 'rgba(var(--secondary-rgb), 0.15)' : 'rgba(255,255,255,0.03)';
+          item.style.border = isSelected ? '1px solid var(--secondary)' : '1px solid var(--panel-border)';
+          item.style.boxShadow = isSelected ? '0 0 8px rgba(var(--secondary-rgb), 0.3)' : 'none';
+          item.style.cursor = 'pointer';
+          item.style.transition = 'all 0.2s ease';
+
+          item.onmouseenter = () => {
+            if (this.selectedAssignStudentId !== s.id) {
+              item.style.background = 'rgba(255,255,255,0.08)';
+              item.style.borderColor = 'var(--secondary)';
+            }
+          };
+          item.onmouseleave = () => {
+            if (this.selectedAssignStudentId !== s.id) {
+              item.style.background = 'rgba(255,255,255,0.03)';
+              item.style.borderColor = 'var(--panel-border)';
+            }
+          };
+
+          item.innerHTML = `
+            <div>
+              <div style="font-weight: 700; color: var(--text-primary); font-size: 1rem;">${s.name}</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">${s.age} y/o • ${s.gender}</div>
+            </div>
+            <div>
+              ${statusBadge}
+            </div>
+          `;
+
+          item.onclick = () => {
+            this.selectedAssignStudentId = s.id;
+            
+            const allItems = studentsListContainer.querySelectorAll('.assign-student-item');
+            allItems.forEach(el => {
+              const elId = el.getAttribute('data-student-id');
+              const isItemSel = elId === s.id;
+              el.style.background = isItemSel ? 'rgba(var(--secondary-rgb), 0.15)' : 'rgba(255,255,255,0.03)';
+              el.style.borderColor = isItemSel ? 'var(--secondary)' : 'var(--panel-border)';
+              el.style.boxShadow = isItemSel ? '0 0 8px rgba(var(--secondary-rgb), 0.3)' : 'none';
+            });
+
+            const warning = document.getElementById('assign-disclaimer-warning');
+            if (warning) {
+              if (s.matchStatus !== 'unmatched') {
+                warning.style.display = 'block';
+              } else {
+                warning.style.display = 'none';
+              }
+            }
+
+            const confirmBtn = document.getElementById('confirm-assign-btn');
+            if (confirmBtn) {
+              confirmBtn.disabled = false;
+            }
+          };
+
+          studentsListContainer.appendChild(item);
+        });
+      }
+    }
+
+    const warning = document.getElementById('assign-disclaimer-warning');
+    if (warning) {
+      if (this.selectedAssignStudentId) {
+        const currentStud = window.db.getStudent(this.selectedAssignStudentId);
+        if (currentStud && currentStud.matchStatus !== 'unmatched') {
+          warning.style.display = 'block';
+        } else {
+          warning.style.display = 'none';
+        }
+      } else {
+        warning.style.display = 'none';
+      }
+    }
+
+    const confirmBtn = document.getElementById('confirm-assign-btn');
+    if (confirmBtn) {
+      confirmBtn.disabled = !this.selectedAssignStudentId;
+    }
+
+    this.openModal('assign-student-modal');
+  }
+
+  saveStudentAssignment() {
+    if (this.selectedAssignMatchId && this.selectedAssignStudentId) {
+      this.tempAssignments[this.selectedAssignMatchId] = this.selectedAssignStudentId;
+      this.closeModal('assign-student-modal');
+      this.refreshUI();
+    }
+  }
+
+  renderMatchProposals() {
+    const incomingTbody = document.getElementById('incoming-proposals-tbody');
+    const sentTbody = document.getElementById('sent-proposals-tbody');
+    
+    if (!incomingTbody || !sentTbody) return;
+
+    const matches = window.db.getMatches().filter(m => m.status === 'Proposed');
+
+    incomingTbody.innerHTML = '';
+    sentTbody.innerHTML = '';
+
+    let hasIncoming = false;
+    let hasSent = false;
+    let incomingCount = 0;
+
+    matches.forEach(match => {
+      const myStudentId = match.studentIds.find(id => id && window.db.getStudent(id)?.schoolId === 'school_1');
+      const partnerStudentId = match.studentIds.find(id => id && window.db.getStudent(id)?.schoolId !== 'school_1');
+      const partnerStudent = partnerStudentId ? window.db.getStudent(partnerStudentId) : null;
+      const partnerSchoolId = match.proposedBySchoolId !== 'school_1' ? match.proposedBySchoolId : match.pendingApprovalFromSchoolId;
+      const partnerSchool = window.db.getSchool(partnerSchoolId);
+
+      const dateStr = match.createdAt ? new Date(match.createdAt).toLocaleDateString() : 'N/A';
+
+      if (match.pendingApprovalFromSchoolId === 'school_1') {
+        hasIncoming = true;
+        incomingCount++;
+
+        const age = partnerStudent ? `${partnerStudent.age} y/o` : 'Unknown';
+        const gender = partnerStudent ? partnerStudent.gender : 'Unknown';
+        const biog = partnerStudent ? (partnerStudent.personalBiog || 'No biography text available.') : 'No details available.';
+        const schoolName = partnerSchool ? partnerSchool.name : 'Exchange School';
+
+        const assignedStudentId = this.tempAssignments[match.id];
+        const assignedStudent = assignedStudentId ? window.db.getStudent(assignedStudentId) : null;
+
+        let assignHtml = '';
+        if (assignedStudent) {
+          assignHtml = `
+            <div style="display: flex; flex-direction: column; gap: 0.2rem; min-width: 160px;">
+              <span style="font-weight: 700; font-size: 0.95rem; color: var(--secondary);">${assignedStudent.name}</span>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">${assignedStudent.age} y/o • ${assignedStudent.gender}</span>
+              <a href="#" onclick="app.openAssignStudentModal('${match.id}'); return false;" style="font-size: 0.75rem; color: var(--text-muted); text-decoration: underline; margin-top: 0.15rem; display: inline-block;">Change Student</a>
+            </div>
+          `;
+        } else {
+          assignHtml = `
+            <button class="btn btn-secondary btn-small" onclick="app.openAssignStudentModal('${match.id}')" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">Select Student...</button>
+          `;
+        }
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td onclick="app.openAssignStudentModal('${match.id}')" style="cursor: pointer;" title="Click to assign local student">
+            <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+              <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">${schoolName} Student</div>
+              <div style="font-size: 0.95rem; font-weight: 600; color: var(--secondary); margin-bottom: 0.25rem;">${age} • ${gender}</div>
+              <div style="font-size: 0.8rem; font-style: italic; background: rgba(255,255,255,0.05); padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); color: var(--text-secondary); line-height: 1.4;">
+                "${biog}"
+              </div>
+            </div>
+          </td>
+          <td>${assignHtml}</td>
+          <td>${dateStr}</td>
+          <td>
+            <button class="btn btn-primary btn-small" ${!assignedStudent ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''} onclick="app.confirmProposal('${match.id}')">Confirm Match</button>
+            <button class="btn btn-secondary btn-small" onclick="app.declineProposal('${match.id}')" style="color:var(--danger); border-color:var(--danger);">Decline</button>
+          </td>
+        `;
+        incomingTbody.appendChild(row);
+      } else if (match.proposedBySchoolId === 'school_1') {
+        hasSent = true;
+        const myStudent = myStudentId ? window.db.getStudent(myStudentId) : null;
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td style="font-weight: 600;">${myStudent ? myStudent.name : 'Unknown'}<br><span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">${myStudent?.gender} • ${myStudent?.age} y/o</span></td>
+          <td>
+            <div style="font-weight: 600;">${partnerSchool ? partnerSchool.name : 'Partner School'}</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Awaiting Assignment</div>
+          </td>
+          <td>${dateStr}</td>
+          <td><span class="badge badge-warning">Awaiting Partner Approval</span></td>
+          <td>
+            <button class="btn btn-secondary btn-small" onclick="app.declineProposal('${match.id}')" style="color:var(--danger); border-color:var(--danger);">Withdraw Suggestion</button>
+          </td>
+        `;
+        sentTbody.appendChild(row);
+      }
+    });
+
+    if (!hasIncoming) {
+      incomingTbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No incoming match requests awaiting approval.</td></tr>`;
+    }
+    if (!hasSent) {
+      sentTbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No sent suggestions pending.</td></tr>`;
+    }
+
+    const badge = document.getElementById('matching-requests-badge');
+    if (badge) {
+      if (incomingCount > 0) {
+        badge.textContent = incomingCount;
+        badge.style.display = 'inline-flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+  }
+
+  // Handle switching sub-tabs inside matching view
+  switchMatchingSubtab(subtab) {
+    this.currentMatchingSubtab = subtab;
+    const pairBtn = document.getElementById('subtab-pair-btn');
+    const reqBtn = document.getElementById('subtab-requests-btn');
+    const pairDiv = document.getElementById('matching-subtab-pair');
+    const reqDiv = document.getElementById('matching-subtab-requests');
+
+    if (!pairBtn || !reqBtn || !pairDiv || !reqDiv) return;
+
+    if (subtab === 'pair') {
+      pairBtn.classList.add('active');
+      reqBtn.classList.remove('active');
+      pairDiv.style.display = 'block';
+      reqDiv.style.display = 'none';
+    } else {
+      pairBtn.classList.remove('active');
+      reqBtn.classList.add('active');
+      pairDiv.style.display = 'none';
+      reqDiv.style.display = 'block';
+    }
+  }
+
+  // Renders safeguarding control table
+  renderTeacherSafeguarding() {
+    const tbody = document.getElementById('safeguarding-alerts-tbody');
+    const flags = window.db.getFlags();
+
+    tbody.innerHTML = '';
+    if (flags.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No safeguarding alerts logged.</td></tr>`;
+      return;
+    }
+
+    // Sort: Pending flags first, then by date descending
+    const sortedFlags = [...flags].sort((a, b) => {
+      if (a.status === 'Pending' && b.status !== 'Pending') return -1;
+      if (a.status !== 'Pending' && b.status === 'Pending') return 1;
+      return new Date(b.flaggedAt) - new Date(a.flaggedAt);
+    });
+
+    sortedFlags.forEach(flag => {
+      const msg = window.db.getMessages().find(m => m.id === flag.messageId);
+      const sender = msg ? window.db.getStudent(msg.senderId) : null;
+      const match = msg ? window.db.getMatches().find(m => m.id === msg.matchId) : null;
+      
+      let statusBadge = '';
+      if (flag.status === 'Pending') statusBadge = '<span class="badge badge-danger">Unresolved</span>';
+      else statusBadge = '<span class="badge badge-success">Resolved</span>';
+
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${new Date(flag.flaggedAt).toLocaleString()}</td>
+        <td style="font-weight: 600;">
+          ${sender ? sender.name : flag.reportedBy || 'Student'}<br>
+          <span style="font-size: 0.75rem; font-weight: normal; color: var(--text-muted);">Match ID: ${match ? match.id : 'N/A'}</span>
+        </td>
+        <td>
+          <strong style="color: var(--danger); font-size: 0.8rem;">Reason: ${flag.reason || msg?.flagReason || 'Triggered Keyword alert'}</strong>
+          <div style="font-size: 0.85rem; font-style: italic; background: rgba(0,0,0,0.1); padding: 0.5rem; border-radius: 6px; margin-top: 0.25rem;">
+            "${msg ? msg.text : 'N/A'}"
+          </div>
+        </td>
+        <td>${statusBadge}</td>
+        <td>
+          ${flag.status === 'Pending' 
+            ? `<button class="btn btn-danger btn-small" onclick="app.openResolveFlagModal('${flag.id}')">Review & Take Action</button>`
+            : `<div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                 <span style="font-size: 0.75rem; color: var(--text-muted);">Resolved by:<br>${flag.reviewedBy}<br>Action: ${flag.actionTaken}</span>
+                 <button class="btn btn-secondary btn-small" style="font-size: 0.7rem; padding: 0.2rem 0.4rem;" onclick="app.openResolveFlagModal('${flag.id}')">View Details</button>
+               </div>`}
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
+
+  // Opens resolution Safeguarding detail modal
+  openResolveFlagModal(flagId) {
+    const flag = window.db.getFlags().find(f => f.id === flagId);
+    if (!flag) return;
+
+    const msg = window.db.getMessages().find(m => m.id === flag.messageId);
+    const sender = msg ? window.db.getStudent(msg.senderId) : null;
+    const match = msg ? window.db.getMatches().find(m => m.id === msg.matchId) : null;
+    
+    // Get chat context (last 4 messages before flagged one)
+    let chatContextMarkup = '';
+    if (match) {
+      const matchMsgs = window.db.getMessages().filter(m => m.matchId === match.id);
+      const flaggedIdx = matchMsgs.findIndex(m => m.id === msg.id);
+      
+      const contextStart = Math.max(0, flaggedIdx - 3);
+      const contextMsgs = matchMsgs.slice(contextStart, flaggedIdx + 1);
+
+      chatContextMarkup = contextMsgs.map(m => {
+        const isFlagged = m.id === msg.id;
+        const senderName = window.db.getStudent(m.senderId)?.name || 'Student';
+        return `
+          <div style="padding: 0.5rem 0.75rem; margin-bottom: 0.5rem; border-radius: 8px; font-size: 0.85rem; 
+                      background: ${isFlagged ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.03)'};
+                      border: ${isFlagged ? '1px solid var(--danger)' : '1px solid var(--panel-border)'}">
+            <strong>${senderName}:</strong> ${m.text}
+            ${m.translation ? `<div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">📝 ${m.translation}</div>` : ''}
+            <div style="font-size: 0.65rem; text-align: right; color: var(--text-muted);">${new Date(m.timestamp).toLocaleTimeString()}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    let actionsMarkup = '';
+    if (flag.status === 'Resolved') {
+      actionsMarkup = `
+        <div class="panel" style="padding: 1rem; border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.02); margin-top: 0.5rem;">
+          <h4 style="font-size: 0.9rem; color: var(--success); font-weight: bold; margin-bottom: 0.5rem;">✔ Safeguarding Violation Resolved</h4>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
+            Resolved by <strong>${flag.reviewedBy}</strong> on <strong>${new Date(flag.reviewedAt).toLocaleString()}</strong>.
+          </p>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.35rem;">
+            Action Taken: <span class="badge badge-success" style="font-size: 0.7rem; padding: 0.15rem 0.45rem;">${flag.actionTaken}</span>
+          </p>
+        </div>
+        <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+          <button class="btn btn-secondary" onclick="app.closeModal('resolve-flag-modal')">Close</button>
+        </div>
+      `;
+    } else {
+      actionsMarkup = `
+        <div>
+          <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem;">Review Actions Actionable:</h4>
+          <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+            <button class="btn btn-secondary" onclick="app.closeModal('resolve-flag-modal')">Close</button>
+            <button class="btn btn-secondary btn-danger" onclick="app.executeFlagAction('${flag.id}', 'Archived Conversation')">Archive Chat</button>
+            <button class="btn btn-primary" onclick="app.executeFlagAction('${flag.id}', 'Resumed Conversation')">Resume Chat</button>
+            <button class="btn btn-secondary" style="border-color: var(--success); color: var(--success);" onclick="app.executeFlagAction('${flag.id}', 'Dismissed')">Dismiss / Safe</button>
+          </div>
+        </div>
+      `;
+    }
+
+    const container = document.getElementById('flag-detail-content');
+    container.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        <div>
+          <span style="font-size: 0.8rem; color: var(--text-secondary);">Reported By: <strong>${flag.reportedBy || sender?.name || 'System'}</strong></span><br>
+          <span style="font-size: 0.8rem; color: var(--text-secondary);">Alert Timestamp: <strong>${new Date(flag.flaggedAt).toLocaleString()}</strong></span>
+        </div>
+        
+        <div class="panel" style="padding: 1rem; border-color: rgba(239, 68, 68, 0.3);">
+          <h4 style="font-size: 0.9rem; color: var(--danger); font-weight: bold; margin-bottom: 0.5rem;">Flagged Violation Reason:</h4>
+          <p style="font-size: 0.85rem; font-weight: 500;">${flag.reason || msg?.flagReason || 'Sensitive Keyword alert'}</p>
+          ${flag.details ? `<p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem; background: rgba(0,0,0,0.1); padding: 0.5rem; border-radius: 6px;">Details: ${flag.details}</p>` : ''}
+        </div>
+
+        <div>
+          <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem;">Recent Chat History context:</h4>
+          <div style="max-height: 200px; overflow-y: auto; padding-right: 0.25rem;">
+            ${chatContextMarkup || '<p style="font-size: 0.8rem; color: var(--text-muted);">No chat context loaded.</p>'}
+          </div>
+        </div>
+
+        <hr style="border-top: 1px solid var(--panel-border);">
+
+        ${actionsMarkup}
+      </div>
+    `;
+
+    this.openModal('resolve-flag-modal');
+  }
+
+  // Teacher submits safeguarding resolution
+  executeFlagAction(flagId, action) {
+    const reviewer = this.currentRole === 'admin' ? 'System Admin' : 'Teacher Mrs. Smith';
+    const flag = window.db.getFlags().find(f => f.id === flagId);
+    
+    if (flag) {
+      window.db.resolveFlag(flagId, reviewer, action);
+      
+      const msg = window.db.getMessages().find(m => m.id === flag.messageId);
+      if (msg) {
+        if (action === 'Archived Conversation') {
+          window.db.deleteMatch(msg.matchId);
+        }
+      }
+
+      this.closeModal('resolve-flag-modal');
+      this.refreshUI();
+      alert(`Safeguarding issue resolved. Action registered: ${action}`);
+    }
+  }
+
+  // Renders student article editorial desk submissions
+  renderTeacherEditorDesk() {
+    const container = document.getElementById('editorial-desk-list');
+    if (!container) return;
+
+    const articles = window.db.getArticles();
+    const students = window.db.getStudents();
+    const pendingBiogs = students.filter(s => s.personalBiogStatus === 'Pending');
+
+    // Draw main structural wrapper for Articles and Biographies
+    container.innerHTML = `
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+        <!-- Left Column: Articles Review -->
+        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+          <h3 style="font-size: 1.1rem; font-weight: 700; border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+            📰 Student Articles Review
+          </h3>
+          <div id="editor-articles-sublist" style="display: flex; flex-direction: column; gap: 1rem;">
+            <!-- Loaded below -->
+          </div>
+        </div>
+
+        <!-- Right Column: Biographies Review -->
+        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+          <h3 style="font-size: 1.1rem; font-weight: 700; border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+            👤 Biography Approvals
+            ${pendingBiogs.length > 0 ? `<span class="badge badge-warning" style="font-size: 0.7rem; padding: 0.15rem 0.45rem; margin-left: 0.25rem;">${pendingBiogs.length} Pending</span>` : ''}
+          </h3>
+          <div id="editor-biogs-sublist" style="display: flex; flex-direction: column; gap: 1rem;">
+            <!-- Loaded below -->
+          </div>
+        </div>
+      </div>
+    `;
+
+    const articlesContainer = document.getElementById('editor-articles-sublist');
+    const biogsContainer = document.getElementById('editor-biogs-sublist');
+
+    // 1. Populate Articles
+    if (articles.length === 0) {
+      articlesContainer.innerHTML = `<p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; padding: 1.5rem;">No articles in database.</p>`;
+    } else {
+      // Sort: Pending first, then by date descending
+      const sortedArticles = [...articles].sort((a, b) => {
+        if (a.status === 'Pending' && b.status !== 'Pending') return -1;
+        if (a.status !== 'Pending' && b.status === 'Pending') return 1;
+        return new Date(b.submittedAt) - new Date(a.submittedAt);
+      });
+
+      sortedArticles.forEach(art => {
+        const author = window.db.getStudent(art.authorId);
+        const school = window.db.getSchool(art.schoolId);
+
+        let statusBadge = '';
+        if (art.status === 'Approved') statusBadge = '<span class="badge badge-success">Approved</span>';
+        else if (art.status === 'Pending') statusBadge = '<span class="badge badge-warning">Awaiting Approval</span>';
+        else statusBadge = '<span class="badge badge-danger">Rejected</span>';
+
+        const card = document.createElement('div');
+        card.className = 'panel';
+        card.style.background = 'rgba(255,255,255,0.01)';
+        card.style.border = '1px solid var(--panel-border)';
+        card.style.padding = '1.25rem';
+        
+        let reviewActionsRow = '';
+        if (art.status === 'Pending') {
+          reviewActionsRow = `
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--panel-border);">
+              <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: var(--danger);" onclick="app.executeArticleReview('${art.id}', 'Rejected')">Reject</button>
+              <button class="btn btn-primary btn-small" onclick="app.executeArticleReview('${art.id}', 'Approved')">Approve & Publish</button>
+            </div>
+          `;
+        } else {
+          reviewActionsRow = `
+            <div style="font-size: 0.75rem; text-align: right; color: var(--text-muted); margin-top: 1rem; border-top: 1px dashed var(--panel-border); padding-top: 0.5rem;">
+              Reviewed by: ${art.reviewedBy} on ${new Date(art.reviewedAt).toLocaleDateString()}
+            </div>
+          `;
+        }
+
+        const photoHtml = art.photoUrl 
+          ? `<img src="${art.photoUrl}" alt="${art.title} photo" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 0.75rem;">` 
+          : '';
+
+        card.innerHTML = `
+          <div class="panel-header" style="margin-bottom: 0.5rem; align-items: flex-start;">
+            <div>
+              <h4 style="font-weight: 700; font-size: 0.95rem; margin: 0;">${art.title}</h4>
+              <span style="font-size: 0.7rem; color: var(--text-secondary);">By ${author?.name || 'Student'} • ${school?.name} (${art.language.toUpperCase()})</span>
+            </div>
+            <div>${statusBadge}</div>
+          </div>
+          ${photoHtml}
+          <p style="font-size: 0.8rem; background: rgba(0,0,0,0.05); padding: 0.75rem; border-radius: 6px; line-height: 1.5; margin: 0;">
+            ${art.content}
+          </p>
+          ${reviewActionsRow}
+        `;
+        articlesContainer.appendChild(card);
+      });
+    }
+
+    // 2. Populate Biographies Review
+    if (pendingBiogs.length === 0) {
+      biogsContainer.innerHTML = `<p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; padding: 1.5rem;">No student biographies awaiting review.</p>`;
+    } else {
+      pendingBiogs.forEach(stud => {
+        const school = window.db.getSchool(stud.schoolId);
+
+        const card = document.createElement('div');
+        card.className = 'panel';
+        card.style.background = 'rgba(255,255,255,0.01)';
+        card.style.border = '1px solid var(--panel-border)';
+        card.style.padding = '1.25rem';
+
+        const approvedBiogHtml = stud.personalBiog 
+          ? `<div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;"><strong>Current Approved Biography:</strong><br>"${stud.personalBiog}"</div>` 
+          : '';
+
+        card.innerHTML = `
+          <div class="panel-header" style="margin-bottom: 0.5rem;">
+            <div>
+              <h4 style="font-weight: 700; font-size: 0.95rem; margin: 0;">${stud.name}</h4>
+              <span style="font-size: 0.7rem; color: var(--text-secondary);">${stud.yearGroup} • ${school ? school.name : 'Unknown School'}</span>
+            </div>
+            <span class="badge badge-warning">Pending Review</span>
+          </div>
+          <div style="background: rgba(0,0,0,0.05); padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem;">
+            ${approvedBiogHtml}
+            <div style="font-size: 0.8rem; line-height: 1.5; color: var(--text-primary);">
+              <strong>Submitted Biography:</strong><br>
+              "${stud.pendingBiog}"
+            </div>
+          </div>
+          <div style="display: flex; gap: 0.5rem; justify-content: flex-end; border-top: 1px solid var(--panel-border); padding-top: 0.75rem;">
+            <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: var(--danger);" onclick="app.executeBiographyReview('${stud.id}', 'Rejected')">Reject</button>
+            <button class="btn btn-primary btn-small" onclick="app.executeBiographyReview('${stud.id}', 'Approved')">Approve</button>
+          </div>
+        `;
+        biogsContainer.appendChild(card);
+      });
+    }
+  }
+
+  // Teacher submits biography review approval/rejection
+  executeBiographyReview(studentId, status) {
+    const reviewer = 'Teacher Mrs. Smith';
+    if (status === 'Approved') {
+      window.db.approveStudentBiog(studentId, reviewer);
+    } else {
+      window.db.rejectStudentBiog(studentId, reviewer);
+    }
+
+    this.refreshUI();
+    alert(`Biography review submitted: ${status}`);
+  }
+
+  // Teacher submits article review approval/rejection
+  executeArticleReview(id, status) {
+    const reviewer = 'Teacher Mrs. Smith';
+    window.db.reviewArticle(id, status, reviewer);
+    
+    // If approved, dynamically create a news announcement to students
+    if (status === 'Approved') {
+      const art = window.db.getArticles().find(a => a.id === id);
+      const author = window.db.getStudent(art?.authorId);
+      
+      window.db.addNews({
+        title: `Published: ${art?.title}`,
+        content: `Read a new cultural article by student ${author ? author.name : 'Exchange Pen Pal'}: "${art?.content.slice(0, 100)}..."`,
+        postedBy: reviewer,
+        schoolId: art?.schoolId
+      });
+    }
+
+    this.refreshUI();
+    alert(`Article reviewed: ${status}`);
+  }
+
+  // Load teacher settings form
+  populateTeacherSettings() {
+    const settings = window.db.getSettings();
+    document.getElementById('flagged-words-input').value = settings.flaggedKeywords.join(', ');
+    document.getElementById('attachments-toggle').checked = settings.attachmentsEnabled;
+
+    // Populate school profile
+    // Under this role Mrs. Smith is coordinator for school_1
+    const schoolId = 'school_1';
+    const school = window.db.getSchool(schoolId);
+    if (school) {
+      document.getElementById('school-desc-input').value = school.description || '';
+      
+      const logoSelect = document.getElementById('school-logo-select');
+      logoSelect.innerHTML = '';
+      
+      const logoNoneOpt = document.createElement('option');
+      logoNoneOpt.value = '';
+      logoNoneOpt.textContent = '[None]';
+      logoSelect.appendChild(logoNoneOpt);
+
+      if (schoolId === 'school_1') {
+        const opt = document.createElement('option');
+        opt.value = 'assets/leicester_logo.jpg';
+        opt.textContent = 'Leicester High School Logo (Crest)';
+        logoSelect.appendChild(opt);
+      } else if (schoolId === 'school_2') {
+        const opt = document.createElement('option');
+        opt.value = 'assets/goethe_logo.png';
+        opt.textContent = 'Goethe-Gymnasium Logo';
+        logoSelect.appendChild(opt);
+      }
+      logoSelect.value = school.logoUrl || '';
+
+      const logoPreview = document.getElementById('school-logo-preview');
+      logoPreview.src = school.logoUrl || '';
+      logoPreview.style.display = school.logoUrl ? 'block' : 'none';
+
+      const photoSelect = document.getElementById('school-photo-select');
+      photoSelect.innerHTML = '';
+
+      const photoNoneOpt = document.createElement('option');
+      photoNoneOpt.value = '';
+      photoNoneOpt.textContent = '[None]';
+      photoSelect.appendChild(photoNoneOpt);
+
+      if (schoolId === 'school_1') {
+        const opt = document.createElement('option');
+        opt.value = 'assets/leicester_campus.jpg';
+        opt.textContent = 'Leicester High School Campus';
+        photoSelect.appendChild(opt);
+      } else if (schoolId === 'school_2') {
+        const opt = document.createElement('option');
+        opt.value = 'assets/goethe_campus.png';
+        opt.textContent = 'Goethe-Gymnasium Campus';
+        photoSelect.appendChild(opt);
+      }
+      photoSelect.value = school.photoUrl || '';
+
+      const photoPreview = document.getElementById('school-photo-preview');
+      photoPreview.src = school.photoUrl || '';
+      photoPreview.style.display = school.photoUrl ? 'block' : 'none';
+    }
+  }
+
+  // Save teacher configuration preferences
+  saveTeacherSettings() {
+    const text = document.getElementById('flagged-words-input').value;
+    const attachments = document.getElementById('attachments-toggle').checked;
+
+    const keywords = text.split(',').map(k => k.trim()).filter(k => k.length > 0);
+    
+    window.db.saveSettings({
+      flaggedKeywords: keywords,
+      attachmentsEnabled: attachments
+    });
+
+    alert('Settings updated successfully! SafeGuard configuration updated.');
+    this.refreshUI();
+  }
+
+  // Save teacher's school profile description, logo, and photo
+  handleSchoolProfileSubmit(e) {
+    e.preventDefault();
+    const description = document.getElementById('school-desc-input').value.trim();
+    const logoUrl = document.getElementById('school-logo-select').value;
+    const photoUrl = document.getElementById('school-photo-select').value;
+
+    const schoolId = 'school_1'; // Mrs. Smith's school
+    window.db.updateSchool(schoolId, { description, logoUrl, photoUrl });
+
+    alert('School profile updated successfully! Matches and exchange partner students will see the updated spotlight.');
+    this.refreshUI();
+  }
+
+
+
+
+  // ================== ADMIN PORTAL RENDERERS ==================
+
+  renderAdminDashboard() {
+    const schools = window.db.getSchools();
+    const audits = window.db.getAuditLogs();
+    
+    // Deduplicate countries
+    const countries = new Set(schools.map(s => s.country));
+
+    document.getElementById('admin-stat-schools').textContent = schools.length;
+    document.getElementById('admin-stat-countries').textContent = countries.size;
+    document.getElementById('admin-stat-audits').textContent = audits.length;
+
+    // Renders audits logs
+    const tbody = document.getElementById('admin-audit-tbody');
+    tbody.innerHTML = '';
+    
+    // Last 10 audit logs descending
+    const sortedAudits = [...audits].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 10);
+    
+    sortedAudits.forEach(log => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td style="font-size: 0.75rem; color: var(--text-muted);">${new Date(log.timestamp).toLocaleString()}</td>
+        <td style="font-weight: 600;">${log.action}</td>
+        <td style="font-size: 0.8rem; color: var(--text-secondary);">${log.details}</td>
+        <td><span class="badge badge-info">${log.user}</span></td>
+      `;
+      tbody.appendChild(row);
+    });
+
+    // Populate registration requests and safeguarding hub
+    this.renderAdminRequests();
+    this.renderAdminSafeguarding();
+  }
+
+  // Renders admin schools directory list
+  renderAdminSchools() {
+    const tbody = document.getElementById('admin-schools-tbody');
+    const schools = window.db.getSchools();
+
+    tbody.innerHTML = '';
+    schools.forEach(school => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td style="font-weight: bold; color: var(--secondary); cursor: pointer; text-decoration: underline;" onclick="app.openSchoolDetail('${school.id}')">${school.code}</td>
+        <td style="font-weight: 600; cursor: pointer; text-decoration: underline;" onclick="app.openSchoolDetail('${school.id}')">${school.name}</td>
+        <td>${school.country}</td>
+        <td>${school.city}</td>
+        <td><span class="badge badge-info">${school.language.toUpperCase()}</span></td>
+        <td><span class="badge badge-success">Operational</span></td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
+
+  // Handle register school form submit
+  handleAddSchool(e) {
+    e.preventDefault();
+    const name = document.getElementById('new-school-name').value.trim();
+    const country = document.getElementById('new-school-country').value.trim();
+    const city = document.getElementById('new-school-city').value.trim();
+    const lang = document.getElementById('new-school-lang').value;
+    const code = document.getElementById('new-school-code').value.trim().toUpperCase();
+
+    const schools = window.db.getSchools();
+    
+    // Check if code exists
+    if (schools.some(s => s.code === code)) {
+      alert(`A school with code ${code} is already registered!`);
+      return;
+    }
+
+    schools.push({
+      id: 'school_' + Date.now(),
+      name,
+      country,
+      city,
+      language: lang,
+      code,
+      description: `${name} is a partner school in ${city}, ${country}.`,
+      photoUrl: '',
+      logoUrl: ''
+    });
+
+    window.db.saveTable('schools', schools);
+    window.db.addLog('School Registered', `Registered new school: ${name} (${code}) in ${country}.`, 'Admin');
+
+    this.closeModal('add-school-modal');
+    document.getElementById('add-school-form').reset();
+    
+    alert('Partner school registered successfully! Ready to invite teachers and students.');
+    
+    this.refreshUI();
+  }
+
+  // Renders the onboarding schools list in the coordinator onboarding portal
+  renderNewCoordinatorOnboarding() {
+    const listEl = document.getElementById('onboarding-schools-list');
+    const expandBtn = document.getElementById('onboarding-schools-expand-btn');
+    const searchInput = document.getElementById('onboarding-school-search');
+    if (!listEl) return;
+
+    const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    const schools = window.db.getSchools();
+    const coordinators = window.db.getCoordinators();
+
+    listEl.innerHTML = '';
+
+    let displaySchools = [];
+
+    if (query) {
+      displaySchools = schools.filter(school => {
+        const matchesSchool = school.name.toLowerCase().includes(query) ||
+                              school.city.toLowerCase().includes(query) ||
+                              school.country.toLowerCase().includes(query) ||
+                              school.code.toLowerCase().includes(query);
+         
+        const schoolCoords = coordinators.filter(c => c.schoolId === school.id);
+        const matchesCoord = schoolCoords.some(c => c.name.toLowerCase().includes(query));
+
+        return matchesSchool || matchesCoord;
+      });
+      
+      if (expandBtn) expandBtn.style.display = 'none';
+    } else {
+      const recentSchools = [...schools].reverse();
+      
+      if (recentSchools.length > 3) {
+        if (expandBtn) {
+          expandBtn.style.display = 'inline-block';
+          expandBtn.textContent = this.onboardingSchoolsExpanded ? 'Collapse List' : `Show All Schools (${schools.length})`;
+        }
+        
+        displaySchools = this.onboardingSchoolsExpanded ? recentSchools : recentSchools.slice(0, 3);
+      } else {
+        displaySchools = recentSchools;
+        if (expandBtn) expandBtn.style.display = 'none';
+      }
+    }
+
+    if (displaySchools.length === 0) {
+      listEl.innerHTML = `<p style="font-size: 0.75rem; color: var(--text-muted); text-align: center; padding: 1rem 0;">No matching schools found.</p>`;
+      return;
+    }
+
+    displaySchools.forEach(school => {
+      const schoolCoords = coordinators.filter(c => c.schoolId === school.id);
+      const coordNames = schoolCoords.length > 0 ? schoolCoords.map(c => c.name).join(', ') : 'None yet';
+
+      const item = document.createElement('div');
+      item.style.padding = '0.65rem 0.5rem';
+      item.style.borderBottom = '1px solid var(--panel-border)';
+      item.style.fontSize = '0.75rem';
+      item.style.display = 'flex';
+      item.style.justifyContent = 'space-between';
+      item.style.alignItems = 'center';
+      item.style.transition = 'background 0.2s';
+      
+      item.onmouseenter = () => item.style.background = 'rgba(255, 255, 255, 0.02)';
+      item.onmouseleave = () => item.style.background = 'transparent';
+
+      item.innerHTML = `
+        <div>
+          <strong style="color: var(--text-primary); font-size: 0.85rem;">${school.name}</strong>
+          <div style="color: var(--text-muted); font-size: 0.7rem; margin-top: 0.1rem;">${school.city}, ${school.country}</div>
+          <div style="color: var(--secondary); font-size: 0.65rem; font-weight: 500; margin-top: 0.15rem;">Coordinator: ${coordNames}</div>
+        </div>
+        <span class="badge badge-info" style="font-size: 0.65rem; padding: 0.2rem 0.4rem; border-radius: 4px; background: rgba(6, 182, 212, 0.15); color: var(--secondary); border: 1px solid rgba(6, 182, 212, 0.3); font-weight: 600;">${school.code}</span>
+      `;
+      listEl.appendChild(item);
+    });
+  }
+
+  // Form submit handler for coordinator requesting school registration
+  handleSchoolRegistrationRequest(e) {
+    e.preventDefault();
+    const req = {
+      name: document.getElementById('req-school-name').value.trim(),
+      country: document.getElementById('req-school-country').value.trim(),
+      city: document.getElementById('req-school-city').value.trim(),
+      language: document.getElementById('req-school-lang').value,
+      code: document.getElementById('req-school-code').value.trim().toUpperCase(),
+      coordinatorName: document.getElementById('req-coord-name').value.trim(),
+      coordinatorEmail: document.getElementById('req-coord-email').value.trim()
+    };
+
+    const schools = window.db.getSchools();
+    if (schools.some(s => s.code === req.code)) {
+      alert(`A school with code ${req.code} already exists on the platform. Please check the code or contact support.`);
+      return;
+    }
+
+    const requests = window.db.getSchoolRequests();
+    if (requests.some(r => r.code === req.code && r.status === 'Pending')) {
+      alert(`A registration request for school code ${req.code} is already pending review.`);
+      return;
+    }
+
+    window.db.addSchoolRequest(req);
+    document.getElementById('request-school-registration-form').reset();
+    alert('Your school registration request has been submitted successfully! The System Admin will review it shortly.');
+    this.refreshUI();
+  }
+
+  // Renders the school requests list in the admin dashboard
+  renderAdminRequests() {
+    const tbody = document.getElementById('admin-requests-tbody');
+    const requests = window.db.getSchoolRequests();
+    
+    tbody.innerHTML = '';
+    if (requests.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">No registration requests found.</td></tr>';
+      return;
+    }
+
+    // Sort requests: Pending first, then by date descending
+    const sortedRequests = [...requests].sort((a, b) => {
+      if (a.status === 'Pending' && b.status !== 'Pending') return -1;
+      if (a.status !== 'Pending' && b.status === 'Pending') return 1;
+      return new Date(b.requestedAt) - new Date(a.requestedAt);
+    });
+
+    sortedRequests.forEach(req => {
+      const dateStr = new Date(req.requestedAt).toLocaleDateString();
+      const statusBadge = req.status === 'Pending' 
+        ? '<span class="badge badge-warning">Pending</span>'
+        : (req.status === 'Approved' ? '<span class="badge badge-success">Approved</span>' : '<span class="badge badge-danger">Declined</span>');
+
+      const actionsMarkup = req.status === 'Pending'
+        ? `<button class="btn btn-primary btn-small" onclick="app.executeSchoolRequestAction('${req.id}', 'approve')">Approve</button>
+           <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: var(--danger);" onclick="app.executeSchoolRequestAction('${req.id}', 'decline')">Decline</button>`
+        : `<span style="font-size: 0.75rem; color: var(--text-muted);">${req.status}</span>`;
+
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${dateStr}</td>
+        <td style="font-weight: 600;">${req.name}<br><span style="font-size: 0.75rem; font-weight: normal; color: var(--text-muted);">${req.code}</span></td>
+        <td>${req.city}, ${req.country}</td>
+        <td><span class="badge badge-info">${req.language.toUpperCase()}</span></td>
+        <td><strong>${req.coordinatorName}</strong><br><span style="font-size: 0.75rem; color: var(--text-muted);">${req.coordinatorEmail}</span></td>
+        <td>${statusBadge}</td>
+        <td>${actionsMarkup}</td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
+
+  // Handler to approve/decline school registration request
+  executeSchoolRequestAction(requestId, action) {
+    const reviewer = 'System Admin';
+    if (action === 'approve') {
+      const newSchool = window.db.approveSchoolRequest(requestId, reviewer);
+      if (newSchool) {
+        alert(`School Registration Approved! ${newSchool.name} is now registered. The requesting coordinator has been granted School Admin rights.`);
+      }
+    } else if (action === 'decline') {
+      window.db.declineSchoolRequest(requestId, reviewer);
+      alert('School Registration Request declined.');
+    }
+    this.refreshUI();
+  }
+
+  // Renders global safeguarding alerts in the admin dashboard
+  renderAdminSafeguarding() {
+    const tbody = document.getElementById('admin-safeguarding-tbody');
+    const flags = window.db.getFlags();
+
+    tbody.innerHTML = '';
+    if (flags.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No safeguarding alerts logged.</td></tr>`;
+      return;
+    }
+
+    // Sort: Pending flags first, then by date descending
+    const sortedFlags = [...flags].sort((a, b) => {
+      if (a.status === 'Pending' && b.status !== 'Pending') return -1;
+      if (a.status !== 'Pending' && b.status === 'Pending') return 1;
+      return new Date(b.flaggedAt) - new Date(a.flaggedAt);
+    });
+
+    sortedFlags.forEach(flag => {
+      const msg = window.db.getMessages().find(m => m.id === flag.messageId);
+      const sender = msg ? window.db.getStudent(msg.senderId) : null;
+      const school = sender ? window.db.getSchool(sender.schoolId) : null;
+      
+      let statusBadge = '';
+      if (flag.status === 'Pending') statusBadge = '<span class="badge badge-danger">Unresolved</span>';
+      else statusBadge = '<span class="badge badge-success">Resolved</span>';
+
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${new Date(flag.flaggedAt).toLocaleString()}</td>
+        <td style="font-weight: 600;">
+          ${school ? school.name : 'Unknown School'}<br>
+          <span style="font-size: 0.75rem; font-weight: normal; color: var(--text-muted);">Sender: ${sender ? sender.name : 'Unknown'}</span>
+        </td>
+        <td>
+          <strong style="color: var(--danger); font-size: 0.8rem;">Reason: ${flag.reason || msg?.flagReason || 'Triggered Keyword alert'}</strong>
+          <div style="font-size: 0.85rem; font-style: italic; background: rgba(0,0,0,0.1); padding: 0.5rem; border-radius: 6px; margin-top: 0.25rem;">
+            "${msg ? msg.text : 'N/A'}"
+          </div>
+        </td>
+        <td>${statusBadge}</td>
+        <td>
+          ${flag.status === 'Pending' 
+            ? `<button class="btn btn-danger btn-small" onclick="app.openResolveFlagModal('${flag.id}')">Review & Take Action</button>`
+            : `<div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                 <span style="font-size: 0.75rem; color: var(--text-muted);">Resolved by:<br>${flag.reviewedBy}<br>Action: ${flag.actionTaken}</span>
+                 <button class="btn btn-secondary btn-small" style="font-size: 0.7rem; padding: 0.2rem 0.4rem;" onclick="app.openResolveFlagModal('${flag.id}')">View Details</button>
+               </div>`}
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
+
+  // Opens detailed modal showing logo, campus photo, biography, registered coordinators (with admin rights toggling), and student roster
+  openSchoolDetail(schoolId) {
+    const school = window.db.getSchool(schoolId);
+    if (!school) return;
+
+    const students = window.db.getStudents().filter(s => s.schoolId === schoolId);
+    const schoolCoords = window.db.getCoordinators().filter(c => c.schoolId === schoolId);
+    
+    const logoHtml = school.logoUrl 
+      ? `<img src="${school.logoUrl}" alt="${school.name} logo" style="max-height: 50px; border-radius: 6px;">` 
+      : '';
+    const photoHtml = school.photoUrl 
+      ? `<img src="${school.photoUrl}" alt="${school.name} campus" style="width: 100%; height: 160px; object-fit: cover; border-radius: 12px; margin-bottom: 0.5rem;">` 
+      : '<div style="height: 160px; background: rgba(0,0,0,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.85rem; border: 1px dashed var(--panel-border);">No campus photograph added</div>';
+
+    // Renders coordinators/staff list with toggle controls
+    let coordinatorsHtml = '';
+    if (schoolCoords.length === 0) {
+      coordinatorsHtml = '<p style="font-size: 0.8rem; color: var(--text-muted); font-style: italic; padding: 0.5rem 0;">No coordinators registered for this school.</p>';
+    } else {
+      coordinatorsHtml = `
+        <div class="table-container" style="max-height: 150px; overflow-y: auto; margin-top: 0.5rem; border: 1px solid var(--panel-border); border-radius: 8px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+            <thead>
+              <tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--panel-border);">
+                <th style="padding: 0.5rem; text-align: left;">Name</th>
+                <th style="padding: 0.5rem; text-align: left;">Email</th>
+                <th style="padding: 0.5rem; text-align: left;">Status</th>
+                <th style="padding: 0.5rem; text-align: left;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${schoolCoords.map(c => {
+                const adminBadge = c.isSchoolAdmin 
+                  ? '<span class="badge badge-success" style="font-size: 0.65rem; padding: 0.15rem 0.45rem;">Admin</span>' 
+                  : '<span class="badge badge-secondary" style="font-size: 0.65rem; padding: 0.15rem 0.45rem;">Staff</span>';
+                
+                const btnLabel = c.isSchoolAdmin ? 'Revoke Admin' : 'Grant Admin';
+                const btnClass = c.isSchoolAdmin ? 'btn-secondary' : 'btn-primary';
+                
+                return `
+                  <tr style="border-bottom: 1px solid var(--panel-border);">
+                    <td style="padding: 0.5rem; font-weight: 600;">${c.name}</td>
+                    <td style="padding: 0.5rem; color: var(--text-secondary);">${c.email}</td>
+                    <td style="padding: 0.5rem;">${adminBadge}</td>
+                    <td style="padding: 0.5rem;">
+                      <button class="btn ${btnClass} btn-small" style="font-size: 0.65rem; padding: 0.2rem 0.5rem;" onclick="app.toggleCoordinatorAdminInsideModal('${c.id}', '${schoolId}')">${btnLabel}</button>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    let rosterHtml = '';
+    if (students.length === 0) {
+      rosterHtml = '<p style="font-size: 0.8rem; color: var(--text-muted); font-style: italic; padding: 0.5rem 0;">No students registered for this school.</p>';
+    } else {
+      rosterHtml = `
+        <div class="table-container" style="max-height: 150px; overflow-y: auto; margin-top: 0.5rem; border: 1px solid var(--panel-border); border-radius: 8px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+            <thead>
+              <tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--panel-border);">
+                <th style="padding: 0.5rem; text-align: left;">Name</th>
+                <th style="padding: 0.5rem; text-align: left;">Email</th>
+                <th style="padding: 0.5rem; text-align: left;">Age/Year</th>
+                <th style="padding: 0.5rem; text-align: left;">Match Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${students.map(s => {
+                const badgeClass = s.matchStatus === 'matched' ? 'badge-success' : (s.matchStatus === 'proposed' ? 'badge-warning' : 'badge-secondary');
+                return `
+                  <tr style="border-bottom: 1px solid var(--panel-border);">
+                    <td style="padding: 0.5rem; font-weight: 600;">${s.name}</td>
+                    <td style="padding: 0.5rem; color: var(--text-secondary);">${s.email}</td>
+                    <td style="padding: 0.5rem;">Age ${s.age} (${s.yearGroup})</td>
+                    <td style="padding: 0.5rem;"><span class="badge ${badgeClass}">${s.matchStatus}</span></td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    let coordinatorsSection = '';
+    let rosterSection = '';
+    if (this.currentRole !== 'student') {
+      coordinatorsSection = `
+        <div style="margin-top: 0.5rem; border-top: 1px dashed var(--panel-border); padding-top: 0.75rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <h5 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin: 0;">Registered Coordinators (${schoolCoords.length})</h5>
+            <button class="btn btn-secondary btn-small" onclick="document.getElementById('add-modal-coord-form-container').style.display = 'block'">+ Add Coordinator</button>
+          </div>
+          
+          <!-- Add Coordinator Form (Hidden by default) -->
+          <div id="add-modal-coord-form-container" style="display: none; background: rgba(0,0,0,0.15); padding: 1rem; border-radius: 8px; margin-bottom: 0.75rem; border: 1px solid var(--panel-border);">
+            <form onsubmit="app.addCoordinatorToSchool(event, '${school.id}')">
+              <h6 style="font-size: 0.8rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-primary);">Add Coordinator Info</h6>
+              <div class="form-group" style="margin-bottom: 0.5rem;">
+                <input type="text" id="new-modal-coord-name" class="form-control" style="font-size: 0.75rem; padding: 0.35rem 0.65rem;" placeholder="Full Name" required>
+              </div>
+              <div class="form-group" style="margin-bottom: 0.5rem;">
+                <input type="email" id="new-modal-coord-email" class="form-control" style="font-size: 0.75rem; padding: 0.35rem 0.65rem;" placeholder="Email Address" required>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                <label style="font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem;">
+                  <input type="checkbox" id="new-modal-coord-admin"> Grant School Admin Rights
+                </label>
+                <div style="display: flex; gap: 0.5rem;">
+                  <button type="button" class="btn btn-secondary btn-small" onclick="document.getElementById('add-modal-coord-form-container').style.display = 'none'">Cancel</button>
+                  <button type="submit" class="btn btn-primary btn-small">Add</button>
+                </div>
+              </div>
+            </form>
+          </div>
+          
+          ${coordinatorsHtml}
+        </div>
+      `;
+
+      rosterSection = `
+        <div style="margin-top: 0.5rem; border-top: 1px dashed var(--panel-border); padding-top: 0.75rem;">
+          <h5 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">Student Roster (${students.length} Students)</h5>
+          ${rosterHtml}
+        </div>
+      `;
+    }
+
+    const container = document.getElementById('school-detail-content');
+    container.innerHTML = `
+      ${photoHtml}
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        ${logoHtml}
+        <div>
+          <h4 style="font-weight: 700; font-size: 1.25rem; margin: 0; color: var(--text-primary);">${school.name}</h4>
+          <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">
+            📍 ${school.city}, ${school.country} • Code: <strong style="color: var(--secondary);">${school.code}</strong>
+          </span>
+        </div>
+      </div>
+
+      <div class="panel" style="padding: 1rem; background: rgba(255,255,255,0.01); border-color: var(--panel-border); margin-top: 0.5rem;">
+        <h5 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">School Biography</h5>
+        <p style="font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary); margin: 0; text-align: justify;">
+          ${school.description || 'No school description provided yet.'}
+        </p>
+      </div>
+
+      ${coordinatorsSection}
+      ${rosterSection}
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 1rem; border-top: 1px solid var(--panel-border); padding-top: 1rem;">
+        <button class="btn btn-secondary" onclick="app.closeModal('school-detail-modal')">Close Details</button>
+      </div>
+    `;
+
+    this.openModal('school-detail-modal');
+  }
+
+  // Opens the active partner's school details modal from the chat view
+  openPartnerSchoolDetail() {
+    const match = window.db.getMatches().find(m => m.id === this.activeMatchId);
+    if (!match) return;
+    const partnerId = match.studentIds.find(id => id !== this.currentStudentId);
+    const partner = window.db.getStudent(partnerId);
+    if (partner && partner.schoolId) {
+      this.openSchoolDetail(partner.schoolId);
+    }
+  }
+
+  // Opens the active partner's student details modal from the chat view
+  openPartnerStudentDetail() {
+    const match = window.db.getMatches().find(m => m.id === this.activeMatchId);
+    if (!match) return;
+    const partnerId = match.studentIds.find(id => id !== this.currentStudentId);
+    if (partnerId) {
+      this.openStudentDetailModal(partnerId);
+    }
+  }
+
+  // Opens detailed student profile modal
+  openStudentDetailModal(studentId) {
+    const student = window.db.getStudent(studentId);
+    if (!student) return;
+    const school = window.db.getSchool(student.schoolId);
+    
+    const initials = student.name.split(' ').map(n => n[0]).join('');
+    const biogToShow = student.personalBiogStatus === 'Approved' && student.personalBiog
+      ? student.personalBiog
+      : '<em>No biography shared yet.</em>';
+
+    const container = document.getElementById('student-profile-content');
+    if (!container) return;
+
+    container.innerHTML = `
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem; text-align: center; margin-top: 0.5rem;">
+        <div class="user-avatar" style="width: 72px; height: 72px; font-size: 1.8rem; background: linear-gradient(135deg, var(--secondary) 0%, var(--accent) 100%);">
+          ${initials}
+        </div>
+        <div>
+          <h4 style="font-weight: 700; font-size: 1.35rem; margin: 0; color: var(--text-primary);">${student.name}</h4>
+          <span class="badge badge-info" style="margin-top: 0.35rem;">Age ${student.age} • ${student.yearGroup}</span>
+        </div>
+      </div>
+
+      <div class="panel" style="padding: 1rem; background: rgba(255,255,255,0.01); border-color: var(--panel-border);">
+        <h5 style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">School Connection</h5>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div style="font-size: 1.5rem;">🏫</div>
+          <div style="text-align: left;">
+            <h6 style="margin: 0; font-size: 0.9rem; font-weight: 700;">
+              <span class="clickable-school-link" style="text-decoration: underline; color: var(--secondary); cursor: pointer;" onclick="app.openSchoolDetailFromStudentModal('${student.schoolId}')">
+                ${school ? school.name : 'Unknown School'}
+              </span>
+            </h6>
+            <span style="font-size: 0.75rem; color: var(--text-secondary);">${school ? `${school.city}, ${school.country}` : ''}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="padding: 1rem; background: rgba(255,255,255,0.01); border-color: var(--panel-border);">
+        <h5 style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Personal Biography</h5>
+        <p style="font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary); margin: 0; text-align: justify; font-style: ${student.personalBiog ? 'normal' : 'italic'};">
+          ${biogToShow}
+        </p>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem; border-top: 1px solid var(--panel-border); padding-top: 1rem;">
+        <button class="btn btn-secondary" onclick="app.closeModal('student-profile-modal')">Close Profile</button>
+      </div>
+    `;
+
+    this.openModal('student-profile-modal');
+  }
+
+  // Opens school detail modal but closes student profile first to prevent overlay stack locks
+  openSchoolDetailFromStudentModal(schoolId) {
+    this.closeModal('student-profile-modal');
+    setTimeout(() => {
+      this.openSchoolDetail(schoolId);
+    }, 150);
+  }
+
+  // Opens detailed student article modal
+  openStudentArticleDetail(articleId) {
+    const art = window.db.getArticles().find(a => a.id === articleId);
+    if (!art) return;
+    const author = window.db.getStudent(art.authorId);
+    const school = window.db.getSchool(art.schoolId);
+
+    const container = document.getElementById('article-detail-content');
+    if (!container) return;
+
+    let statusBadge = '';
+    if (art.status === 'Approved') statusBadge = '<span class="badge badge-success">Approved</span>';
+    else if (art.status === 'Pending') statusBadge = '<span class="badge badge-warning">Pending Review</span>';
+    else statusBadge = '<span class="badge badge-danger">Rejected</span>';
+
+    const photoHtml = art.photoUrl
+      ? `<img src="${art.photoUrl}" alt="${art.title} photo" style="width: 100%; height: 200px; object-fit: cover; border-radius: 12px; margin-bottom: 0.5rem;">`
+      : '';
+
+    container.innerHTML = `
+      ${photoHtml}
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+        <div>
+          <h4 style="font-weight: 700; font-size: 1.25rem; margin: 0; color: var(--text-primary);">${art.title}</h4>
+          <span style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 500;">
+            By ${author ? author.name : 'Unknown Author'} • ${school ? school.name : 'Unknown School'} (${art.language.toUpperCase()})
+          </span>
+        </div>
+        <div>${statusBadge}</div>
+      </div>
+
+      <div class="panel" style="padding: 1rem; background: rgba(255,255,255,0.01); border-color: var(--panel-border); margin-top: 0.5rem;">
+        <p style="font-size: 0.9rem; line-height: 1.6; color: var(--text-secondary); margin: 0; text-align: justify; white-space: pre-wrap;">
+          ${art.content}
+        </p>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; border-top: 1px solid var(--panel-border); padding-top: 1rem;">
+        <span style="font-size: 0.75rem; color: var(--text-muted);">Submitted on: ${new Date(art.submittedAt).toLocaleDateString()}</span>
+        <button class="btn btn-secondary" onclick="app.closeModal('article-detail-modal')">Close Details</button>
+      </div>
+    `;
+
+    this.openModal('article-detail-modal');
+  }
+
+  // Toggles admin status for coordinator from within the detail modal and keeps the modal open
+  toggleCoordinatorAdminInsideModal(coordinatorId, schoolId) {
+    const reviewer = 'System Admin';
+    window.db.toggleCoordinatorAdmin(coordinatorId, reviewer);
+    this.refreshUI();
+    this.openSchoolDetail(schoolId);
+  }
+
+  // Adds a coordinator directly to a school from within the detail modal
+  addCoordinatorToSchool(e, schoolId) {
+    e.preventDefault();
+    const name = document.getElementById('new-modal-coord-name').value.trim();
+    const email = document.getElementById('new-modal-coord-email').value.trim();
+    const isSchoolAdmin = document.getElementById('new-modal-coord-admin').checked;
+
+    if (!name || !email) {
+      alert('Please fill out all fields.');
+      return;
+    }
+
+    const coordinators = window.db.getCoordinators();
+    if (coordinators.some(c => c.email === email)) {
+      alert('A coordinator with this email address is already registered on the platform.');
+      return;
+    }
+
+    const newCoord = {
+      id: 'coord_' + Date.now(),
+      name,
+      email,
+      schoolId,
+      isSchoolAdmin
+    };
+
+    coordinators.push(newCoord);
+    window.db.saveTable('coordinators', coordinators);
+    window.db.addLog('Coordinator Added', `Added coordinator ${name} (${email}) to school ${window.db.getSchool(schoolId)?.name}.`, 'System Admin');
+
+    alert(`Coordinator ${name} added successfully!`);
+    this.refreshUI();
+    this.openSchoolDetail(schoolId);
+  }
+
+  // Toggles between the list of articles and the submission form on the My Articles page
+  showArticleForm(show) {
+    const listView = document.getElementById('articles-list-view');
+    const formView = document.getElementById('articles-form-view');
+    if (listView && formView) {
+      if (show) {
+        listView.style.display = 'none';
+        formView.style.display = 'block';
+      } else {
+        listView.style.display = 'block';
+        formView.style.display = 'none';
+      }
+    }
+  }
+
+  // Toggles collapsing/expanding the Writing Assistant panel below chat
+  toggleLanguageAssistant() {
+    const panel = document.getElementById('student-language-widget-panel');
+    const btn = document.getElementById('toggle-assistant-btn');
+    if (panel.style.display === 'none' || !panel.style.display) {
+      panel.style.display = 'block';
+      btn.classList.add('active');
+      panel.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      panel.style.display = 'none';
+      btn.classList.remove('active');
+    }
+  }
+
+  // ================== CORE UTILITY HELPERS ==================
+
+  // Modal Open/Close helpers
+  openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.classList.add('active');
+    }
+  }
+
+  closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.classList.remove('active');
+    }
+  }
+}
+
+// Global coordinator initialization
+window.app = new App();

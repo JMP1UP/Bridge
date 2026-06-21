@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bridge – connecting students across cultures</title>
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div>
+        <div class="brand" style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem;">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <div class="brand-logo">🌐</div>
+            <span class="brand-name">Bridge</span>
+          </div>
+          <span style="font-size: 0.52rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 0.15rem; line-height: 1.2;">connecting students across cultures</span>
+        </div>
+        
+        <!-- Navigation links (Rendered dynamically based on role) -->
+        <nav>
+          <!-- Student Nav Links -->
+          <ul class="nav-links" id="student-nav" style="display: none;">
+            <li><a class="nav-link active" data-tab="stud-dashboard">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+              <span data-localize="stud_dashboard">Student Dashboard</span>
+            </a></li>
+            <li><a class="nav-link" data-tab="stud-chat">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+              <span data-localize="stud_chat">My Pen Pals</span>
+            </a></li>
+            <li><a class="nav-link" data-tab="stud-culture">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
+              <span data-localize="stud_culture">My Articles</span>
+            </a></li>
+            <li><a class="nav-link" data-tab="stud-settings">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+              <span data-localize="stud_settings">Account Settings</span>
+            </a></li>
+          </ul>
+
+          <!-- Teacher Nav Links -->
+          <ul class="nav-links" id="teacher-nav" style="display: none;">
+            <li><a class="nav-link active" data-tab="teach-dashboard">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+              <span data-localize="teacher_dashboard">Staff Dashboard</span>
+            </a></li>
+            <li><a class="nav-link" data-tab="teach-students">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+              <span data-localize="student_mgmt">Student List</span>
+            </a></li>
+            <li><a class="nav-link" data-tab="teach-matching">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="18" y1="8" x2="23" y2="13"></line><line x1="23" y1="8" x2="18" y2="13"></line></svg>
+              <span data-localize="matching_tool">Matching Tool</span>
+            </a></li>
+            <li><a class="nav-link" data-tab="teach-safeguarding">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+              <span data-localize="safeguarding_hub">Safeguarding Control</span>
+              <span class="badge badge-danger alert-pulse" id="flagged-alert-count" style="display: none; margin-left: auto;">0</span>
+            </a></li>
+            <li><a class="nav-link" data-tab="teach-editor">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+              <span data-localize="news_article_review">Editorial Desk</span>
+            </a></li>
+            <li><a class="nav-link" data-tab="teach-settings">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+              <span data-localize="global_settings">School Settings</span>
+            </a></li>
+          </ul>
+
+          <!-- Admin Nav Links -->
+          <ul class="nav-links" id="admin-nav" style="display: none;">
+            <li><a class="nav-link active" data-tab="admin-dashboard">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+              <span data-localize="admin_panel">Platform Admin</span>
+            </a></li>
+            <li><a class="nav-link" data-tab="admin-schools">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+              <span data-localize="schools">Schools Directory</span>
+            </a></li>
+            <li><a class="nav-link" data-tab="admin-settings">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+              <span data-localize="global_settings">Global Settings</span>
+            </a></li>
+          </ul>
+
+          <!-- New Coordinator Nav Links -->
+          <ul class="nav-links" id="new-coordinator-nav" style="display: none;">
+            <li><a class="nav-link active" data-tab="new-coord-onboarding">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="17" y1="11" x2="23" y2="11"></line></svg>
+              <span>Onboarding Portal</span>
+            </a></li>
+          </ul>
+        </nav>
+      </div>
+
+      <!-- Logged-in profile badge -->
+      <div class="user-profile-badge">
+        <div class="user-avatar" id="current-user-avatar">?</div>
+        <div class="user-info">
+          <span class="user-name" id="current-user-name">Guest User</span>
+          <span class="user-role" id="current-user-role">Role</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace Content -->
+    <main class="main-content">
+      <!-- Top header bar -->
+      <div class="top-bar">
+        <div class="page-title">
+          <h1 id="view-title">Dashboard</h1>
+          <p id="view-subtitle">Welcome back to your dashboard!</p>
+        </div>
+        <div class="top-actions">
+          <!-- Toggle platform language indicator -->
+          <div class="translation-bar" id="ui-lang-selector-container">
+            <span style="font-size: 0.8rem; font-weight: 500;">Interface:</span>
+            <select id="ui-lang-selector" class="form-control btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+              <option value="en">English (EN)</option>
+              <option value="de">Deutsch (DE)</option>
+            </select>
+          </div>
+          <button class="btn btn-secondary" id="theme-toggle-btn">🌙 Dark Mode</button>
+        </div>
+      </div>
+
+      <!-- VIEW PANELS (Toggled by JS) -->
+
+      <!-- ================== STUDENT VIEW PANELS ================== -->
+      
+      <!-- Student Dashboard Tab -->
+      <section class="tab-view-panel" id="view-stud-dashboard">
+        <div class="news-grid">
+          <!-- Main Welcome Card -->
+          <div class="panel" style="grid-column: span 2;">
+            <div class="panel-header">
+              <h2 class="panel-title">👋 <span data-localize="dashboard">Welcome back!</span></h2>
+              <span class="badge badge-info" id="student-match-badge">Matching Status</span>
+            </div>
+            <div id="student-welcome-details">
+              <!-- Filled by JS -->
+            </div>
+          </div>
+
+          <!-- News Feed Card -->
+          <div class="panel news-card" id="student-news-feed-panel" style="grid-column: span 2;">
+            <div class="panel-header">
+              <h2 class="panel-title">📰 <span data-localize="news_feed">School News</span></h2>
+            </div>
+            <div id="student-news-feed" style="display: flex; flex-direction: column; gap: 1rem;">
+              <!-- News listings -->
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Student Chat / Messaging Tab -->
+      <section class="tab-view-panel" id="view-stud-chat" style="display: none;">
+        <div class="panel chat-layout">
+          <!-- Chat sidebar -->
+          <div class="chat-sidebar">
+            <div class="chat-sidebar-header">
+              <span data-localize="my_penpals">My Pen Pals</span>
+            </div>
+            <div class="chat-list" id="student-chat-list">
+              <!-- Chat list populated by JS -->
+            </div>
+          </div>
+
+          <!-- Chat body -->
+          <div class="chat-main" id="student-chat-body">
+            <!-- Empty state -->
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-secondary); text-align: center; padding: 2rem;" id="chat-empty-state">
+              <span style="font-size: 3rem;">✉️</span>
+              <h3 style="margin-top: 1rem;">No Conversation Selected</h3>
+              <p style="font-size: 0.85rem;">Select a pen pal from the list to start chatting.</p>
+            </div>
+
+            <!-- Active chat feed -->
+            <div id="chat-active-state" style="display: none; flex-direction: column; height: 100%;">
+              <!-- Chat Header -->
+              <div class="chat-header">
+                <div class="chat-partner-info">
+                  <div class="user-avatar" id="chat-partner-avatar" style="cursor: pointer;" onclick="app.openPartnerStudentDetail()" title="Click to view partner profile">?</div>
+                  <div>
+                    <h4 id="chat-partner-name" class="clickable-partner-link" style="cursor: pointer; text-decoration: underline;" onclick="app.openPartnerStudentDetail()" title="Click to view partner profile">Partner Name</h4>
+                    <span class="user-role clickable-school-link" id="chat-partner-school" onclick="app.openPartnerSchoolDetail()" title="Click to view partner school profile">School, Country</span>
+                  </div>
+                </div>
+                <div>
+                  <button class="btn btn-danger btn-small" id="student-report-btn">🚨 <span data-localize="report_concern">Report Concern</span></button>
+                </div>
+              </div>
+
+              <!-- Chat Safeguarding Alert Banner (Toggled by JS) -->
+              <div class="chat-warning-bar" id="chat-safety-banner" style="display: none;">
+                <span>⚠️</span>
+                <span id="chat-safety-message" data-localize="flagged_warning">This conversation is suspended.</span>
+              </div>
+
+              <!-- Message Feed -->
+              <div class="chat-feed" id="chat-message-feed">
+                <!-- Messages bubbles -->
+              </div>
+
+              <!-- Chat Input compose area -->
+              <div class="chat-input-area" id="chat-compose-area">
+                <div class="chat-input-row">
+                  <textarea class="chat-input" id="chat-textarea" placeholder="Type your message here..."></textarea>
+                  <button class="btn btn-primary" id="chat-send-btn">
+                    <span data-localize="send">Send</span>
+                  </button>
+                </div>
+                <div class="chat-input-controls" style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 0.75rem;">
+                  <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                    <div class="translation-bar" style="display: flex; gap: 0.5rem; align-items: center;">
+                      <button class="btn btn-secondary btn-small" id="translate-compose-btn" style="padding: 0.35rem 0.75rem; border: none; background: transparent;">📝 <span data-localize="translate">Draft Translation</span></button>
+                      <span id="compose-translation-preview" style="font-style: italic; color: var(--text-secondary); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+                    </div>
+                    <button class="btn btn-secondary btn-small" id="toggle-assistant-btn" onclick="app.toggleLanguageAssistant()" style="padding: 0.55rem 0.85rem;">💡 <span data-localize="helper">Helper</span></button>
+                  </div>
+                  <span style="font-size: 0.75rem; color: var(--text-muted);">Avoid sharing phone numbers, addresses or social accounts.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Language Help / Prompt Panel (Below messaging feed) -->
+        <div class="panel" style="margin-top: 1.5rem; display: none;" id="student-language-widget-panel">
+          <div class="panel-header" style="margin-bottom: 1rem;">
+            <h3 class="panel-title">💡 <span data-localize="language_help">Language Writing Assistant</span></h3>
+          </div>
+          
+          <div class="tab-nav">
+            <button class="tab-btn active" data-help-tab="help-starters" data-localize="sentence_starters">Sentence Starters</button>
+            <button class="tab-btn" data-help-tab="help-vocab" data-localize="vocab_builder">Vocabulary Helper</button>
+            <button class="tab-btn" data-help-tab="help-prompts" data-localize="writing_prompts">Writing Prompts</button>
+          </div>
+
+          <!-- Sentence starters subtab -->
+          <div class="help-subtab" id="help-starters">
+            <div class="starters-list" id="starters-container">
+              <!-- Loaded dynamically -->
+            </div>
+          </div>
+
+          <!-- Vocab builder subtab -->
+          <div class="help-subtab" id="help-vocab" style="display: none;">
+            <div class="vocab-list" id="vocab-container">
+              <!-- Loaded dynamically -->
+            </div>
+          </div>
+
+          <!-- Writing Prompts subtab -->
+          <div class="help-subtab" id="help-prompts" style="display: none;">
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;" id="prompts-container">
+              <!-- Loaded dynamically -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Student Culture Corner (Submit Article) Tab -->
+      <section class="tab-view-panel" id="view-stud-culture" style="display: none;">
+        <!-- Articles List Sub-view -->
+        <div class="panel" id="articles-list-view">
+          <div class="panel-header">
+            <h2 class="panel-title">✍️ <span data-localize="stud_culture">My Submitted Articles</span></h2>
+            <button class="btn btn-primary" onclick="app.showArticleForm(true)">+ Write New Article</button>
+          </div>
+          <div id="student-page-articles-list" style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
+            <!-- Rendered dynamically by JS -->
+          </div>
+        </div>
+
+        <!-- Article Submission Form Sub-view (Hidden by default) -->
+        <div class="panel" id="articles-form-view" style="display: none;">
+          <div class="panel-header">
+            <h2 class="panel-title">✍️ <span data-localize="submit_article">Write a Cultural Article</span></h2>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">Share your school life, traditions, food, or hobbies! Your teacher will review it before publishing.</p>
+          </div>
+          
+          <form id="article-submission-form">
+            <div class="form-group">
+              <label for="art-title">Article Title</label>
+              <input type="text" id="art-title" class="form-control" placeholder="e.g. Afternoon Tea, My School Schedule, Local Festivals..." required>
+            </div>
+            <div class="form-group">
+              <label for="art-lang">Language Written In</label>
+              <select id="art-lang" class="form-control">
+                <option value="en">English (EN)</option>
+                <option value="de">German (DE)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="art-photo-input">Article Photograph</label>
+              <input type="file" id="art-photo-input" class="form-control" accept="image/*" style="padding: 0.4rem 0.75rem;">
+              <div class="photo-preview-container" style="margin-top: 0.75rem; display: flex; align-items: center; justify-content: center; height: 140px; border: 1px dashed var(--panel-border); border-radius: 12px; overflow: hidden; background: rgba(0,0,0,0.15);">
+                <img id="article-photo-preview" src="" alt="Article Photo Preview" style="height: 100%; width: 100%; object-fit: cover; display: none;">
+                <span id="article-photo-placeholder" style="font-size: 0.8rem; color: var(--text-muted);">No photograph uploaded</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="art-content">Article Content (Write at least 2-3 sentences)</label>
+              <textarea id="art-content" class="form-control" style="height: 180px; resize: vertical;" placeholder="Write about your topic, share what makes it special in your culture..." required></textarea>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+              <button type="button" class="btn btn-secondary" onclick="app.showArticleForm(false)">Cancel</button>
+              <button type="submit" class="btn btn-primary">Submit for Review</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- Student Settings Tab -->
+      <section class="tab-view-panel" id="view-stud-settings" style="display: none;">
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">⚙️ <span data-localize="account_settings">Account Preferences</span></h2>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+            <div class="form-group">
+              <label>Profile Picture Name Tag</label>
+              <input type="text" class="form-control" id="stud-setting-name" disabled>
+            </div>
+            <div class="form-group">
+              <label>Registered School</label>
+              <input type="text" class="form-control" id="stud-setting-school" disabled>
+            </div>
+            <div class="form-group">
+              <label>Email Address</label>
+              <input type="text" class="form-control" id="stud-setting-email" disabled>
+            </div>
+            <div class="form-group">
+              <label for="stud-setting-biog">Personal Biography</label>
+              <textarea class="form-control" id="stud-setting-biog" style="height: 100px; resize: vertical;" placeholder="Tell your pen pal about yourself (e.g. hobbies, favorite music, sports)..."></textarea>
+              <div id="stud-biog-status-banner" style="margin-top: 0.5rem; font-size: 0.8rem; font-weight: 500;"></div>
+            </div>
+            <div style="display: flex; justify-content: flex-end; margin-top: -0.5rem; margin-bottom: 0.5rem;">
+              <button class="btn btn-primary" onclick="app.saveStudentBiography()">Save Biography</button>
+            </div>
+            <hr style="border-top: 1px solid var(--panel-border);">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <h4 style="font-size: 0.95rem;">Safeguarding Agreement</h4>
+                <p style="font-size: 0.8rem; color: var(--text-secondary);">By using this platform, you agree to treat your partner with respect and follow all safety policies.</p>
+              </div>
+              <span class="badge badge-success">Agreed</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ================== TEACHER / STAFF PORTAL PANELS ================== -->
+
+      <!-- Teacher Dashboard Tab -->
+      <section class="tab-view-panel" id="view-teach-dashboard" style="display: none;">
+        <!-- Statistics grids -->
+        <div class="grid-stats">
+          <div class="panel stat-card" onclick="app.switchTab('teach-students')" style="cursor: pointer;">
+            <div class="stat-icon" style="background: rgba(59, 130, 246, 0.15); color: var(--primary);">👥</div>
+            <div>
+              <div class="stat-value" id="stat-total-students">0</div>
+              <div class="stat-label">Total Students</div>
+            </div>
+          </div>
+          <div class="panel stat-card" onclick="app.switchTab('teach-matching')" style="cursor: pointer;">
+            <div class="stat-icon" style="background: rgba(245, 158, 11, 0.15); color: var(--warning);">⚡</div>
+            <div>
+              <div class="stat-value" id="stat-unmatched-students">0</div>
+              <div class="stat-label">Unmatched Students</div>
+            </div>
+          </div>
+          <div class="panel stat-card alert-pulse" id="stat-flagged-card" onclick="app.switchTab('teach-safeguarding')" style="cursor: pointer;">
+            <div class="stat-icon" style="background: rgba(239, 68, 68, 0.15); color: var(--danger);">🚨</div>
+            <div>
+              <div class="stat-value" id="stat-flagged-concerns">0</div>
+              <div class="stat-label">Flagged Issues</div>
+            </div>
+          </div>
+          <div class="panel stat-card" onclick="app.switchTab('teach-editor')" style="cursor: pointer;">
+            <div class="stat-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--success);">✍️</div>
+            <div>
+              <div class="stat-value" id="stat-pending-articles">0</div>
+              <div class="stat-label">Pending Reviews</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Teacher's School Profile Spotlight & Partner Links -->
+        <div class="panel" style="margin-top: 1.5rem;" id="teacher-school-spotlight-panel">
+          <div class="panel-header" style="margin-bottom: 1rem;">
+            <h2 class="panel-title">🏫 My School Overview & Partner Links</h2>
+            <button class="btn btn-secondary btn-small" onclick="app.switchTab('teach-settings')">Edit Profile</button>
+          </div>
+          <div id="teacher-school-spotlight-content" class="teacher-spotlight-grid" style="display: grid; grid-template-columns: 320px 1fr; gap: 2rem;">
+            <!-- Populated dynamically by JS -->
+          </div>
+        </div>
+
+        <div class="news-grid" style="margin-top: 1.5rem;">
+          <!-- Active alert monitor / Safeguarding feed -->
+          <div class="panel news-card">
+            <div class="panel-header">
+              <h2 class="panel-title">🚨 Immediate Safeguarding Concerns</h2>
+              <button class="btn btn-secondary btn-small" onclick="app.switchTab('teach-safeguarding')">View Hub</button>
+            </div>
+            <div id="teacher-safeguarding-teaser" style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <!-- Pending article approvals teaser -->
+          <div class="panel news-card">
+            <div class="panel-header">
+              <h2 class="panel-title">📖 Articles Awaiting Editorial Approval</h2>
+              <button class="btn btn-secondary btn-small" onclick="app.switchTab('teach-editor')">View desk</button>
+            </div>
+            <div id="teacher-articles-teaser" style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Teacher Roster / Student management Tab -->
+      <section class="tab-view-panel" id="view-teach-students" style="display: none;">
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">👥 Student List</h2>
+            <div style="display: flex; gap: 0.75rem;">
+              <button class="btn btn-secondary btn-small" id="bulk-upload-btn">📥 Bulk Upload</button>
+              <button class="btn btn-primary btn-small" id="invite-student-btn">+ Add Student</button>
+            </div>
+          </div>
+          
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Student Name</th>
+                  <th>Age / Gender</th>
+                  <th>Class / School</th>
+                  <th>Match Status</th>
+                  <th>Engagement</th>
+                  <th>Account Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="student-roster-tbody">
+                <!-- Dynamic student list rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Teacher Matching Screen Tab -->
+      <section class="tab-view-panel" id="view-teach-matching" style="display: none;">
+        <!-- Matching Tool Subtabs Navigation -->
+        <div class="subtabs-nav">
+          <button class="subtab-btn active" id="subtab-pair-btn" onclick="app.switchMatchingSubtab('pair')">
+            Pair Students
+          </button>
+          <button class="subtab-btn" id="subtab-requests-btn" onclick="app.switchMatchingSubtab('requests')">
+            Match Requests
+            <span class="badge badge-danger" id="matching-requests-badge" style="display: none; padding: 0.1rem 0.35rem; font-size: 0.65rem; border-radius: 10px;">0</span>
+          </button>
+        </div>
+
+        <!-- Subtab 1: Pair Students (Side-by-side Selectors) -->
+        <div id="matching-subtab-pair">
+          <div class="panel" style="margin-bottom: 1.5rem;">
+            <div class="panel-header">
+              <h2 class="panel-title">🤝 Pen Pal Matching Center</h2>
+              <button class="btn btn-primary" id="propose-match-btn" disabled>Propose Selected Student</button>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">Select one unmatched student from your school on the left, then select the target partner school from the dropdown on the right to send a matching suggestion. To protect student privacy under GDPR, all requests are sent anonymously (showing only age, gender, and biography details).</p>
+          </div>
+
+          <div class="matching-container">
+            <!-- English/UK Students list -->
+            <div class="panel">
+              <div class="panel-header">
+                <h3 class="panel-title">🏫 Leicester High School (UK)</h3>
+              </div>
+              <div class="match-list-col" id="match-col-en">
+                <!-- Loaded dynamically -->
+              </div>
+            </div>
+
+            <!-- Partner School Selection column -->
+            <div class="panel">
+              <div class="panel-header">
+                <h3 class="panel-title">🏫 Target Partner School</h3>
+              </div>
+              <div style="padding: 1.25rem; display: flex; flex-direction: column; gap: 1.25rem;">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label for="partner-school-select" style="font-weight: 600; font-size: 0.85rem; margin-bottom: 0.5rem; display: block;">Select Exchange School</label>
+                  <select id="partner-school-select" class="form-control">
+                    <!-- Populated dynamically by JS -->
+                  </select>
+                </div>
+                <div class="photo-preview-container" id="partner-school-info-card" style="padding: 1.25rem; border: 1px dashed var(--panel-border); border-radius: 12px; background: rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 0.75rem;">
+                  <h4 id="partner-school-name" style="font-size: 0.95rem; font-weight: 700; color: var(--primary);">Goethe-Gymnasium</h4>
+                  <p id="partner-school-meta" style="font-size: 0.75rem; color: var(--text-secondary);">Germany • Munich</p>
+                  <p id="partner-school-desc" style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5; margin: 0;">Select a school above to see its details and unmatched students count.</p>
+                  <div style="border-top: 1px solid var(--panel-border); padding-top: 0.75rem; margin-top: 0.25rem; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.75rem; color: var(--text-secondary);">Unmatched Students Awaiting Match:</span>
+                    <span class="badge badge-info" id="partner-school-unmatched-count" style="font-weight: 700; font-size: 0.75rem; padding: 0.15rem 0.45rem;">0</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subtab 2: Match Requests (Incoming/Sent tables) -->
+        <div id="matching-subtab-requests" style="display: none;">
+          <!-- Proposed Match Requests Review Desk -->
+          <div class="panel">
+            <div class="panel-header">
+              <h3 class="panel-title">📥 Incoming Match Suggestions (Awaiting Your Approval)</h3>
+            </div>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Incoming Student Details (Anonymized)</th>
+                    <th>Assign to Your Student</th>
+                    <th>Date Suggested</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="incoming-proposals-tbody">
+                  <!-- Dynamic incoming suggestions -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel" style="margin-top: 1.5rem;">
+            <div class="panel-header">
+              <h3 class="panel-title">📤 Sent Match Suggestions (Awaiting Partner Approval)</h3>
+            </div>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Your Student</th>
+                    <th>Target School Student Details (Anonymized)</th>
+                    <th>Date Suggested</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="sent-proposals-tbody">
+                  <!-- Dynamic sent suggestions -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Teacher Safeguarding Control Tab -->
+      <section class="tab-view-panel" id="view-teach-safeguarding" style="display: none;">
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">🛡️ Safeguarding Control Dashboard</h2>
+          </div>
+          
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Flagged Date</th>
+                  <th>Conversation Thread</th>
+                  <th>Flag Reason / Flagged Message</th>
+                  <th>Status</th>
+                  <th>Reviewer Action</th>
+                </tr>
+              </thead>
+              <tbody id="safeguarding-alerts-tbody">
+                <!-- Loaded dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Teacher Editorial review Tab -->
+      <section class="tab-view-panel" id="view-teach-editor" style="display: none;">
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">✍️ Student Publications Desk</h2>
+          </div>
+          
+          <div style="display: flex; flex-direction: column; gap: 1.5rem;" id="editorial-desk-list">
+            <!-- Loaded dynamically -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Teacher Settings Tab -->
+      <section class="tab-view-panel" id="view-teach-settings" style="display: none;">
+        <!-- School Profile Editor Card -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">🏫 School Profile Editor</h2>
+          </div>
+          <form id="school-profile-form">
+            <div class="form-group">
+              <label for="school-desc-input">School Biography & Description</label>
+              <textarea class="form-control" id="school-desc-input" style="height: 120px; resize: vertical;" placeholder="Tell exchange partners and students about your school..." required></textarea>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+              <div class="form-group">
+                <label for="school-logo-select">School Logo (Crest)</label>
+                <select class="form-control" id="school-logo-select">
+                  <!-- Populated dynamically by JS -->
+                </select>
+                <div class="logo-preview-container" style="margin-top: 0.75rem; display: flex; align-items: center; justify-content: center; height: 120px; border: 1px dashed var(--panel-border); border-radius: 12px; overflow: hidden; background: rgba(0,0,0,0.15);">
+                  <img id="school-logo-preview" src="" alt="Logo Preview" style="max-height: 100px; max-width: 90%; object-fit: contain;">
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="school-photo-select">Campus Photograph</label>
+                <select class="form-control" id="school-photo-select">
+                  <!-- Populated dynamically by JS -->
+                </select>
+                <div class="photo-preview-container" style="margin-top: 0.75rem; display: flex; align-items: center; justify-content: center; height: 120px; border: 1px dashed var(--panel-border); border-radius: 12px; overflow: hidden; background: rgba(0,0,0,0.15);">
+                  <img id="school-photo-preview" src="" alt="Campus Preview" style="height: 100%; width: 100%; object-fit: cover;">
+                </div>
+              </div>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem;">
+              <button type="submit" class="btn btn-primary" id="save-school-profile-btn">Save School Profile</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="panel" style="margin-top: 1.5rem;">
+          <div class="panel-header">
+            <h2 class="panel-title">⚙️ School Preferences & Keywords Control</h2>
+          </div>
+          <div class="form-group">
+            <label for="flagged-words-input">Keyword Flagging Dictionary (Comma separated)</label>
+            <textarea class="form-control" id="flagged-words-input" style="height: 120px;"></textarea>
+            <span style="font-size: 0.75rem; color: var(--text-secondary);">Messages containing these terms will be immediately flagged, paused, and reported to teachers.</span>
+          </div>
+          <div class="form-group" style="display: flex; flex-direction: row; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-top: 1px solid var(--panel-border);">
+            <div>
+              <h4 style="font-size: 0.95rem;">Enable Photo & Document Attachments</h4>
+              <p style="font-size: 0.8rem; color: var(--text-secondary);">Allow students to attach photos and PDF assets directly in messages.</p>
+            </div>
+            <input type="checkbox" id="attachments-toggle" style="width: 20px; height: 20px;">
+          </div>
+          <div style="display: flex; justify-content: flex-end;">
+            <button class="btn btn-primary" id="save-teacher-settings-btn">Save Configuration</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- New Coordinator Onboarding Tab -->
+      <section class="tab-view-panel" id="view-new-coord-onboarding" style="display: none;">
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">👋 Connect Your School to Bridge</h2>
+          </div>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6;">
+            Welcome to the Bridge Onboarding Portal! In order to participate in the international cultural exchange, your school must be registered on the platform.
+          </p>
+
+          <div class="onboarding-grid" style="display: grid; gap: 2rem;">
+            <!-- Register School Form -->
+            <div class="panel" style="background: rgba(255,255,255,0.01); border-color: var(--panel-border);">
+              <h3 style="font-weight: 700; font-size: 1.1rem; margin-bottom: 1rem;">Request New School Registration</h3>
+              <form id="request-school-registration-form">
+                <div class="form-group">
+                  <label for="req-school-name">School Name</label>
+                  <input type="text" id="req-school-name" class="form-control" placeholder="e.g. Oakridge Academy" required>
+                </div>
+                <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                  <div>
+                    <label for="req-school-country">Country</label>
+                    <input type="text" id="req-school-country" class="form-control" placeholder="e.g. United Kingdom" required>
+                  </div>
+                  <div>
+                    <label for="req-school-city">City</label>
+                    <input type="text" id="req-school-city" class="form-control" placeholder="e.g. London" required>
+                  </div>
+                </div>
+                <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                  <div>
+                    <label for="req-school-lang">Primary Language</label>
+                    <select id="req-school-lang" class="form-control">
+                      <option value="en">English (EN)</option>
+                      <option value="de">German (DE)</option>
+                      <option value="fr">French (FR)</option>
+                      <option value="es">Spanish (ES)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="req-school-code">Desired Code ID</label>
+                    <input type="text" id="req-school-code" class="form-control" placeholder="e.g. OAK-UK" required>
+                  </div>
+                </div>
+                
+                <h4 style="font-size: 0.9rem; font-weight: 700; color: var(--text-secondary); margin-top: 1.25rem; margin-bottom: 0.5rem; border-top: 1px solid var(--panel-border); padding-top: 1rem;">
+                  Coordinator Account Info
+                </h4>
+                <div class="form-group">
+                  <label for="req-coord-name">Your Full Name</label>
+                  <input type="text" id="req-coord-name" class="form-control" placeholder="e.g. Mr. David Green" required>
+                </div>
+                <div class="form-group">
+                  <label for="req-coord-email">Your Email Address</label>
+                  <input type="email" id="req-coord-email" class="form-control" placeholder="e.g. david@oakridge.edu" required>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem;">
+                  <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Registration Request</button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Onboarding Info/Checklist -->
+            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+              <div class="panel" style="background: rgba(59, 130, 246, 0.03); border-color: rgba(59, 130, 246, 0.15);">
+                <h4 style="font-weight: 700; font-size: 0.95rem; color: var(--primary); margin-bottom: 0.5rem;">📋 What Happens Next?</h4>
+                <ol style="font-size: 0.8rem; line-height: 1.6; color: var(--text-secondary); padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                  <li><strong>Submit Request:</strong> Fill out the form to request a new school registration.</li>
+                  <li><strong>Admin Review:</strong> A Platform Administrator will review your school information and verify your credentials.</li>
+                  <li><strong>Setup Admin Account:</strong> Upon approval, your school profile is created, and your coordinator account is granted **School Admin** rights.</li>
+                  <li><strong>Invite Students:</strong> You can then log in, manage settings, and invite your students.</li>
+                </ol>
+              </div>
+
+              <div class="panel" style="background: rgba(255,255,255,0.01); border-color: var(--panel-border);">
+                <h4 style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem;">🏫 Approved Schools Directory</h4>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">If your school has already been approved, ask your Lead Administrator to create an invitation link for you, or contact system support.</p>
+                
+                <!-- Search Input -->
+                <div style="position: relative; margin-bottom: 0.75rem;">
+                  <input type="text" id="onboarding-school-search" class="form-control" style="font-size: 0.8rem; padding: 0.45rem 2rem 0.45rem 0.75rem;" placeholder="Search by school or coordinator...">
+                  <span style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); font-size: 0.8rem; color: var(--text-muted); pointer-events: none;">🔍</span>
+                </div>
+
+                <div id="onboarding-schools-list" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 180px; overflow-y: auto; padding-right: 0.5rem;">
+                  <!-- Populated by JS -->
+                </div>
+
+                <!-- Expand Directory Link -->
+                <div style="margin-top: 0.75rem; text-align: center;">
+                  <a href="#" id="onboarding-schools-expand-btn" style="font-size: 0.75rem; text-decoration: underline; color: var(--secondary); display: none;">Show All Schools</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================== ADMIN VIEW PANELS ================== -->
+
+      <!-- Admin Platform Control Tab -->
+      <section class="tab-view-panel" id="view-admin-dashboard" style="display: none;">
+        <div class="grid-stats">
+          <div class="panel stat-card" onclick="app.switchTab('admin-schools')" style="cursor: pointer;">
+            <div class="stat-icon" style="background: rgba(99, 102, 241, 0.15); color: var(--accent);">🏫</div>
+            <div>
+              <div class="stat-value" id="admin-stat-schools">3</div>
+              <div class="stat-label">Total Schools</div>
+            </div>
+          </div>
+          <div class="panel stat-card" onclick="app.switchTab('admin-schools')" style="cursor: pointer;">
+            <div class="stat-icon" style="background: rgba(6, 182, 212, 0.15); color: var(--secondary);">🌍</div>
+            <div>
+              <div class="stat-value" id="admin-stat-countries">2</div>
+              <div class="stat-label">Active Countries</div>
+            </div>
+          </div>
+          <div class="panel stat-card" onclick="document.getElementById('admin-audit-trail-panel').scrollIntoView({ behavior: 'smooth' })" style="cursor: pointer;">
+            <div class="stat-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--success);">📃</div>
+            <div>
+              <div class="stat-value" id="admin-stat-audits">3</div>
+              <div class="stat-label">System Audits</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Incoming School Registration Requests -->
+        <div class="panel" style="margin-top: 1.5rem;">
+          <div class="panel-header">
+            <h2 class="panel-title">📥 School Registration Requests</h2>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Requested Date</th>
+                  <th>School Name (Code)</th>
+                  <th>Location</th>
+                  <th>Language</th>
+                  <th>Coordinator Detail</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-requests-tbody">
+                <!-- Dynamically populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Global Safeguarding Alerts -->
+        <div class="panel" style="margin-top: 1.5rem; border-color: rgba(239, 68, 68, 0.25); background: rgba(239, 68, 68, 0.01);">
+          <div class="panel-header">
+            <h2 class="panel-title" style="color: var(--danger);">🛡️ Global Safeguarding Monitoring Hub</h2>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Flagged Date</th>
+                  <th>Sender's School</th>
+                  <th>Report Details / Reason</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-safeguarding-tbody">
+                <!-- Dynamically populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel" id="admin-audit-trail-panel" style="margin-top: 1.5rem;">
+          <div class="panel-header">
+            <h2 class="panel-title">📃 Global System Audit Trail</h2>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Action Event</th>
+                  <th>Details Log</th>
+                  <th>Authorized User</th>
+                </tr>
+              </thead>
+              <tbody id="admin-audit-tbody">
+                <!-- Loaded dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Admin Schools Directory Tab -->
+      <section class="tab-view-panel" id="view-admin-schools" style="display: none;">
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">🏫 Registered Partner Schools</h2>
+            <button class="btn btn-primary btn-small" id="admin-add-school-btn">+ Add Partner School</button>
+          </div>
+          
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>School Code</th>
+                  <th>School Name</th>
+                  <th>Country</th>
+                  <th>City</th>
+                  <th>Primary Language</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="admin-schools-tbody">
+                <!-- Loaded dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Admin Settings Tab -->
+      <section class="tab-view-panel" id="view-admin-settings" style="display: none;">
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">⚙️ Global Platform Settings</h2>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+            <div class="form-group">
+              <label>System Expansion Countries Allowed</label>
+              <input type="text" class="form-control" value="United Kingdom, Germany, France, Spain, Italy" disabled>
+            </div>
+            <div class="form-group">
+              <label>Active Localizations</label>
+              <div style="display: flex; gap: 1.5rem; margin-top: 0.5rem;">
+                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                  <input type="checkbox" checked disabled> English (EN)
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                  <input type="checkbox" checked disabled> Deutsch (DE)
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                  <input type="checkbox" checked> Français (FR) (Preview)
+                </label>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Data Protection & GDPR Policy compliance</label>
+              <span class="badge badge-success">Active & Compliant</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- FLOATING DEVELOPER ROLE-SWITCH PANEL -->
+  <div class="dev-console" id="dev-panel">
+    <div class="dev-console-header">
+      <span>🛠️ Dev Control Panel</span>
+      <button class="dev-console-toggle" id="dev-toggle-collapse">Collapse ▲</button>
+    </div>
+    <div class="dev-console-body" id="dev-panel-body">
+      <span style="font-size: 0.65rem; color: var(--text-muted);">Switch roles instantly to test different portal layouts:</span>
+      
+      <!-- Student selectors -->
+      <button class="dev-role-btn active" data-dev-role="student" data-dev-id="stud_1">
+        <span>Harriet P. (Leicester Student)</span>
+        <span class="badge badge-info">EN</span>
+      </button>
+      <button class="dev-role-btn" data-dev-role="student" data-dev-id="stud_7">
+        <span>Lukas S. (DE Student)</span>
+        <span class="badge badge-info">DE</span>
+      </button>
+      
+      <!-- Teacher / Coordinator -->
+      <button class="dev-role-btn" data-dev-role="teacher">
+        <span>Mrs. Smith (Teacher)</span>
+        <span class="badge badge-warning">Staff</span>
+      </button>
+
+      <!-- Unregistered Teacher -->
+      <button class="dev-role-btn" data-dev-role="new-coordinator">
+        <span>New Coordinator (No School)</span>
+        <span class="badge badge-warning">New</span>
+      </button>
+      
+      <!-- Platform Admin -->
+      <button class="dev-role-btn" data-dev-role="admin">
+        <span>System Admin</span>
+        <span class="badge badge-danger">Admin</span>
+      </button>
+      
+      <!-- System reset database button -->
+      <div class="dev-actions">
+        <button class="btn btn-secondary btn-small" id="dev-reset-db-btn" style="grid-column: span 2; font-size: 0.7rem; padding: 0.35rem 0;">Reset Local DB</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALS OVERLAYS -->
+
+  <!-- Report a Concern Modal -->
+  <div class="modal-overlay" id="report-concern-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="panel-title">🚨 Report a Safety Concern</h3>
+        <button class="modal-close" onclick="app.closeModal('report-concern-modal')">&times;</button>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+        If you feel uncomfortable, or if your pen pal sent something concerning, report it below. Your teacher will review the chat history immediately and the conversation will be paused for safety.
+      </p>
+      <form id="report-concern-form">
+        <div class="form-group">
+          <label for="report-reason">Select a Reason</label>
+          <select id="report-reason" class="form-control">
+            <option value="Personal Details Request">They asked for my address/phone number/social media</option>
+            <option value="Inappropriate Language">Inappropriate or rude words</option>
+            <option value="Meeting Up Request">They suggested meeting up in person</option>
+            <option value="Other">Other concern</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="report-details">Provide more details (Optional)</label>
+          <textarea id="report-details" class="form-control" style="height: 100px; resize: vertical;" placeholder="Help teachers understand what happened..."></textarea>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button type="button" class="btn btn-secondary" onclick="app.closeModal('report-concern-modal')">Cancel</button>
+          <button type="submit" class="btn btn-danger">Submit Safety Report</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Invitation & Account Link Creator Modal -->
+  <div class="modal-overlay" id="invite-student-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="panel-title">Invite New Student</h3>
+        <button class="modal-close" onclick="app.closeModal('invite-student-modal')">&times;</button>
+      </div>
+      <form id="invite-student-form">
+        <div class="form-group">
+          <label for="new-student-name">Full Name</label>
+          <input type="text" id="new-student-name" class="form-control" required placeholder="e.g. Tabitha Brown">
+        </div>
+        <div class="form-group">
+          <label for="new-student-email">Email Address</label>
+          <input type="email" id="new-student-email" class="form-control" required placeholder="e.g. tabitha@leicesterhigh.edu">
+        </div>
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div>
+            <label for="new-student-age">Age</label>
+            <input type="number" id="new-student-age" class="form-control" min="10" max="18" value="14" required>
+          </div>
+          <div>
+            <label for="new-student-gender">Gender</label>
+            <select id="new-student-gender" class="form-control">
+              <option value="Female">Female</option>
+              <option value="Male">Male</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div>
+            <label for="new-student-year">Year Group</label>
+            <input type="text" id="new-student-year" class="form-control" value="Year 9" required>
+          </div>
+          <div>
+            <label for="new-student-school">Assign School</label>
+            <select id="new-student-school" class="form-control">
+              <!-- Schools options populated by JS -->
+            </select>
+          </div>
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+          <button type="button" class="btn btn-secondary" onclick="app.closeModal('invite-student-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Generate Invitation</button>
+        </div>
+      </form>
+
+      <!-- Invitation link generator result area (Initially hidden) -->
+      <div id="invite-result-area" style="display: none; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px dashed var(--panel-border);">
+        <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--success);">✔ Welcome Invitation Generated!</h4>
+        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.75rem;">Copy and send this link to the student to allow onboarding sign-up.</p>
+        <div style="display: flex; gap: 0.5rem;">
+          <input type="text" id="invite-link-input" class="form-control" style="flex-grow: 1; font-size: 0.75rem;" readonly>
+          <button class="btn btn-secondary btn-small" onclick="app.copyInviteLink()">Copy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk upload Modal -->
+  <div class="modal-overlay" id="bulk-upload-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="panel-title">Bulk Student Invite Upload</h3>
+        <button class="modal-close" onclick="app.closeModal('bulk-upload-modal')">&times;</button>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+        Paste a list of student email addresses (comma or line separated) to generate bulk invitations.
+      </p>
+      <form id="bulk-upload-form">
+        <div class="form-group">
+          <label for="bulk-emails">Student Emails</label>
+          <textarea id="bulk-emails" class="form-control" style="height: 120px;" placeholder="alice@school.edu&#10;bob@school.edu&#10;charlie@school.edu" required></textarea>
+        </div>
+        <div class="form-group">
+          <label for="bulk-school">Assign School to List</label>
+          <select id="bulk-school" class="form-control">
+            <!-- Schools populated by JS -->
+          </select>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button type="button" class="btn btn-secondary" onclick="app.closeModal('bulk-upload-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Process Bulk List</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Admin Add School Modal -->
+  <div class="modal-overlay" id="add-school-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="panel-title">Register New School</h3>
+        <button class="modal-close" onclick="app.closeModal('add-school-modal')">&times;</button>
+      </div>
+      <form id="add-school-form">
+        <div class="form-group">
+          <label for="new-school-name">School Name</label>
+          <input type="text" id="new-school-name" class="form-control" required placeholder="e.g. Lycée Saint-Exupéry">
+        </div>
+        <div class="form-group" style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 1rem;">
+          <div>
+            <label for="new-school-country">Country</label>
+            <input type="text" id="new-school-country" class="form-control" required placeholder="e.g. France">
+          </div>
+          <div>
+            <label for="new-school-city">City</label>
+            <input type="text" id="new-school-city" class="form-control" required placeholder="e.g. Lyon">
+          </div>
+        </div>
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 1rem;">
+          <div>
+            <label for="new-school-lang">Primary Lang</label>
+            <select id="new-school-lang" class="form-control">
+              <option value="en">English (EN)</option>
+              <option value="de">German (DE)</option>
+              <option value="fr">French (FR)</option>
+              <option value="es">Spanish (ES)</option>
+            </select>
+          </div>
+          <div>
+            <label for="new-school-code">School Code ID</label>
+            <input type="text" id="new-school-code" class="form-control" required placeholder="e.g. LYC-FR">
+          </div>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+          <button type="button" class="btn btn-secondary" onclick="app.closeModal('add-school-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Register School</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Safeguarding Flag Resolve Detail Modal -->
+  <div class="modal-overlay" id="resolve-flag-modal">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3 class="panel-title">🛡️ Safeguarding Review Desk</h3>
+        <button class="modal-close" onclick="app.closeModal('resolve-flag-modal')">&times;</button>
+      </div>
+      <div id="flag-detail-content">
+        <!-- Loaded dynamically by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- GDPR Assign Student Modal -->
+  <div class="modal-overlay" id="assign-student-modal">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3 class="panel-title">Assign Local Student to Pen Pal Proposal</h3>
+        <button class="modal-close" onclick="app.closeModal('assign-student-modal')">&times;</button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <!-- Anonymized Proposer Info Card -->
+        <div id="assign-proposer-info" style="padding: 1rem; border-radius: 12px; background: rgba(var(--primary-rgb), 0.1); border: 1px solid var(--panel-border);">
+          <!-- Populated dynamically by JS -->
+        </div>
+
+        <!-- Local Students List -->
+        <div>
+          <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.5rem;">Select Student from Your School</h4>
+          <div id="assign-students-list" style="max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; padding-right: 0.5rem;">
+            <!-- Populated dynamically by JS -->
+          </div>
+          <div id="assign-disclaimer-warning" style="display: none; font-size: 0.75rem; color: var(--danger); margin-top: 0.75rem; font-weight: 600;">
+            ⚠️ Note: Selecting this student will disband their existing match/proposal upon match confirmation.
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem;">
+          <button class="btn btn-secondary" onclick="app.closeModal('assign-student-modal')">Cancel</button>
+          <button class="btn btn-primary" id="confirm-assign-btn" disabled>Confirm Assignment</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Student Profile Detail Modal -->
+  <div class="modal-overlay" id="student-profile-modal">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3 class="panel-title">👤 Student Profile</h3>
+        <button class="modal-close" onclick="app.closeModal('student-profile-modal')">&times;</button>
+      </div>
+      <div id="student-profile-content" style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <!-- Loaded dynamically by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Student Article Detail Modal -->
+  <div class="modal-overlay" id="article-detail-modal">
+    <div class="modal-content" style="max-width: 550px;">
+      <div class="modal-header">
+        <h3 class="panel-title">📖 Article Details</h3>
+        <button class="modal-close" onclick="app.closeModal('article-detail-modal')">&times;</button>
+      </div>
+      <div id="article-detail-content" style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <!-- Loaded dynamically by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin School Detail Modal -->
+  <div class="modal-overlay" id="school-detail-modal">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3 class="panel-title">🏫 School Profile & Student Roster</h3>
+        <button class="modal-close" onclick="app.closeModal('school-detail-modal')">&times;</button>
+      </div>
+      <div id="school-detail-content" style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <!-- Loaded dynamically by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Core Scripts -->
+  <script src="database.js"></script>
+  <script src="translation.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

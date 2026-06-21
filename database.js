@@ -1,0 +1,634 @@
+// Database state layer for Pen Pal platform
+const DB_KEY = 'penpal_exchange_db';
+
+const defaultDatabase = {
+  schools: [
+    { 
+      id: 'school_1', 
+      name: 'Leicester High School', 
+      country: 'United Kingdom', 
+      city: 'Leicester', 
+      language: 'en', 
+      code: 'LEI-UK',
+      description: "Leicester High School is an independent girls' school located in Leicester, UK. Established in 1906, we provide a warm, nurturing environment that fosters academic excellence, confidence, and international cooperation. Our students are encouraged to be independent thinkers and global citizens.",
+      photoUrl: "assets/leicester_campus.jpg",
+      logoUrl: "assets/leicester_logo.jpg"
+    },
+    { 
+      id: 'school_2', 
+      name: 'Goethe-Gymnasium', 
+      country: 'Germany', 
+      city: 'Munich', 
+      language: 'de', 
+      code: 'GOE-DE',
+      description: "Goethe-Gymnasium is a mixed, state-supported academic high school (Gymnasium) located in Munich, Germany. We focus on modern languages, science, and international cultural exchanges. We are proud to partner with schools globally to foster bilingual learning and friendships.",
+      photoUrl: "assets/goethe_campus.png",
+      logoUrl: "assets/goethe_logo.png"
+    },
+    { 
+      id: 'school_3', 
+      name: 'Lycée Saint-Exupéry', 
+      country: 'France', 
+      city: 'Lyon', 
+      language: 'fr', 
+      code: 'LYC-FR',
+      description: "Lycée Saint-Exupéry is a historic high school in Lyon, France. We specialize in international studies, literature, and art history.",
+      photoUrl: "",
+      logoUrl: ""
+    }
+  ],
+  students: [
+    // UK Students (All female for Leicester High School)
+    { id: 'stud_1', name: 'Harriet Potter', email: 'harriet@leicesterhigh.edu', age: 14, gender: 'Female', yearGroup: 'Year 9', schoolId: 'school_1', language: 'en', active: true, matchStatus: 'matched', activityLevel: 'High', invitationStatus: 'Active', personalBiog: "Hi! I'm Harriet. I love drawing, playing tennis, and learning languages. I live in Leicester with my family.", pendingBiog: "", personalBiogStatus: "Approved" },
+    { id: 'stud_2', name: 'Emily Watson', email: 'emily@leicesterhigh.edu', age: 13, gender: 'Female', yearGroup: 'Year 8', schoolId: 'school_1', language: 'en', active: true, matchStatus: 'matched', activityLevel: 'Medium', invitationStatus: 'Active', personalBiog: "", pendingBiog: "I love baking chocolate chip cookies and reading mystery novels.", personalBiogStatus: "Pending" },
+    { id: 'stud_3', name: 'Jessica Smith', email: 'jessica@leicesterhigh.edu', age: 14, gender: 'Female', yearGroup: 'Year 9', schoolId: 'school_1', language: 'en', active: true, matchStatus: 'matched', activityLevel: 'Medium', invitationStatus: 'Active', personalBiog: "", pendingBiog: "", personalBiogStatus: "None" },
+    { id: 'stud_4', name: 'Chloe Jones', email: 'chloe@leicesterhigh.edu', age: 13, gender: 'Female', yearGroup: 'Year 8', schoolId: 'school_1', language: 'en', active: true, matchStatus: 'matched', activityLevel: 'Low', invitationStatus: 'Active', personalBiog: "", pendingBiog: "", personalBiogStatus: "None" },
+    { id: 'stud_5', name: 'Tabitha Brown', email: 'tabitha@leicesterhigh.edu', age: 14, gender: 'Female', yearGroup: 'Year 9', schoolId: 'school_1', language: 'en', active: false, matchStatus: 'unmatched', activityLevel: 'None', invitationStatus: 'Invited', personalBiog: "", pendingBiog: "", personalBiogStatus: "None" },
+    { id: 'stud_6', name: 'Sophia Taylor', email: 'sophia@leicesterhigh.edu', age: 15, gender: 'Female', yearGroup: 'Year 10', schoolId: 'school_1', language: 'en', active: false, matchStatus: 'unmatched', activityLevel: 'None', invitationStatus: 'Invited', personalBiog: "", pendingBiog: "", personalBiogStatus: "None" },
+
+    // German Students (Mixed school)
+    { id: 'stud_7', name: 'Lukas Schmidt', email: 'lukas@goethe.edu', age: 14, gender: 'Male', yearGroup: 'Klasse 9', schoolId: 'school_2', language: 'de', active: true, matchStatus: 'matched', activityLevel: 'High', invitationStatus: 'Active', personalBiog: "Hallo! Ich bin Lukas. Ich spiele gerne Fußball und zocke Minecraft. Ich freue mich auf den Austausch!", pendingBiog: "", personalBiogStatus: "Approved" },
+    { id: 'stud_8', name: 'Hanna Müller', email: 'hanna@goethe.edu', age: 13, gender: 'Female', yearGroup: 'Klasse 8', schoolId: 'school_2', language: 'de', active: true, matchStatus: 'matched', activityLevel: 'High', invitationStatus: 'Active', personalBiog: "", pendingBiog: "", personalBiogStatus: "None" },
+    { id: 'stud_9', name: 'Jonas Wagner', email: 'jonas@goethe.edu', age: 14, gender: 'Male', yearGroup: 'Klasse 9', schoolId: 'school_2', language: 'de', active: true, matchStatus: 'matched', activityLevel: 'Medium', invitationStatus: 'Active', personalBiog: "", pendingBiog: "", personalBiogStatus: "None" },
+    { id: 'stud_10', name: 'Mia Fischer', email: 'mia@goethe.edu', age: 13, gender: 'Female', yearGroup: 'Klasse 8', schoolId: 'school_2', language: 'de', active: true, matchStatus: 'matched', activityLevel: 'Low', invitationStatus: 'Active', personalBiog: "", pendingBiog: "", personalBiogStatus: "None" },
+    { id: 'stud_11', name: 'Sophie Weber', email: 'sophie@goethe.edu', age: 13, gender: 'Female', yearGroup: 'Klasse 8', schoolId: 'school_2', language: 'de', active: false, matchStatus: 'unmatched', activityLevel: 'None', invitationStatus: 'Invited', personalBiog: "", pendingBiog: "", personalBiogStatus: "None" },
+    { id: 'stud_12', name: 'Leon Becker', email: 'leon@goethe.edu', age: 15, gender: 'Male', yearGroup: 'Klasse 10', schoolId: 'school_2', language: 'de', active: false, matchStatus: 'proposed', activityLevel: 'None', invitationStatus: 'Invited', personalBiog: "", pendingBiog: "", personalBiogStatus: "None" }
+  ],
+  matches: [
+    { id: 'match_1', type: '1-to-1', studentIds: ['stud_1', 'stud_7'], active: true, status: 'Active', createdAt: '2026-05-10T10:00:00Z', paused: false },
+    { id: 'match_2', type: '1-to-1', studentIds: ['stud_2', 'stud_8'], active: true, status: 'Active', createdAt: '2026-05-12T11:30:00Z', paused: false },
+    { id: 'match_3', type: '1-to-1', studentIds: ['stud_3', 'stud_9'], active: true, status: 'Active', createdAt: '2026-05-15T09:15:00Z', paused: false },
+    { id: 'match_4', type: '1-to-1', studentIds: ['stud_4', 'stud_10'], active: true, status: 'Active', createdAt: '2026-05-16T14:20:00Z', paused: false },
+    { id: 'match_5', type: '1-to-1', studentIds: [null, 'stud_12'], active: false, status: 'Proposed', proposedBySchoolId: 'school_2', pendingApprovalFromSchoolId: 'school_1', createdAt: '2026-06-20T10:00:00Z', paused: false }
+  ],
+  messages: [
+    // Harriet and Lukas
+    { id: 'msg_1', matchId: 'match_1', senderId: 'stud_1', text: "Hello Lukas! I am Harriet from Leicester. I'm excited to be your pen pal. Do you like football?", translation: "Hallo Lukas! Ich bin Harriet aus Leicester. Ich freue mich, deine Brieffreundin zu sein. Magst du Fußball?", timestamp: '2026-05-10T14:30:00Z', read: true, flagged: false },
+    { id: 'msg_2', matchId: 'match_1', senderId: 'stud_7', text: "Hallo Harriet! Yes, I love football. I support Bayern Munich. What about you?", translation: "Hallo Harriet! Ja, ich liebe Fußball. Ich unterstütze Bayern München. Und du?", timestamp: '2026-05-11T09:12:00Z', read: true, flagged: false },
+    { id: 'msg_3', matchId: 'match_1', senderId: 'stud_1', text: "Nice! I support Leicester City FC. We should chat about the matches. I also enjoy playing video games.", translation: "Schön! Ich unterstütze Leicester City FC. Wir sollten uns über die Spiele unterhalten. Ich spiele auch gerne Videospiele.", timestamp: '2026-05-12T16:45:00Z', read: true, flagged: false },
+    { id: 'msg_4', matchId: 'match_1', senderId: 'stud_7', text: "I play Minecraft and FIFA. Do you have a favorite school subject?", translation: "Ich play Minecraft und FIFA. Hast du ein Lieblingsfach in der Schule?", timestamp: '2026-05-13T10:05:00Z', read: false, flagged: false },
+
+    // Emily and Hanna
+    { id: 'msg_5', matchId: 'match_2', senderId: 'stud_2', text: "Hi Hanna! How is the weather in Munich? Here in Leicester it is raining again!", translation: "Hallo Hanna! Wie ist das Wetter in München? Hier in Leicester regnet es schon wieder!", timestamp: '2026-05-12T12:00:00Z', read: true, flagged: false },
+    { id: 'msg_6', matchId: 'match_2', senderId: 'stud_8', text: "Hallo Emily! Here it is sunny today. We are going to the park. What do you do in your free time?", translation: "Hallo Emily! Hier ist es heute sonnig. Wir gehen in den Park. Was machst du in deiner Freizeit?", timestamp: '2026-05-13T15:20:00Z', read: true, flagged: false },
+
+    // Jessica and Jonas - with a flagged message
+    { id: 'msg_7', matchId: 'match_3', senderId: 'stud_3', text: "Hey Jonas, what are you doing this weekend?", translation: "Hey Jonas, was makst du dieses Wochenende?", timestamp: '2026-06-18T10:00:00Z', read: true, flagged: false },
+    { id: 'msg_8', matchId: 'match_3', senderId: 'stud_9', text: "Hey Jessica, I am staying home. Hey, can you give me your phone number? Let's meet up in secret sometime!", translation: "Hey Jessica, ich bleibe zu Hause. Du, kannst du mir deine Handynummer geben? Lass uns mal heimlich treffen!", timestamp: '2026-06-19T11:05:00Z', read: true, flagged: true, flagReason: 'Contains sensitive terms: "phone number", "meet up in secret"' },
+    { id: 'msg_9', matchId: 'match_1', senderId: 'stud_7', text: "Can you send me your email address so we can chat on Skype?", translation: "Kannst du mir deine E-Mail-Adresse schicken, damit wir über Skype chatten können?", timestamp: '2026-05-15T10:00:00Z', read: true, flagged: false },
+    { id: 'msg_10', matchId: 'match_2', senderId: 'stud_2', text: "Lass uns morgen heimlich treffen!", translation: "Let's meet up in secret tomorrow!", timestamp: '2026-06-01T15:30:00Z', read: true, flagged: false }
+  ],
+  articles: [
+    {
+      id: 'art_1',
+      title: 'Afternoon Tea in England',
+      content: 'In England, Afternoon Tea is a very old tradition. It started in the 1840s. Usually, we drink black tea with milk and eat scones with clotted cream and jam, sandwich fingers (like cucumber or egg), and sweet cakes. It is very delicious! We usually do this around 4 PM to bridge the gap between lunch and dinner.',
+      authorId: 'stud_2',
+      schoolId: 'school_1',
+      status: 'Approved',
+      submittedAt: '2026-05-20T14:00:00Z',
+      reviewedBy: 'Teacher Mrs. Smith',
+      reviewedAt: '2026-05-21T09:00:00Z',
+      language: 'en',
+      likes: 8,
+      photoUrl: 'assets/afternoon_tea.png'
+    },
+    {
+      id: 'art_2',
+      title: 'Traditional German Brezeln',
+      content: 'Hello everyone! I want to tell you about Brezeln (pretzels) from Bavaria. They are made of dough, shaped into a knot, dipped in lye water, and sprinkled with coarse salt before baking. They are crispy on the outside and soft inside. We eat them with butter, cheese, or white sausage (Weißwurst) for breakfast. You can buy them in every bakery!',
+      authorId: 'stud_7',
+      schoolId: 'school_2',
+      status: 'Pending',
+      submittedAt: '2026-06-20T15:30:00Z',
+      language: 'de',
+      likes: 0,
+      photoUrl: 'assets/brezeln.png'
+    }
+  ],
+  news: [
+    { id: 'news_1', title: 'Welcome to the 2026 Exchange!', content: 'We are thrilled to launch this exchange program between Leicester High School and Goethe-Gymnasium. Please remember to respect your pen pal and follow the safety guidelines. Have fun learning new languages and sharing traditions!', postedBy: 'Teacher Mrs. Smith', schoolId: 'school_1', timestamp: '2026-05-01T08:00:00Z' },
+    { id: 'news_2', title: 'Summer Cultural Festival Coming Up!', content: 'Next month, we will celebrate our annual Cultural Sharing Week. Get ready to write articles about your local festivals and share them with the partner school!', postedBy: 'Teacher Herr Wagner', schoolId: 'school_2', timestamp: '2026-06-15T09:00:00Z' }
+  ],
+  flags: [
+    { id: 'flag_1', messageId: 'msg_8', status: 'Pending', flaggedAt: '2026-06-19T11:05:00Z', reviewedBy: null, reviewedAt: null, actionTaken: null },
+    { id: 'flag_2', messageId: 'msg_9', status: 'Resolved', flaggedAt: '2026-05-15T10:00:00Z', reviewedBy: 'Teacher Mrs. Smith', reviewedAt: '2026-05-15T14:20:00Z', actionTaken: 'Dismissed' },
+    { id: 'flag_3', messageId: 'msg_10', status: 'Resolved', flaggedAt: '2026-06-01T15:30:00Z', reviewedBy: 'Teacher Mrs. Smith', reviewedAt: '2026-06-02T09:00:00Z', actionTaken: 'Resumed Conversation' }
+  ],
+  auditLogs: [
+    { id: 'log_1', timestamp: '2026-05-10T10:00:00Z', action: 'Match Created', details: 'Harriet Potter matched with Lukas Schmidt.', user: 'Teacher Mrs. Smith' },
+    { id: 'log_2', timestamp: '2026-05-21T09:00:00Z', action: 'Article Approved', details: 'Approved article "Afternoon Tea in England" by Emily Watson.', user: 'Teacher Mrs. Smith' },
+    { id: 'log_3', timestamp: '2026-06-19T11:05:00Z', action: 'Auto Safeguard Flag', details: 'Message 8 flagged for sensitive keywords.', user: 'System' }
+  ],
+  settings: {
+    flaggedKeywords: ['phone number', 'address', 'meet up', 'whatsapp', 'instagram', 'secret', 'treffen', 'handynummer', 'adresse', 'heimlich'],
+    languages: ['en', 'de'],
+    attachmentsEnabled: false
+  },
+  coordinators: [
+    { id: 'coord_1', name: 'Mrs. Smith', email: 'smith@leicesterhigh.edu', schoolId: 'school_1', isSchoolAdmin: true },
+    { id: 'coord_2', name: 'Herr Wagner', email: 'wagner@goethe.edu', schoolId: 'school_2', isSchoolAdmin: false }
+  ],
+  schoolRequests: [
+    { id: 'req_1', name: 'Oakridge Academy', country: 'United Kingdom', city: 'London', language: 'en', code: 'OAK-UK', coordinatorName: 'Mr. David Green', coordinatorEmail: 'david@oakridge.edu', status: 'Pending', requestedAt: '2026-06-21T09:00:00Z' }
+  ]
+};
+
+class LocalDB {
+  constructor() {
+    this.init();
+  }
+
+  init() {
+    let data = null;
+    try {
+      data = JSON.parse(localStorage.getItem(DB_KEY));
+    } catch (e) {}
+
+    const hasOldName = data && data.schools && data.schools.some(s => s.id === 'school_1' && (s.name.includes('Oakridge') || s.city.includes('London')));
+    const isMissingTables = data && (!data.coordinators || !data.schoolRequests);
+    const isMissingPhotos = data && data.articles && data.articles.some(a => a.id === 'art_1' && !a.photoUrl);
+    const isMissingBiog = data && data.students && data.students.some(s => s.personalBiogStatus === undefined);
+    const isMissingResolvedFlags = data && data.flags && data.flags.length < 3;
+    const isOldProposedMatchSeed = data && data.matches && data.matches.some(m => m.id === 'match_5' && m.studentIds[0] !== null);
+
+    if (!data || hasOldName || isMissingTables || isMissingPhotos || isMissingBiog || isMissingResolvedFlags || isOldProposedMatchSeed) {
+      localStorage.setItem(DB_KEY, JSON.stringify(defaultDatabase));
+    }
+  }
+
+  get() {
+    return JSON.parse(localStorage.getItem(DB_KEY));
+  }
+
+  save(data) {
+    localStorage.setItem(DB_KEY, JSON.stringify(data));
+  }
+
+  reset() {
+    localStorage.setItem(DB_KEY, JSON.stringify(defaultDatabase));
+    return defaultDatabase;
+  }
+
+  getTable(name) {
+    const data = this.get();
+    return data[name] || [];
+  }
+
+  saveTable(name, list) {
+    const data = this.get();
+    data[name] = list;
+    this.save(data);
+  }
+
+  // Helper getters
+  getStudents() { return this.getTable('students'); }
+  getStudent(id) { return this.getStudents().find(s => s.id === id); }
+  getSchools() { return this.getTable('schools'); }
+  getSchool(id) { return this.getSchools().find(s => s.id === id); }
+  getMatches() { return this.getTable('matches'); }
+  getMessages() { return this.getTable('messages'); }
+  getArticles() { return this.getTable('articles'); }
+  getNews() { return this.getTable('news'); }
+  getFlags() { return this.getTable('flags'); }
+  getAuditLogs() { return this.getTable('auditLogs'); }
+  getSettings() { return this.get().settings; }
+  getCoordinators() { return this.getTable('coordinators'); }
+  getCoordinator(id) { return this.getCoordinators().find(c => c.id === id); }
+  getSchoolRequests() { return this.getTable('schoolRequests'); }
+  getSchoolRequest(id) { return this.getSchoolRequests().find(r => r.id === id); }
+
+  // Action helpers
+  addSchoolRequest(req) {
+    const list = this.getSchoolRequests();
+    const newReq = {
+      id: 'req_' + Date.now(),
+      status: 'Pending',
+      requestedAt: new Date().toISOString(),
+      ...req
+    };
+    list.push(newReq);
+    this.saveTable('schoolRequests', list);
+    this.addLog('School Request Submitted', `Coordinator ${req.coordinatorName} requested registration for ${req.name}.`, 'System');
+    return newReq;
+  }
+
+  approveSchoolRequest(requestId, reviewer) {
+    const requests = this.getSchoolRequests();
+    const reqIndex = requests.findIndex(r => r.id === requestId);
+    if (reqIndex !== -1) {
+      const req = requests[reqIndex];
+      req.status = 'Approved';
+      this.saveTable('schoolRequests', requests);
+
+      // Create new school
+      const schools = this.getSchools();
+      const newSchoolId = 'school_' + Date.now();
+      const newSchool = {
+        id: newSchoolId,
+        name: req.name,
+        country: req.country,
+        city: req.city,
+        language: req.language,
+        code: req.code,
+        description: `${req.name} is a newly registered partner school in ${req.city}, ${req.country}.`,
+        photoUrl: '',
+        logoUrl: ''
+      };
+      schools.push(newSchool);
+      this.saveTable('schools', schools);
+
+      // Create coordinator account with isSchoolAdmin: true
+      const coordinators = this.getCoordinators();
+      const newCoord = {
+        id: 'coord_' + Date.now(),
+        name: req.coordinatorName,
+        email: req.coordinatorEmail,
+        schoolId: newSchoolId,
+        isSchoolAdmin: true
+      };
+      coordinators.push(newCoord);
+      this.saveTable('coordinators', coordinators);
+
+      this.addLog('School Request Approved', `Approved and registered ${req.name} (Code: ${req.code}). Assigned admin rights to coordinator ${req.coordinatorName}.`, reviewer);
+      return newSchool;
+    }
+  }
+
+  declineSchoolRequest(requestId, reviewer) {
+    const requests = this.getSchoolRequests();
+    const reqIndex = requests.findIndex(r => r.id === requestId);
+    if (reqIndex !== -1) {
+      const req = requests[reqIndex];
+      req.status = 'Declined';
+      this.saveTable('schoolRequests', requests);
+      this.addLog('School Request Declined', `Declined school registration for ${req.name} requested by ${req.coordinatorName}.`, reviewer);
+    }
+  }
+
+  toggleCoordinatorAdmin(coordinatorId, reviewer) {
+    const coordinators = this.getCoordinators();
+    const index = coordinators.findIndex(c => c.id === coordinatorId);
+    if (index !== -1) {
+      coordinators[index].isSchoolAdmin = !coordinators[index].isSchoolAdmin;
+      this.saveTable('coordinators', coordinators);
+      const state = coordinators[index].isSchoolAdmin ? 'Granted' : 'Revoked';
+      this.addLog('Coordinator Admin Toggled', `${state} School Admin rights for coordinator ${coordinators[index].name}.`, reviewer);
+    }
+  }
+
+  // Action helpers
+  addStudent(student) {
+    const list = this.getStudents();
+    list.push(student);
+    this.saveTable('students', list);
+    this.addLog('Student Added', `${student.name} (${student.email}) added to roster.`, 'Teacher / Coordinator');
+  }
+
+  updateStudent(id, updates) {
+    const list = this.getStudents();
+    const index = list.findIndex(s => s.id === id);
+    if (index !== -1) {
+      list[index] = { ...list[index], ...updates };
+      this.saveTable('students', list);
+    }
+  }
+
+  submitStudentBiog(studentId, biogText) {
+    const student = this.getStudent(studentId);
+    this.updateStudent(studentId, {
+      pendingBiog: biogText,
+      personalBiogStatus: 'Pending'
+    });
+    this.addLog('Biography Submitted', `Student ${student ? student.name : studentId} submitted a biography for review.`, 'Student');
+  }
+
+  approveStudentBiog(studentId, reviewerName) {
+    const student = this.getStudent(studentId);
+    if (student) {
+      this.updateStudent(studentId, {
+        personalBiog: student.pendingBiog,
+        pendingBiog: '',
+        personalBiogStatus: 'Approved'
+      });
+      this.addLog('Biography Approved', `Approved biography for student ${student.name}.`, reviewerName);
+    }
+  }
+
+  rejectStudentBiog(studentId, reviewerName) {
+    const student = this.getStudent(studentId);
+    if (student) {
+      this.updateStudent(studentId, {
+        pendingBiog: '',
+        personalBiogStatus: 'Rejected'
+      });
+      this.addLog('Biography Rejected', `Rejected biography for student ${student.name}.`, reviewerName);
+    }
+  }
+
+  updateSchool(id, updates) {
+    const list = this.getSchools();
+    const index = list.findIndex(s => s.id === id);
+    if (index !== -1) {
+      list[index] = { ...list[index], ...updates };
+      this.saveTable('schools', list);
+      this.addLog('School Profile Updated', `Updated school profile details for ${list[index].name}.`, 'Teacher');
+    }
+  }
+
+  createMatch(type, studentIds) {
+    const matches = this.getMatches();
+    const newMatch = {
+      id: 'match_' + Date.now(),
+      type,
+      studentIds,
+      active: true,
+      status: 'Active',
+      createdAt: new Date().toISOString(),
+      paused: false
+    };
+    matches.push(newMatch);
+    this.saveTable('matches', matches);
+
+    // Update students match status
+    studentIds.forEach(id => {
+      this.updateStudent(id, { matchStatus: 'matched' });
+    });
+
+    const names = studentIds.map(id => this.getStudent(id)?.name || id).join(' & ');
+    this.addLog('Match Created', `Created a ${type} match between: ${names}.`, 'Teacher');
+    return newMatch;
+  }
+
+  proposeMatch(type, studentIds, proposedBySchoolId, pendingApprovalFromSchoolId) {
+    const matches = this.getMatches();
+    const newMatch = {
+      id: 'match_' + Date.now(),
+      type,
+      studentIds,
+      active: false,
+      status: 'Proposed',
+      proposedBySchoolId,
+      pendingApprovalFromSchoolId,
+      createdAt: new Date().toISOString(),
+      paused: false
+    };
+    matches.push(newMatch);
+    this.saveTable('matches', matches);
+
+    // Update students match status to proposed
+    studentIds.forEach(id => {
+      if (id) {
+        this.updateStudent(id, { matchStatus: 'proposed' });
+      }
+    });
+
+    const names = studentIds.filter(id => id).map(id => this.getStudent(id)?.name || id).join(' & ');
+    this.addLog('Match Proposed', `Proposed a ${type} match for student: ${names}.`, 'Teacher');
+    return newMatch;
+  }
+
+  confirmMatch(matchId, assignedStudentId, reviewerName) {
+    const matches = this.getMatches();
+    const match = matches.find(m => m.id === matchId);
+    if (match) {
+      // Disband any other matches/proposals containing the newly assigned student
+      if (assignedStudentId) {
+        for (let i = matches.length - 1; i >= 0; i--) {
+          const m = matches[i];
+          if (m.id !== matchId && m.studentIds.includes(assignedStudentId)) {
+            m.studentIds.forEach(id => {
+              if (id && id !== assignedStudentId) {
+                this.updateStudent(id, { matchStatus: 'unmatched' });
+              }
+            });
+            matches.splice(i, 1);
+          }
+        }
+      }
+
+      // Find the unassigned (null) slot in studentIds and assign the student
+      if (assignedStudentId && !match.studentIds.includes(assignedStudentId)) {
+        const nullIdx = match.studentIds.indexOf(null);
+        if (nullIdx !== -1) {
+          match.studentIds[nullIdx] = assignedStudentId;
+        } else {
+          match.studentIds.push(assignedStudentId);
+        }
+      }
+      match.active = true;
+      match.status = 'Active';
+      this.saveTable('matches', matches);
+
+      // Update students match status to matched
+      match.studentIds.forEach(id => {
+        if (id) {
+          this.updateStudent(id, { matchStatus: 'matched' });
+        }
+      });
+
+      const names = match.studentIds.map(id => this.getStudent(id)?.name || id).join(' & ');
+      this.addLog('Match Confirmed', `Confirmed match suggestion between: ${names}.`, reviewerName);
+    }
+  }
+
+  declineMatch(matchId, reviewerName) {
+    const matches = this.getMatches();
+    const matchIndex = matches.findIndex(m => m.id === matchId);
+    if (matchIndex !== -1) {
+      const match = matches[matchIndex];
+      // Reset students status back to unmatched
+      match.studentIds.forEach(id => {
+        if (id) {
+          this.updateStudent(id, { matchStatus: 'unmatched' });
+        }
+      });
+      
+      // Remove match request
+      matches.splice(matchIndex, 1);
+      this.saveTable('matches', matches);
+      
+      const names = match.studentIds.filter(id => id).map(id => this.getStudent(id)?.name || id).join(' & ');
+      this.addLog('Match Declined/Withdrawn', `Declined/Withdrawn match proposal for: ${names || 'student'}.`, reviewerName);
+    }
+  }
+
+  pauseMatch(matchId, paused) {
+    const matches = this.getMatches();
+    const index = matches.findIndex(m => m.id === matchId);
+    if (index !== -1) {
+      matches[index].paused = paused;
+      this.saveTable('matches', matches);
+      const studentNames = matches[index].studentIds.map(id => this.getStudent(id)?.name).join(' & ');
+      this.addLog(paused ? 'Match Paused' : 'Match Resumed', `Conversation between ${studentNames} ${paused ? 'paused' : 'resumed'}.`, 'Teacher');
+    }
+  }
+
+  deleteMatch(matchId) {
+    const matches = this.getMatches();
+    const match = matches.find(m => m.id === matchId);
+    if (match) {
+      // Set students status back to unmatched if not in another match
+      match.studentIds.forEach(id => {
+        // Simple check: does student have other active matches?
+        const remainingMatches = matches.filter(m => m.id !== matchId && m.active && m.studentIds.includes(id));
+        if (remainingMatches.length === 0) {
+          this.updateStudent(id, { matchStatus: 'unmatched' });
+        }
+      });
+      match.active = false;
+      this.saveTable('matches', matches);
+      const studentNames = match.studentIds.map(id => this.getStudent(id)?.name).join(' & ');
+      this.addLog('Match Removed', `Archived match between ${studentNames}.`, 'Teacher');
+    }
+  }
+
+  addMessage(matchId, senderId, text, translation = '') {
+    const messages = this.getMessages();
+    const settings = this.getSettings();
+    
+    // Check flags
+    let flagged = false;
+    let flagReason = '';
+    const lowerText = text.toLowerCase();
+    const triggeredKeywords = settings.flaggedKeywords.filter(keyword => lowerText.includes(keyword.toLowerCase()));
+    
+    if (triggeredKeywords.length > 0) {
+      flagged = true;
+      flagReason = `Contains sensitive terms: "${triggeredKeywords.join('", "')}"`;
+    }
+
+    const newMsg = {
+      id: 'msg_' + Date.now(),
+      matchId,
+      senderId,
+      text,
+      translation,
+      timestamp: new Date().toISOString(),
+      read: false,
+      flagged,
+      flagReason
+    };
+
+    messages.push(newMsg);
+    this.saveTable('messages', messages);
+
+    // Update sender activity level
+    const student = this.getStudent(senderId);
+    if (student) {
+      this.updateStudent(senderId, { activityLevel: 'High' });
+    }
+
+    if (flagged) {
+      // Create flag entry
+      const flags = this.getFlags();
+      const newFlag = {
+        id: 'flag_' + Date.now(),
+        messageId: newMsg.id,
+        status: 'Pending',
+        flaggedAt: new Date().toISOString(),
+        reviewedBy: null,
+        reviewedAt: null,
+        actionTaken: null
+      };
+      flags.push(newFlag);
+      this.saveTable('flags', flags);
+      
+      // Auto-pause match for safety
+      this.pauseMatch(matchId, true);
+      this.addLog('Auto Safeguard Flag', `Message by ${student?.name || senderId} flagged and chat paused. Reason: ${flagReason}`, 'System');
+    }
+
+    return newMsg;
+  }
+
+  addArticle(article) {
+    const list = this.getArticles();
+    const newArt = {
+      id: 'art_' + Date.now(),
+      likes: 0,
+      submittedAt: new Date().toISOString(),
+      status: 'Pending',
+      ...article
+    };
+    list.push(newArt);
+    this.saveTable('articles', list);
+    const author = this.getStudent(article.authorId);
+    this.addLog('Article Submitted', `Article "${article.title}" submitted by ${author?.name || 'Student'}.`, 'System');
+    return newArt;
+  }
+
+  reviewArticle(id, status, reviewer, feedback = '') {
+    const list = this.getArticles();
+    const index = list.findIndex(a => a.id === id);
+    if (index !== -1) {
+      list[index].status = status;
+      list[index].reviewedBy = reviewer;
+      list[index].reviewedAt = new Date().toISOString();
+      if (feedback) {
+        list[index].feedback = feedback;
+      }
+      this.saveTable('articles', list);
+      this.addLog('Article Reviewed', `Article "${list[index].title}" reviewed: ${status}.`, reviewer);
+    }
+  }
+
+  resolveFlag(flagId, reviewer, actionTaken) {
+    const flags = this.getFlags();
+    const fIdx = flags.findIndex(f => f.id === flagId);
+    if (fIdx !== -1) {
+      flags[fIdx].status = 'Resolved';
+      flags[fIdx].reviewedBy = reviewer;
+      flags[fIdx].reviewedAt = new Date().toISOString();
+      flags[fIdx].actionTaken = actionTaken;
+      this.saveTable('flags', flags);
+
+      // Unflag message
+      const msgs = this.getMessages();
+      const mIdx = msgs.findIndex(m => m.id === flags[fIdx].messageId);
+      if (mIdx !== -1) {
+        msgs[mIdx].flagged = false;
+        this.saveTable('messages', msgs);
+        // Unpause match if safety action is completed or resumed
+        if (actionTaken === 'Dismissed' || actionTaken === 'Resumed Conversation') {
+          this.pauseMatch(msgs[mIdx].matchId, false);
+        }
+      }
+      this.addLog('Flag Resolved', `Safeguarding flag resolved by ${reviewer}. Action: ${actionTaken}`, reviewer);
+    }
+  }
+
+  addNews(newsItem) {
+    const list = this.getNews();
+    const item = {
+      id: 'news_' + Date.now(),
+      timestamp: new Date().toISOString(),
+      ...newsItem
+    };
+    list.push(item);
+    this.saveTable('news', list);
+    this.addLog('News Posted', `Teacher news announcement: "${newsItem.title}".`, newsItem.postedBy);
+  }
+
+  addLog(action, details, user) {
+    const list = this.getAuditLogs();
+    const log = {
+      id: 'log_' + Date.now(),
+      timestamp: new Date().toISOString(),
+      action,
+      details,
+      user
+    };
+    list.push(log);
+    this.saveTable('auditLogs', list);
+  }
+  
+  saveSettings(newSettings) {
+    const data = this.get();
+    data.settings = { ...data.settings, ...newSettings };
+    this.save(data);
+    this.addLog('Settings Updated', `System configuration modified.`, 'Admin');
+  }
+}
+
+window.db = new LocalDB();
