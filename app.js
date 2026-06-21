@@ -617,6 +617,29 @@ class App {
       const sharedPubsLabel = translations.shared_publications_label || "Cultural Discoveries";
       const engagementMetricsTitle = translations.engagement_metrics_title || "Our Exchange Journey";
 
+      // Determine Friendly Level based on message count
+      let connectionLevel = translations.level_getting_started || "Getting Started 🌱";
+      let levelBadgeColor = "rgba(16, 185, 129, 0.15)";
+      let levelTextColor = "#34d399";
+      let levelBorderColor = "rgba(16, 185, 129, 0.25)";
+
+      if (msgCount >= 20) {
+        connectionLevel = translations.level_super_friends || "Super Friends! 💖";
+        levelBadgeColor = "rgba(236, 72, 153, 0.15)";
+        levelTextColor = "#f472b6";
+        levelBorderColor = "rgba(236, 72, 153, 0.25)";
+      } else if (msgCount >= 10) {
+        connectionLevel = translations.level_great_penpals || "Great Pen Pals! 🌟";
+        levelBadgeColor = "rgba(245, 158, 11, 0.15)";
+        levelTextColor = "#fbbf24";
+        levelBorderColor = "rgba(245, 158, 11, 0.25)";
+      } else if (msgCount >= 3) {
+        connectionLevel = translations.level_chatty_friends || "Chatty Friends! 💬";
+        levelBadgeColor = "rgba(59, 130, 246, 0.15)";
+        levelTextColor = "#60a5fa";
+        levelBorderColor = "rgba(59, 130, 246, 0.25)";
+      }
+
       welcomeContainer.innerHTML = `
         <div style="display: flex; gap: 1.5rem; align-items: center; margin-top: 1rem;">
           <div class="user-avatar" style="width: 60px; height: 60px; font-size: 1.5rem; cursor: pointer;" onclick="app.openStudentDetailModal('${partner?.id}')" title="Click to view partner profile">
@@ -631,23 +654,30 @@ class App {
         </div>
 
         <!-- Exchange Engagement Metrics Grid -->
-        <div style="margin-top: 1.5rem; border-top: 1px solid var(--panel-border); padding-top: 1.25rem;">
-          <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.05em; margin-bottom: 0.75rem;">📊 ${engagementMetricsTitle}</h4>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
-            <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--panel-border); padding: 0.75rem 1rem; border-radius: 12px; display: flex; flex-direction: column; gap: 0.25rem;">
-              <span style="font-size: 0.75rem; font-weight: 600; color: var(--secondary);">${activeExchangesLabel}</span>
-              <span style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary);">${pairedCount}</span>
-              <span style="font-size: 0.7rem; color: var(--text-secondary);">${pairedStudentsText}</span>
+        <div style="margin-top: 1.75rem; border-top: 1px solid var(--panel-border); padding-top: 1.5rem;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+            <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.05em; margin: 0; text-transform: uppercase;">🚀 ${engagementMetricsTitle}</h4>
+            <span style="font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 20px; background: ${levelBadgeColor}; color: ${levelTextColor}; border: 1px solid ${levelBorderColor};">${connectionLevel}</span>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.25rem;">
+            <div class="student-metric-card card-cyan">
+              <span class="student-metric-label">${activeExchangesLabel}</span>
+              <span class="student-metric-value">${pairedCount}</span>
+              <span class="student-metric-desc">${pairedStudentsText}</span>
+              <span class="student-metric-watermark">🌍</span>
             </div>
-            <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--panel-border); padding: 0.75rem 1rem; border-radius: 12px; display: flex; flex-direction: column; gap: 0.25rem;">
-              <span style="font-size: 0.75rem; font-weight: 600; color: var(--primary);">${chatHistoryLabel}</span>
-              <span style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary);">${msgCount}</span>
-              <span style="font-size: 0.7rem; color: var(--text-secondary);">${messagesExchangedText}</span>
+            <div class="student-metric-card card-blue">
+              <span class="student-metric-label">${chatHistoryLabel}</span>
+              <span class="student-metric-value">${msgCount}</span>
+              <span class="student-metric-desc">${messagesExchangedText}</span>
+              <span class="student-metric-watermark">💬</span>
             </div>
-            <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--panel-border); padding: 0.75rem 1rem; border-radius: 12px; display: flex; flex-direction: column; gap: 0.25rem;">
-              <span style="font-size: 0.75rem; font-weight: 600; color: var(--accent);">${sharedPubsLabel}</span>
-              <span style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary);">${artCount}</span>
-              <span style="font-size: 0.7rem; color: var(--text-secondary);">${publishedArticlesText}</span>
+            <div class="student-metric-card card-purple">
+              <span class="student-metric-label">${sharedPubsLabel}</span>
+              <span class="student-metric-value">${artCount}</span>
+              <span class="student-metric-desc">${publishedArticlesText}</span>
+              <span class="student-metric-watermark">✨</span>
             </div>
           </div>
         </div>
@@ -686,18 +716,20 @@ class App {
         </div>
 
         <!-- Global Engagement Metrics Grid -->
-        <div style="margin-top: 1.5rem; border-top: 1px solid var(--panel-border); padding-top: 1.25rem;">
-          <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.05em; margin-bottom: 0.75rem;">📊 ${globalStatisticsTitle}</h4>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
-            <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--panel-border); padding: 0.75rem 1rem; border-radius: 12px; display: flex; flex-direction: column; gap: 0.25rem;">
-              <span style="font-size: 0.75rem; font-weight: 600; color: var(--secondary);">${activeExchangesLabel}</span>
-              <span style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary);">${pairedCount}</span>
-              <span style="font-size: 0.7rem; color: var(--text-secondary);">${pairedStudentsText}</span>
+        <div style="margin-top: 1.75rem; border-top: 1px solid var(--panel-border); padding-top: 1.5rem;">
+          <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.05em; margin-bottom: 1rem; text-transform: uppercase;">📊 ${globalStatisticsTitle}</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.25rem;">
+            <div class="student-metric-card card-cyan">
+              <span class="student-metric-label">${activeExchangesLabel}</span>
+              <span class="student-metric-value">${pairedCount}</span>
+              <span class="student-metric-desc">${pairedStudentsText}</span>
+              <span class="student-metric-watermark">🌍</span>
             </div>
-            <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--panel-border); padding: 0.75rem 1rem; border-radius: 12px; display: flex; flex-direction: column; gap: 0.25rem;">
-              <span style="font-size: 0.75rem; font-weight: 600; color: var(--accent);">${sharedPubsLabel}</span>
-              <span style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary);">${artCount}</span>
-              <span style="font-size: 0.7rem; color: var(--text-secondary);">${publishedArticlesText}</span>
+            <div class="student-metric-card card-purple">
+              <span class="student-metric-label">${sharedPubsLabel}</span>
+              <span class="student-metric-value">${artCount}</span>
+              <span class="student-metric-desc">${publishedArticlesText}</span>
+              <span class="student-metric-watermark">✨</span>
             </div>
           </div>
         </div>

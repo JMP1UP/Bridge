@@ -78,7 +78,11 @@ const UI_TRANSLATIONS = {
     messages_exchanged_text_plural: "{count} friendly messages shared!",
     shared_publications_label: "Cultural Discoveries",
     published_articles_text_singular: "1 story published!",
-    published_articles_text_plural: "{count} stories published!"
+    published_articles_text_plural: "{count} stories published!",
+    level_getting_started: "Getting Started 🌱",
+    level_chatty_friends: "Chatty Friends! 💬",
+    level_great_penpals: "Great Pen Pals! 🌟",
+    level_super_friends: "Super Friends! 💖"
   },
   de: {
     stud_dashboard: "Schüler-Dashboard",
@@ -158,7 +162,11 @@ const UI_TRANSLATIONS = {
     messages_exchanged_text_plural: "{count} Nachrichten geteilt!",
     shared_publications_label: "Kulturelle Entdeckungen",
     published_articles_text_singular: "1 Beitrag veröffentlicht!",
-    published_articles_text_plural: "{count} Beiträge veröffentlicht!"
+    published_articles_text_plural: "{count} Beiträge veröffentlicht!",
+    level_getting_started: "Erste Schritte 🌱",
+    level_chatty_friends: "Schreibfreudig! 💬",
+    level_great_penpals: "Super Brieffreunde! 🌟",
+    level_super_friends: "Beste Freunde! 💖"
   }
 };
 
