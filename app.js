@@ -365,13 +365,7 @@ class App {
     let defaultTab = '';
     if (this.currentRole === 'student') {
       document.getElementById('student-nav').style.display = 'flex';
-      const student = window.db.getStudent(this.currentStudentId);
-      const matches = student ? window.db.getMatches().filter(m => m.active && m.studentIds.includes(student.id)) : [];
-      if (matches.length > 0) {
-        defaultTab = 'stud-chat';
-      } else {
-        defaultTab = 'stud-dashboard';
-      }
+      defaultTab = 'stud-dashboard';
     } else if (this.currentRole === 'teacher') {
       document.getElementById('teacher-nav').style.display = 'flex';
       defaultTab = 'teach-dashboard';
@@ -514,6 +508,43 @@ class App {
   renderStudentDashboard() {
     const student = window.db.getStudent(this.currentStudentId);
     if (!student) return;
+
+    // School Branding Banner Details
+    const school = window.db.getSchool(student.schoolId);
+    const bannerEl = document.getElementById('student-school-banner');
+    const photoEl = document.getElementById('student-school-photo');
+    const logoEl = document.getElementById('student-school-logo');
+    const nameEl = document.getElementById('student-school-name');
+    const locationEl = document.getElementById('student-school-location');
+
+    if (school) {
+      if (bannerEl) bannerEl.style.display = 'flex';
+      
+      if (photoEl) {
+        if (school.photoUrl) {
+          photoEl.style.backgroundImage = `url('${school.photoUrl}')`;
+          photoEl.style.display = 'block';
+        } else {
+          photoEl.style.backgroundImage = 'none';
+          photoEl.style.display = 'none';
+        }
+      }
+      
+      if (logoEl) {
+        if (school.logoUrl) {
+          logoEl.src = school.logoUrl;
+          logoEl.style.display = 'block';
+        } else {
+          logoEl.src = '';
+          logoEl.style.display = 'none';
+        }
+      }
+      
+      if (nameEl) nameEl.textContent = school.name;
+      if (locationEl) locationEl.textContent = `${school.city}, ${school.country}`;
+    } else {
+      if (bannerEl) bannerEl.style.display = 'none';
+    }
 
     // Welcome Card Content
     const welcomeContainer = document.getElementById('student-welcome-details');
