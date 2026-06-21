@@ -88,10 +88,25 @@ class App {
   }
 
   init() {
-    // Load initial user state
-    this.updateUserBadge();
-    this.renderNavigation();
-    
+    this.isLoggedIn = false;
+
+    // Populate login screen options
+    this.populateLoginScreen();
+
+    // Bind login buttons
+    document.getElementById('login-student-btn').addEventListener('click', () => {
+      const studentId = document.getElementById('login-student-select').value;
+      if (studentId) this.loginAsStudent(studentId);
+    });
+
+    document.getElementById('login-staff-btn').addEventListener('click', () => {
+      const role = document.getElementById('login-staff-select').value;
+      if (role) this.loginAsStaff(role);
+    });
+
+    // Bind logout button
+    document.getElementById('logout-btn').addEventListener('click', () => this.logout());
+
     // Setup tabs
     document.querySelectorAll('.nav-link').forEach(link => {
       link.addEventListener('click', (e) => {
@@ -472,6 +487,7 @@ class App {
 
   // Main UI refresh selector
   refreshUI() {
+    if (!this.isLoggedIn) return;
     // Redraw based on role
     if (this.currentRole === 'student') {
       this.renderStudentDashboard();
@@ -2948,6 +2964,46 @@ class App {
     if (modal) {
       modal.classList.remove('active');
     }
+  }
+
+  // ================== LOGIN / LOGOUT PORTAL HELPERS ==================
+
+  populateLoginScreen() {
+    const studentSelect = document.getElementById('login-student-select');
+    if (!studentSelect) return;
+    studentSelect.innerHTML = '';
+    
+    const students = window.db.getStudents();
+    students.forEach(s => {
+      const school = window.db.getSchool(s.schoolId);
+      const schoolName = school ? school.name : 'Unknown School';
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = `${s.name} (${s.age} y/o, ${s.gender} • ${schoolName})`;
+      studentSelect.appendChild(opt);
+    });
+  }
+
+  loginAsStudent(studentId) {
+    this.isLoggedIn = true;
+    this.switchRole('student', studentId);
+    document.getElementById('login-screen').style.display = 'none';
+    document.querySelector('.app-container').style.setProperty('display', 'flex', 'important');
+  }
+
+  loginAsStaff(role) {
+    this.isLoggedIn = true;
+    this.switchRole(role);
+    document.getElementById('login-screen').style.display = 'none';
+    document.querySelector('.app-container').style.setProperty('display', 'flex', 'important');
+  }
+
+  logout() {
+    this.isLoggedIn = false;
+    this.currentRole = null;
+    document.getElementById('login-screen').style.setProperty('display', 'flex', 'important');
+    document.querySelector('.app-container').style.setProperty('display', 'none', 'important');
+    this.populateLoginScreen();
   }
 }
 
