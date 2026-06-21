@@ -1166,7 +1166,9 @@ class App {
         <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.5rem;">
           ${logoHtml}
           <div>
-            <h4 style="font-weight: 700; font-size: 1.1rem; margin: 0; line-height: 1.2;">${school.name}</h4>
+            <h4 style="font-weight: 700; font-size: 1.1rem; margin: 0; line-height: 1.2;">
+              <span style="cursor: pointer; text-decoration: underline; color: var(--secondary);" onclick="app.openSchoolDetail('${school.id}')">${school.name}</span>
+            </h4>
             <span style="font-size: 0.8rem; color: var(--text-secondary);">${school.city}, ${school.country}</span>
           </div>
         </div>
@@ -1223,7 +1225,9 @@ class App {
                   <div style="display: flex; align-items: center; gap: 0.75rem;">
                     ${partnerLogo}
                     <div>
-                      <h5 style="font-weight: 700; font-size: 0.9rem; margin: 0;">${item.school.name}</h5>
+                      <h5 style="font-weight: 700; font-size: 0.9rem; margin: 0;">
+                        <span style="cursor: pointer; text-decoration: underline; color: var(--secondary);" onclick="app.openSchoolDetail('${item.school.id}')">${item.school.name}</span>
+                      </h5>
                       <span style="font-size: 0.75rem; color: var(--text-muted);">${item.school.city}, ${item.school.country}</span>
                     </div>
                   </div>
