@@ -1387,4 +1387,39 @@ tr:hover td {
   animation: pulse-highlight-animation 1.5s cubic-bezier(0.24, 0, 0.38, 1);
 }
 
+/* Student Dashboard Grid Layout to eliminate alignment gaps */
+.student-dashboard-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 1.5rem;
+}
+
+.student-dashboard-grid .school-banner-panel {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.student-dashboard-grid .student-welcome-card {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+.student-dashboard-grid .news-card {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+@media (max-width: 992px) {
+  .student-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  .student-dashboard-grid .school-banner-panel,
+  .student-dashboard-grid .student-welcome-card,
+  .student-dashboard-grid .news-card {
+    grid-column: 1 !important;
+    grid-row: auto !important;
+  }
+}
+
+
 
