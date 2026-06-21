@@ -52,8 +52,20 @@ const UI_TRANSLATIONS = {
     vocab_builder: "Vocabulary Builder",
     writing_prompts: "Writing Prompts",
     current_partner: "Pen Pal Match",
-    unmatched: "Unmatched",
-    activity_level: "Activity Level"
+    activity_level: "Activity Level",
+    welcome_title_matched: "Your Pen Pal is",
+    welcome_title_unmatched: "You don't have a pen pal match yet!",
+    welcome_desc_unmatched: "Your languages teacher will match you with a student from a partner school shortly.",
+    school_label: "School",
+    age_label: "Age",
+    year_group_label: "Year group",
+    send_message_btn: "Send a Message",
+    write_article_btn: "Write a Culture Article",
+    welcome_subtitle_student: "Welcome, {name}! Connect with your cultural exchange partner.",
+    matched_status: "Matched",
+    awaiting_match_status: "Awaiting Match",
+    by_author: "By",
+    no_articles_submitted: "No articles submitted yet."
   },
   de: {
     stud_dashboard: "Schüler-Dashboard",
@@ -107,7 +119,20 @@ const UI_TRANSLATIONS = {
     writing_prompts: "Schreibimpulse",
     current_partner: "Brieffreund",
     unmatched: "Nicht gekoppelt",
-    activity_level: "Aktivitätslevel"
+    activity_level: "Aktivitätslevel",
+    welcome_title_matched: "Dein Brieffreund ist",
+    welcome_title_unmatched: "Du hast noch keinen Brieffreund!",
+    welcome_desc_unmatched: "Deine Lehrkraft wird dich in Kürze mit einem Schüler einer Partnerschule koppeln.",
+    school_label: "Schule",
+    age_label: "Alter",
+    year_group_label: "Jahrgangsstufe",
+    send_message_btn: "Nachricht senden",
+    write_article_btn: "Kulturbeitrag schreiben",
+    welcome_subtitle_student: "Willkommen, {name}! Tausche dich mit deinem Brieffreund aus.",
+    matched_status: "Gekoppelt",
+    awaiting_match_status: "Warte auf Kopplung",
+    by_author: "Von",
+    no_articles_submitted: "Noch keine Beiträge eingereicht."
   }
 };
 

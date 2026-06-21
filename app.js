@@ -413,7 +413,8 @@ class App {
 
     if (this.currentRole === 'student') {
       const student = window.db.getStudent(this.currentStudentId);
-      subtitleEl.textContent = `Welcome, ${student?.name || 'Student'}! Connect with your cultural exchange partner.`;
+      const template = window.translator.UI_TRANSLATIONS[this.interfaceLang].welcome_subtitle_student || "Welcome, {name}! Connect with your cultural exchange partner.";
+      subtitleEl.textContent = template.replace('{name}', student?.name || 'Student');
     } else if (this.currentRole === 'teacher') {
       subtitleEl.textContent = 'Staff Portal: Monitor safety, review student articles, and pair partners.';
     } else if (this.currentRole === 'admin') {
@@ -558,31 +559,44 @@ class App {
       const partner = window.db.getStudent(partnerId);
       const school = window.db.getSchool(partner?.schoolId);
       
+      const translations = window.translator.UI_TRANSLATIONS[this.interfaceLang];
       badge.className = "badge badge-success";
-      badge.textContent = "Matched";
+      badge.textContent = translations.matched_status || "Matched";
       
+      const titleText = `${translations.welcome_title_matched || "Your Pen Pal is"} <span class="clickable-partner-link" style="cursor: pointer; text-decoration: underline;" onclick="app.openStudentDetailModal('${partner?.id}')" title="Click to view partner profile">${partner?.name || 'Unknown'}</span>`;
+      const schoolLabel = translations.school_label || "School";
+      const ageLabel = translations.age_label || "Age";
+      const yGroupLabel = translations.year_group_label || "Year group";
+      const sendMsgBtnText = translations.send_message_btn || "Send a Message";
+
       welcomeContainer.innerHTML = `
         <div style="display: flex; gap: 1.5rem; align-items: center; margin-top: 1rem;">
           <div class="user-avatar" style="width: 60px; height: 60px; font-size: 1.5rem; cursor: pointer;" onclick="app.openStudentDetailModal('${partner?.id}')" title="Click to view partner profile">
             ${partner?.name.split(' ').map(n => n[0]).join('') || '?'}
           </div>
           <div>
-            <h3>Your Pen Pal is <span class="clickable-partner-link" style="cursor: pointer; text-decoration: underline;" onclick="app.openStudentDetailModal('${partner?.id}')" title="Click to view partner profile">${partner?.name || 'Unknown'}</span></h3>
-            <p style="color: var(--text-secondary); font-size: 0.9rem;">🏫 School: <span class="clickable-school-link" onclick="app.openSchoolDetail('${school?.id}')">${school?.name}</span> (${school?.city}, ${school?.country})</p>
-            <p style="color: var(--text-secondary); font-size: 0.9rem;">🎂 Age: ${partner?.age} • Year group: ${partner?.yearGroup}</p>
-            <button class="btn btn-primary btn-small" style="margin-top: 0.5rem;" onclick="app.switchTab('stud-chat')">Send a Message</button>
+            <h3>${titleText}</h3>
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">🏫 ${schoolLabel}: <span class="clickable-school-link" onclick="app.openSchoolDetail('${school?.id}')">${school?.name}</span> (${school?.city}, ${school?.country})</p>
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">🎂 ${ageLabel}: ${partner?.age} • ${yGroupLabel}: ${partner?.yearGroup}</p>
+            <button class="btn btn-primary btn-small" style="margin-top: 0.5rem;" onclick="app.switchTab('stud-chat')">${sendMsgBtnText}</button>
           </div>
         </div>
       `;
     } else {
+      const translations = window.translator.UI_TRANSLATIONS[this.interfaceLang];
       badge.className = "badge badge-warning";
-      badge.textContent = "Awaiting Match";
+      badge.textContent = translations.awaiting_match_status || "Awaiting Match";
+      
+      const noMatchTitle = translations.welcome_title_unmatched || "You don't have a pen pal match yet!";
+      const noMatchDesc = translations.welcome_desc_unmatched || "Your languages teacher will match you with a student from a partner school shortly.";
+      const writeArtBtnText = translations.write_article_btn || "Write a Culture Article";
+
       welcomeContainer.innerHTML = `
         <div style="margin-top: 1rem;">
-          <h3>You don't have a pen pal match yet!</h3>
-          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.75rem;">Your languages teacher will match you with a student from a partner school shortly.</p>
+          <h3>${noMatchTitle}</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.75rem;">${noMatchDesc}</p>
           <div style="display: flex; gap: 0.5rem;">
-            <button class="btn btn-secondary btn-small" onclick="app.switchTab('stud-culture')">Write a Culture Article</button>
+            <button class="btn btn-secondary btn-small" onclick="app.switchTab('stud-culture')">${writeArtBtnText}</button>
           </div>
         </div>
       `;
@@ -610,12 +624,14 @@ class App {
         }
       }
 
+      const translations = window.translator.UI_TRANSLATIONS[this.interfaceLang];
+      const byAuthorText = translations.by_author || "By";
       card.innerHTML = `
         ${photoHtml}
         <h4 style="font-weight: 700; font-size: 1rem; margin-bottom: 0.25rem;">${item.title}</h4>
         <p style="font-size: 0.85rem; color: var(--text-secondary);">${item.content}</p>
         <div class="news-card-meta">
-          <span>By: ${item.postedBy}</span>
+          <span>${byAuthorText}: ${item.postedBy}</span>
           <span>${new Date(item.timestamp).toLocaleDateString()}</span>
         </div>
       `;
@@ -628,7 +644,9 @@ class App {
     
     articlesContainer.innerHTML = '';
     if (studentArticles.length === 0) {
-      articlesContainer.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1rem;">No articles submitted yet.</p>`;
+      const translations = window.translator.UI_TRANSLATIONS[this.interfaceLang];
+      const noArticlesText = translations.no_articles_submitted || "No articles submitted yet.";
+      articlesContainer.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1rem;">${noArticlesText}</p>`;
     } else {
       studentArticles.forEach(art => {
         const item = document.createElement('div');
