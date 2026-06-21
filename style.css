@@ -922,7 +922,7 @@ tr:hover td {
   font-family: var(--font-title);
   font-size: 0.85rem;
   font-weight: 800;
-  color: var(--secondary);
+  color: #06b6d4; /* Constant high-contrast cyan */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -934,9 +934,14 @@ tr:hover td {
 .dev-console-toggle {
   background: none;
   border: none;
-  color: white;
+  color: #cbd5e1;
   cursor: pointer;
   font-size: 0.75rem;
+  transition: color 0.2s;
+}
+
+.dev-console-toggle:hover {
+  color: #ffffff;
 }
 
 .dev-console-body {
@@ -948,7 +953,7 @@ tr:hover td {
 .dev-role-btn {
   background: rgba(255,255,255,0.05);
   border: 1px solid rgba(255,255,255,0.1);
-  color: var(--text-primary);
+  color: #cbd5e1; /* Constant light gray instead of theme var */
   text-align: left;
   padding: 0.5rem 0.75rem;
   border-radius: 8px;
@@ -960,9 +965,29 @@ tr:hover td {
   transition: all 0.2s;
 }
 
-.dev-role-btn:hover, .dev-role-btn.active {
-  background: rgba(var(--primary-rgb), 0.25);
-  border-color: var(--primary);
+.dev-role-btn:hover {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: #3b82f6;
+  color: #ffffff;
+}
+
+.dev-role-btn.active {
+  background: rgba(59, 130, 246, 0.3);
+  border-color: #3b82f6;
+  color: #ffffff;
+}
+
+#dev-reset-db-btn {
+  color: #cbd5e1 !important;
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  background: rgba(255,255,255,0.05) !important;
+  transition: all 0.2s !important;
+}
+
+#dev-reset-db-btn:hover {
+  background: rgba(255,255,255,0.15) !important;
+  color: #ffffff !important;
+  border-color: rgba(255,255,255,0.3) !important;
 }
 
 .dev-actions {
