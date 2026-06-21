@@ -569,12 +569,13 @@ class App {
     // Check pen pal matches
     const matches = window.db.getMatches().filter(m => m.active && m.studentIds.includes(student.id));
     
+    const translations = window.translator.UI_TRANSLATIONS[this.interfaceLang];
+
     if (matches.length > 0) {
       const partnerId = matches[0].studentIds.find(id => id !== student.id);
       const partner = window.db.getStudent(partnerId);
       const school = window.db.getSchool(partner?.schoolId);
       
-      const translations = window.translator.UI_TRANSLATIONS[this.interfaceLang];
       badge.className = "badge badge-success";
       badge.textContent = translations.matched_status || "Matched";
       
@@ -583,6 +584,31 @@ class App {
       const ageLabel = translations.age_label || "Age";
       const yGroupLabel = translations.year_group_label || "Year group";
       const sendMsgBtnText = translations.send_message_btn || "Send a Message";
+
+      // Calculate stats
+      const allMatches = window.db.getMatches();
+      const activeMatchesBetweenSchools = allMatches.filter(m => {
+        if (!m.active) return false;
+        const s0 = window.db.getStudent(m.studentIds[0]);
+        const s1 = window.db.getStudent(m.studentIds[1]);
+        return (s0 && s1) && (
+          (s0.schoolId === 'school_1' && s1.schoolId === 'school_2') ||
+          (s0.schoolId === 'school_2' && s1.schoolId === 'school_1')
+        );
+      });
+      const pairedCount = activeMatchesBetweenSchools.length * 2;
+      const msgCount = window.db.getMessages().filter(m => m.matchId === matches[0].id).length;
+      const artCount = window.db.getArticles().filter(a => 
+        a.status === 'Approved' && (a.schoolId === 'school_1' || a.schoolId === 'school_2')
+      ).length;
+
+      const pairedStudentsText = (translations.paired_students_text || "{count} students connected").replace('{count}', pairedCount);
+      const messagesExchangedText = (translations.messages_exchanged_text || "{count} messages exchanged").replace('{count}', msgCount);
+      const publishedArticlesText = (translations.published_articles_text || "{count} articles published").replace('{count}', artCount);
+
+      const activeExchangesLabel = translations.active_exchanges_label || "Active Exchanges";
+      const chatHistoryLabel = translations.chat_history_label || "Chat History";
+      const sharedPubsLabel = translations.shared_publications_label || "Shared Publications";
 
       welcomeContainer.innerHTML = `
         <div style="display: flex; gap: 1.5rem; align-items: center; margin-top: 1rem;">
@@ -596,9 +622,30 @@ class App {
             <button class="btn btn-primary btn-small" style="margin-top: 0.5rem;" onclick="app.switchTab('stud-chat')">${sendMsgBtnText}</button>
           </div>
         </div>
+
+        <!-- Exchange Engagement Metrics Grid -->
+        <div style="margin-top: 1.5rem; border-top: 1px solid var(--panel-border); padding-top: 1.25rem;">
+          <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;">📊 Exchange Engagement Metrics</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+            <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--panel-border); padding: 0.75rem 1rem; border-radius: 12px; display: flex; flex-direction: column; gap: 0.25rem;">
+              <span style="font-size: 0.75rem; font-weight: 600; color: var(--secondary);">${activeExchangesLabel}</span>
+              <span style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary);">${pairedCount}</span>
+              <span style="font-size: 0.7rem; color: var(--text-secondary);">${pairedStudentsText}</span>
+            </div>
+            <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--panel-border); padding: 0.75rem 1rem; border-radius: 12px; display: flex; flex-direction: column; gap: 0.25rem;">
+              <span style="font-size: 0.75rem; font-weight: 600; color: var(--primary);">${chatHistoryLabel}</span>
+              <span style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary);">${msgCount}</span>
+              <span style="font-size: 0.7rem; color: var(--text-secondary);">${messagesExchangedText}</span>
+            </div>
+            <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--panel-border); padding: 0.75rem 1rem; border-radius: 12px; display: flex; flex-direction: column; gap: 0.25rem;">
+              <span style="font-size: 0.75rem; font-weight: 600; color: var(--accent);">${sharedPubsLabel}</span>
+              <span style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary);">${artCount}</span>
+              <span style="font-size: 0.7rem; color: var(--text-secondary);">${publishedArticlesText}</span>
+            </div>
+          </div>
+        </div>
       `;
     } else {
-      const translations = window.translator.UI_TRANSLATIONS[this.interfaceLang];
       badge.className = "badge badge-warning";
       badge.textContent = translations.awaiting_match_status || "Awaiting Match";
       
@@ -606,12 +653,41 @@ class App {
       const noMatchDesc = translations.welcome_desc_unmatched || "Your languages teacher will match you with a student from a partner school shortly.";
       const writeArtBtnText = translations.write_article_btn || "Write a Culture Article";
 
+      // Calculate global stats
+      const allMatches = window.db.getMatches();
+      const activeMatches = allMatches.filter(m => m.active);
+      const pairedCount = activeMatches.length * 2;
+      const artCount = window.db.getArticles().filter(a => a.status === 'Approved').length;
+
+      const pairedStudentsText = (translations.paired_students_text || "{count} students connected").replace('{count}', pairedCount);
+      const publishedArticlesText = (translations.published_articles_text || "{count} articles published").replace('{count}', artCount);
+
+      const activeExchangesLabel = translations.active_exchanges_label || "Active Exchanges";
+      const sharedPubsLabel = translations.shared_publications_label || "Shared Publications";
+
       welcomeContainer.innerHTML = `
         <div style="margin-top: 1rem;">
           <h3>${noMatchTitle}</h3>
           <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.75rem;">${noMatchDesc}</p>
           <div style="display: flex; gap: 0.5rem;">
             <button class="btn btn-secondary btn-small" onclick="app.switchTab('stud-culture')">${writeArtBtnText}</button>
+          </div>
+        </div>
+
+        <!-- Global Engagement Metrics Grid -->
+        <div style="margin-top: 1.5rem; border-top: 1px solid var(--panel-border); padding-top: 1.25rem;">
+          <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;">📊 Global Exchange Statistics</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+            <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--panel-border); padding: 0.75rem 1rem; border-radius: 12px; display: flex; flex-direction: column; gap: 0.25rem;">
+              <span style="font-size: 0.75rem; font-weight: 600; color: var(--secondary);">${activeExchangesLabel}</span>
+              <span style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary);">${pairedCount}</span>
+              <span style="font-size: 0.7rem; color: var(--text-secondary);">${pairedStudentsText}</span>
+            </div>
+            <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--panel-border); padding: 0.75rem 1rem; border-radius: 12px; display: flex; flex-direction: column; gap: 0.25rem;">
+              <span style="font-size: 0.75rem; font-weight: 600; color: var(--accent);">${sharedPubsLabel}</span>
+              <span style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary);">${artCount}</span>
+              <span style="font-size: 0.7rem; color: var(--text-secondary);">${publishedArticlesText}</span>
+            </div>
           </div>
         </div>
       `;

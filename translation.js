@@ -68,7 +68,13 @@ const UI_TRANSLATIONS = {
     no_articles_submitted: "No articles submitted yet.",
     staff_messages: "Staff Messages",
     no_conversation: "No Conversation Selected",
-    select_coordinator: "Select a coordinator from the list to start chatting."
+    select_coordinator: "Select a coordinator from the list to start chatting.",
+    active_exchanges_label: "Active Exchanges",
+    paired_students_text: "{count} students connected",
+    chat_history_label: "Chat History",
+    messages_exchanged_text: "{count} messages exchanged",
+    shared_publications_label: "Shared Publications",
+    published_articles_text: "{count} articles published"
   },
   de: {
     stud_dashboard: "Schüler-Dashboard",
@@ -138,7 +144,13 @@ const UI_TRANSLATIONS = {
     no_articles_submitted: "Noch keine Beiträge eingereicht.",
     staff_messages: "Lehrer-Nachrichten",
     no_conversation: "Keine Unterhaltung ausgewählt",
-    select_coordinator: "Wähle eine Lehrkraft aus der Liste aus, um einen Chat zu starten."
+    select_coordinator: "Wähle eine Lehrkraft aus der Liste aus, um einen Chat zu starten.",
+    active_exchanges_label: "Aktive Kopplungen",
+    paired_students_text: "{count} Schüler verbunden",
+    chat_history_label: "Chat-Verlauf",
+    messages_exchanged_text: "{count} Nachrichten ausgetauscht",
+    shared_publications_label: "Gemeinsame Beiträge",
+    published_articles_text: "{count} Beiträge veröffentlicht"
   }
 };
 
