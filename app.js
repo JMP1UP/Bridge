@@ -1667,9 +1667,12 @@ class App {
     // 1. Overview Card
     html += `
       <div class="metric-card overview-link" style="cursor: default;">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
-          <h4 style="font-family: var(--font-title); font-weight: 700; font-size: 0.95rem; margin: 0; color: var(--text-primary);">${ownSchool.name}</h4>
-          <span style="font-size: 1.25rem;">📊</span>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; gap: 0.5rem;">
+          <h4 style="font-family: var(--font-title); font-weight: 700; font-size: 0.95rem; margin: 0; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; max-width: 180px;">${ownSchool.name}</h4>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span class="info-icon-btn" onclick="event.stopPropagation(); app.openSchoolDetail('${ownSchool.id}')" title="View School Profile">ℹ️</span>
+            <span style="font-size: 1.25rem;">📊</span>
+          </div>
         </div>
         <div style="font-size: 1.5rem; font-weight: 800; font-family: var(--font-title); color: var(--accent); margin: 0.25rem 0;">
           ${overallMatchRate}% <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">of students paired</span>
@@ -1731,7 +1734,10 @@ class App {
               ${logoHtml}
               <h4 style="font-family: var(--font-title); font-weight: 700; font-size: 0.95rem; margin: 0; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden;">${partner.name}</h4>
             </div>
-            <span style="font-size: 0.65rem; font-weight: 600; padding: 0.15rem 0.45rem; border-radius: 6px; ${badgeStyle}">${statusText}</span>
+            <div style="display: flex; align-items: center; gap: 0.35rem; margin-left: auto;">
+              <span class="info-icon-btn" onclick="event.stopPropagation(); app.openSchoolDetail('${partner.id}')" title="View School Profile">ℹ️</span>
+              <span style="font-size: 0.65rem; font-weight: 600; padding: 0.15rem 0.45rem; border-radius: 6px; ${badgeStyle}">${statusText}</span>
+            </div>
           </div>
           <div style="font-size: 1.5rem; font-weight: 800; font-family: var(--font-title); color: ${activeCount > 0 ? 'var(--success)' : 'var(--text-secondary)'}; margin: 0.25rem 0;">
             ${activeCount} <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">active connection${activeCount === 1 ? '' : 's'}</span>
