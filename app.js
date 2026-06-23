@@ -2212,6 +2212,17 @@ class App {
       `;
     });
 
+    // Add a dashed shortcut card to request new connections
+    html += `
+      <div class="metric-card" onclick="app.switchMatchingSubtab('connections')" style="border: 2px dashed var(--panel-border); background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 120px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--primary)'; this.style.background='rgba(var(--primary-rgb), 0.03)'" onmouseout="this.style.borderColor='var(--panel-border)'; this.style.background='transparent'">
+        <div style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; height: 100%;">
+          <span style="font-size: 1.6rem; line-height: 1; display: block; margin: 0;">🔗</span>
+          <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); display: block; line-height: 1.2;">Establish a New Connection</span>
+          <span style="font-size: 0.7rem; color: var(--text-muted); display: block; line-height: 1.2;">Find other schools on Bridge</span>
+        </div>
+      </div>
+    `;
+
     html += `</div>`;
     summaryContainer.innerHTML = html;
 
