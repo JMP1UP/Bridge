@@ -1137,6 +1137,35 @@ tr:hover td {
   border-radius: 3px 3px 0 0;
 }
 
+/* Premium Segmented Pill Switcher Styles */
+.subtab-pill {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 0.55rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border-radius: 10px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.subtab-pill:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.subtab-pill.active {
+  color: #fff;
+  background: var(--primary);
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.35);
+}
+
 /* Login Screen Rebrand & Layout */
 .login-screen-container {
   display: flex;

@@ -3722,7 +3722,7 @@ class App {
       }
 
       // Keep current subtab active or default to article
-      const activeSubtabBtn = document.querySelector('.project-subtab-nav .subtab-btn.active');
+      const activeSubtabBtn = document.querySelector('.project-subtab-nav .subtab-pill.active');
       const activeId = activeSubtabBtn ? activeSubtabBtn.id.replace('proj-subtab-', '') : 'article';
       this.switchProjectSubtab(activeId);
     }
