@@ -41,6 +41,7 @@
             <select id="login-staff-select" class="form-control login-select">
               <option value="coord_1">Mrs. Smith (Languages Coordinator & School Admin - UK)</option>
               <option value="coord_2">Herr Wagner (Languages Coordinator - Germany)</option>
+              <option value="coord_3">Monsieur Dupont (Languages Coordinator - France)</option>
               <option value="admin">System Admin (Platform Administrator)</option>
             </select>
           </div>
@@ -790,6 +791,9 @@
           <button class="subtab-btn" id="subtab-active-btn" onclick="app.switchMatchingSubtab('active')">
             Active Matches
           </button>
+          <button class="subtab-btn" id="subtab-connections-btn" onclick="app.switchMatchingSubtab('connections')">
+            School Connections
+          </button>
         </div>
 
         <!-- Matching Metrics Overview -->
@@ -965,6 +969,11 @@
             <div class="form-group">
               <label for="school-desc-input">School Biography & Description</label>
               <textarea class="form-control" id="school-desc-input" style="height: 120px; resize: vertical;" placeholder="Tell exchange partners and students about your school..." required></textarea>
+            </div>
+            
+            <div class="form-group">
+              <label for="coordinator-bio-input">Coordinator Biography & Introduction</label>
+              <textarea class="form-control" id="coordinator-bio-input" style="height: 100px; resize: vertical;" placeholder="Introduce yourself to partner school coordinators (e.g. your teaching experience, role)..." required></textarea>
             </div>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
@@ -1147,6 +1156,11 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Subtab 4: School Connections & Directory -->
+        <div id="matching-subtab-connections" style="display: none;">
+          <!-- Content populated dynamically by JS -->
         </div>
       </section>
 
@@ -1490,6 +1504,38 @@
         <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
           <button type="button" class="btn btn-secondary" onclick="app.closeModal('report-concern-modal')">Cancel</button>
           <button type="submit" class="btn btn-danger">Submit Safety Report</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Send School Connection Request Modal -->
+  <div class="modal-overlay" id="connect-request-modal">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3 class="panel-title">🔗 Request School Connection</h3>
+        <button class="modal-close" onclick="app.closeModal('connect-request-modal')">&times;</button>
+      </div>
+      <form id="connect-request-form">
+        <input type="hidden" id="connect-target-school-id">
+        <div style="margin-bottom: 1rem;">
+          <h4 style="font-size: 0.95rem; font-weight: 700; margin: 0;" id="connect-target-school-name">Target School</h4>
+          <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0.15rem 0 0 0;" id="connect-target-school-meta">Location</p>
+        </div>
+        
+        <div class="form-group">
+          <label for="connect-requestor-bio">Your Biography & Introduction</label>
+          <textarea id="connect-requestor-bio" class="form-control" style="height: 100px; resize: vertical;" placeholder="Introduce yourself to the partner school coordinator..." required></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label for="connect-personalised-msg">Personalised Message (Optional)</label>
+          <textarea id="connect-personalised-msg" class="form-control" style="height: 80px; resize: vertical;" placeholder="e.g. Hello, we would love to connect our year 9 German class with your English class!"></textarea>
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+          <button type="button" class="btn btn-secondary" onclick="app.closeModal('connect-request-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Send Connection Request</button>
         </div>
       </form>
     </div>

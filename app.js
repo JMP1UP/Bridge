@@ -202,6 +202,36 @@ class App {
     const artForm = document.getElementById('article-submission-form');
     artForm.addEventListener('submit', (e) => this.handleArticleSubmit(e));
 
+    // Connection Request form submission
+    const connForm = document.getElementById('connect-request-form');
+    if (connForm) {
+      connForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const targetSchoolId = document.getElementById('connect-target-school-id').value;
+        const requestorBio = document.getElementById('connect-requestor-bio').value.trim();
+        const requestMessage = document.getElementById('connect-personalised-msg').value.trim();
+        const teacher = this.getLoggedTeacher();
+        const schoolId = teacher ? teacher.schoolId : 'school_1';
+
+        window.db.addSchoolConnection({
+          fromSchoolId: schoolId,
+          toSchoolId: targetSchoolId,
+          requestMessage,
+          requestorBio
+        });
+
+        // Add audit log
+        const name = teacher ? teacher.name : 'Teacher';
+        const targetSchool = window.db.getSchool(targetSchoolId);
+        window.db.addLog('Connection Requested', `Sent connection request to ${targetSchool ? targetSchool.name : 'another school'}.`, name);
+
+        alert('Connection request sent successfully!');
+        this.closeModal('connect-request-modal');
+        this.refreshUI();
+        this.renderSchoolConnections();
+      });
+    }
+
     // Message sending listeners
     document.getElementById('chat-send-btn').addEventListener('click', () => this.sendMessage());
     document.getElementById('chat-textarea').addEventListener('keydown', (e) => {
@@ -1890,10 +1920,18 @@ class App {
       const unmatchedCount = students.filter(s => s.schoolId === schoolId && s.matchStatus === 'unmatched').length;
       countEl.textContent = unmatchedCount;
     } else {
-      nameEl.textContent = 'No School Selected';
-      metaEl.textContent = '';
-      descEl.textContent = 'Please choose a partner school from the dropdown to continue.';
-      countEl.textContent = '0';
+      const selectEl = document.getElementById('partner-school-select');
+      if (selectEl && selectEl.options.length === 0) {
+        nameEl.innerHTML = '<span style="color: var(--danger);">⚠️ No Connected Partner Schools</span>';
+        metaEl.textContent = 'Action Required';
+        descEl.innerHTML = 'You cannot suggest matches until you connect with a school. Please go to the <strong>School Connections</strong> tab to find partner schools and establish a connection.';
+        countEl.textContent = 'N/A';
+      } else {
+        nameEl.textContent = 'No School Selected';
+        metaEl.textContent = '';
+        descEl.textContent = 'Please choose a partner school from the dropdown to continue.';
+        countEl.textContent = '0';
+      }
     }
   }
 
@@ -1994,7 +2032,13 @@ class App {
     const previousVal = partnerSelect.value;
     partnerSelect.innerHTML = '';
 
-    const schools = window.db.getSchools().filter(s => s.id !== schoolId);
+    const connections = window.db.getSchoolConnections().filter(c => 
+      c.status === 'Connected' && (c.fromSchoolId === schoolId || c.toSchoolId === schoolId)
+    );
+    const connectedSchoolIds = connections.map(c => 
+      c.fromSchoolId === schoolId ? c.toSchoolId : c.fromSchoolId
+    );
+    const schools = window.db.getSchools().filter(s => connectedSchoolIds.includes(s.id));
     schools.forEach(s => {
       const opt = document.createElement('option');
       opt.value = s.id;
@@ -2497,20 +2541,24 @@ class App {
     const pairBtn = document.getElementById('subtab-pair-btn');
     const reqBtn = document.getElementById('subtab-requests-btn');
     const activeBtn = document.getElementById('subtab-active-btn');
+    const connBtn = document.getElementById('subtab-connections-btn');
     
     const pairDiv = document.getElementById('matching-subtab-pair');
     const reqDiv = document.getElementById('matching-subtab-requests');
     const activeDiv = document.getElementById('matching-subtab-active');
+    const connDiv = document.getElementById('matching-subtab-connections');
 
     if (!pairBtn || !reqBtn || !activeBtn || !pairDiv || !reqDiv || !activeDiv) return;
 
     pairBtn.classList.remove('active');
     reqBtn.classList.remove('active');
     activeBtn.classList.remove('active');
+    if (connBtn) connBtn.classList.remove('active');
     
     pairDiv.style.display = 'none';
     reqDiv.style.display = 'none';
     activeDiv.style.display = 'none';
+    if (connDiv) connDiv.style.display = 'none';
 
     if (subtab === 'pair') {
       pairBtn.classList.add('active');
@@ -2522,6 +2570,12 @@ class App {
       activeBtn.classList.add('active');
       activeDiv.style.display = 'block';
       this.renderActiveMatches();
+    } else if (subtab === 'connections') {
+      if (connBtn) connBtn.classList.add('active');
+      if (connDiv) {
+        connDiv.style.display = 'block';
+        this.renderSchoolConnections();
+      }
     }
   }
 
@@ -2588,6 +2642,266 @@ class App {
       window.db.deleteMatch(matchId);
       alert('Match disbanded successfully.');
       this.refreshUI();
+    }
+  }
+
+  // Renders the School Connections management tab for teachers
+  renderSchoolConnections() {
+    const teacher = this.getLoggedTeacher();
+    const schoolId = teacher ? teacher.schoolId : 'school_1';
+    const container = document.getElementById('matching-subtab-connections');
+    if (!container) return;
+
+    const connections = window.db.getSchoolConnections();
+    const established = connections.filter(c => c.status === 'Connected' && (c.fromSchoolId === schoolId || c.toSchoolId === schoolId));
+    const incoming = connections.filter(c => c.status === 'Pending' && c.toSchoolId === schoolId);
+    const sent = connections.filter(c => c.status === 'Pending' && c.fromSchoolId === schoolId);
+
+    const connectedOrRequestedSchoolIds = connections.filter(c => 
+      c.fromSchoolId === schoolId || c.toSchoolId === schoolId
+    ).map(c => c.fromSchoolId === schoolId ? c.toSchoolId : c.fromSchoolId);
+    
+    const unconnectedSchools = window.db.getSchools().filter(s => 
+      s.id !== schoolId && !connectedOrRequestedSchoolIds.includes(s.id)
+    );
+
+    // Build Established Connections section
+    let establishedHtml = '';
+    if (established.length === 0) {
+      establishedHtml = `
+        <div style="text-align: center; padding: 2rem; color: var(--text-secondary); border: 1px dashed var(--panel-border); border-radius: 12px; background: rgba(255,255,255,0.01);">
+          <span style="font-size: 2rem; display: block; margin-bottom: 0.5rem;">🔗</span>
+          <h4 style="margin: 0; font-size: 0.95rem; font-weight: 600;">No Connected Schools</h4>
+          <p style="font-size: 0.75rem; margin: 0.25rem 0 0 0; color: var(--text-muted);">Find a partner school below and request a connection to start matching students.</p>
+        </div>
+      `;
+    } else {
+      establishedHtml = `
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          ${established.map(c => {
+            const partnerSchoolId = c.fromSchoolId === schoolId ? c.toSchoolId : c.fromSchoolId;
+            const school = window.db.getSchool(partnerSchoolId);
+            const flag = this.getSchoolFlag(school?.country);
+            
+            // Calculate active matches count
+            const matches = window.db.getMatches().filter(m => m.active && 
+              m.studentIds.some(id => {
+                const stud = window.db.getStudent(id);
+                return stud && stud.schoolId === schoolId;
+              }) &&
+              m.studentIds.some(id => {
+                const stud = window.db.getStudent(id);
+                return stud && stud.schoolId === partnerSchoolId;
+              })
+            );
+            
+            return `
+              <div class="panel" style="padding: 1rem; background: rgba(255,255,255,0.02); display: flex; justify-content: space-between; align-items: center; border-radius: 12px; border: 1px solid var(--panel-border);">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                  <div style="font-size: 1.5rem; width: 40px; height: 40px; background: rgba(0,0,0,0.15); border-radius: 8px; display: flex; align-items: center; justify-content: center;">🏫</div>
+                  <div>
+                    <h4 style="font-weight: 700; font-size: 0.95rem; margin: 0; display: flex; align-items: center; gap: 0.4rem;">
+                      ${flag} ${school?.name}
+                    </h4>
+                    <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0.15rem 0 0 0;">${school?.city}, ${school?.country} • Lang: ${school?.language.toUpperCase()}</p>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                  <span class="badge badge-info">${matches.length} Pen Pal Match${matches.length === 1 ? '' : 'es'}</span>
+                  <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2);" onclick="app.removeSchoolConnection('${c.id}')">Disconnect</button>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    // Build Pending Incoming Connection Requests section
+    let incomingHtml = '';
+    if (incoming.length > 0) {
+      incomingHtml = `
+        <div style="margin-bottom: 2rem;">
+          <h3 style="font-size: 1rem; font-weight: 700; color: var(--primary); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">📥 Incoming Connection Requests (${incoming.length})</h3>
+          <div style="display: flex; flex-direction: column; gap: 1rem;">
+            ${incoming.map(c => {
+              const school = window.db.getSchool(c.fromSchoolId);
+              const flag = this.getSchoolFlag(school?.country);
+              const sender = window.db.getCoordinators().find(co => co.schoolId === c.fromSchoolId) || { name: 'Unknown Coordinator', email: '' };
+              
+              return `
+                <div class="panel" style="padding: 1.25rem; background: rgba(6, 182, 212, 0.03); border: 1px solid rgba(6, 182, 212, 0.25); border-radius: 14px; display: flex; flex-direction: column; gap: 0.75rem;">
+                  <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem;">
+                    <div>
+                      <h4 style="font-weight: 700; font-size: 1rem; margin: 0; color: var(--text-primary); display: flex; align-items: center; gap: 0.4rem;">
+                        ${flag} ${school?.name}
+                      </h4>
+                      <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0.15rem 0 0 0;">${school?.city}, ${school?.country} • Lang: ${school?.language.toUpperCase()}</p>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                      <button class="btn btn-primary btn-small" onclick="app.acceptConnectionRequest('${c.id}')">Accept</button>
+                      <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2);" onclick="app.declineConnectionRequest('${c.id}')">Decline</button>
+                    </div>
+                  </div>
+                  <div style="background: rgba(0,0,0,0.15); border-radius: 8px; padding: 0.75rem; font-size: 0.8rem; border: 1px solid var(--panel-border);">
+                    <div style="font-weight: 600; margin-bottom: 0.35rem; color: var(--secondary);">From Coordinator: ${sender.name} (${sender.email})</div>
+                    <div style="font-style: italic; margin-bottom: 0.5rem; color: var(--text-secondary); line-height: 1.4;">"<strong>Coordinator Biography:</strong> ${c.requestorBio || 'Not provided.'}"</div>
+                    ${c.requestMessage ? `<div style="color: var(--text-secondary); line-height: 1.4; border-top: 1px solid var(--panel-border); padding-top: 0.4rem; margin-top: 0.4rem;"><strong>Personal Message:</strong> ${c.requestMessage}</div>` : ''}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // Build Sent Requests section
+    let sentHtml = '';
+    if (sent.length > 0) {
+      sentHtml = `
+        <div style="margin-top: 1.5rem; margin-bottom: 1.5rem;">
+          <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.05em; margin-bottom: 0.75rem; text-transform: uppercase;">📤 Outgoing Requests Sent (${sent.length})</h4>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            ${sent.map(c => {
+              const school = window.db.getSchool(c.toSchoolId);
+              const flag = this.getSchoolFlag(school?.country);
+              return `
+                <div class="panel" style="padding: 1rem; background: rgba(255,255,255,0.01); display: flex; justify-content: space-between; align-items: center; border-radius: 12px; border: 1px solid var(--panel-border);">
+                  <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <div style="font-size: 1.5rem; width: 40px; height: 40px; background: rgba(0,0,0,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center;">🏫</div>
+                    <div>
+                      <h5 style="font-weight: 700; font-size: 0.9rem; margin: 0; display: flex; align-items: center; gap: 0.4rem;">
+                        ${flag} ${school?.name}
+                      </h5>
+                      <span style="font-size: 0.75rem; color: var(--text-muted);">${school?.city}, ${school?.country}</span>
+                    </div>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 1rem;">
+                    <span class="badge badge-warning" style="font-size: 0.7rem; padding: 0.15rem 0.5rem;">Pending Acceptance</span>
+                    <button class="btn btn-secondary btn-small" style="color: var(--text-muted);" onclick="app.declineConnectionRequest('${c.id}')">Cancel Request</button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // Build Find Partner Schools section
+    let partnerSchoolsHtml = '';
+    if (unconnectedSchools.length === 0) {
+      partnerSchoolsHtml = `
+        <div style="text-align: center; padding: 2rem; color: var(--text-muted); border: 1px dashed var(--panel-border); border-radius: 12px; background: rgba(255,255,255,0.01);">
+          No other schools are currently available to connect.
+        </div>
+      `;
+    } else {
+      partnerSchoolsHtml = `
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem;">
+          ${unconnectedSchools.map(s => {
+            const flag = this.getSchoolFlag(s.country);
+            return `
+              <div class="panel" style="padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; border-radius: 14px; border: 1px solid var(--panel-border); background: rgba(255,255,255,0.01); transition: transform 0.2s, border-color 0.2s;" onmouseover="this.style.borderColor='var(--secondary)'" onmouseout="this.style.borderColor='var(--panel-border)'">
+                <div>
+                  <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <span style="font-size: 1.5rem;">🏫</span>
+                    <h5 style="font-weight: 700; font-size: 0.95rem; margin: 0; line-height: 1.3; color: var(--text-primary);">${s.name}</h5>
+                  </div>
+                  <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0.25rem 0;"><strong>Location:</strong> ${flag} ${s.city}, ${s.country}</p>
+                  <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0.25rem 0;"><strong>Language:</strong> ${s.language.toUpperCase()}</p>
+                  <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem; line-height: 1.45; text-align: justify; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                    ${s.description || 'No biography details provided.'}
+                  </p>
+                </div>
+                <button class="btn btn-primary btn-small" style="width: 100%;" onclick="app.openConnectRequestModal('${s.id}')">+ Request Connection</button>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    container.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 1.75rem;">
+        
+        <!-- Incoming Requests section -->
+        ${incomingHtml}
+
+        <!-- Established Connections section -->
+        <div>
+          <h3 style="font-size: 1rem; font-weight: 700; color: var(--secondary); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">🔗 Established Connections (${established.length})</h3>
+          ${establishedHtml}
+        </div>
+
+        <!-- Sent Requests section -->
+        ${sentHtml}
+
+        <!-- Find Partner Schools Directory section -->
+        <div style="margin-top: 1rem; border-top: 1px solid var(--panel-border); padding-top: 1.5rem;">
+          <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">🔍 School Directory (Find Exchange Partners)</h3>
+          <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.25rem;">Establish connection requests with school coordinators before proposing student matches.</p>
+          ${partnerSchoolsHtml}
+        </div>
+
+      </div>
+    `;
+  }
+
+  // Opens connection request modal
+  openConnectRequestModal(targetSchoolId) {
+    const school = window.db.getSchool(targetSchoolId);
+    if (!school) return;
+
+    const teacher = this.getLoggedTeacher();
+    const bioText = teacher ? (teacher.bio || '') : '';
+
+    document.getElementById('connect-target-school-id').value = targetSchoolId;
+    document.getElementById('connect-target-school-name').textContent = school.name;
+    document.getElementById('connect-target-school-meta').innerHTML = `${this.getSchoolFlag(school.country)} ${school.city}, ${school.country}`;
+    document.getElementById('connect-requestor-bio').value = bioText;
+    document.getElementById('connect-personalised-msg').value = '';
+
+    this.openModal('connect-request-modal');
+  }
+
+  // Accepts incoming request
+  acceptConnectionRequest(requestId) {
+    window.db.updateSchoolConnection(requestId, { status: 'Connected', connectedAt: new Date().toISOString() });
+    
+    // Add audit log
+    const conn = window.db.getSchoolConnections().find(c => c.id === requestId);
+    const teacher = this.getLoggedTeacher();
+    const name = teacher ? teacher.name : 'Teacher';
+    const otherSchool = window.db.getSchool(conn ? conn.fromSchoolId : '');
+    window.db.addLog('School Connected', `Accepted connection request from ${otherSchool ? otherSchool.name : 'another school'}.`, name);
+
+    alert('Connection accepted successfully! You can now pair students with this school.');
+    this.refreshUI();
+    this.renderSchoolConnections();
+  }
+
+  // Declines / Cancels a request
+  declineConnectionRequest(requestId) {
+    window.db.deleteSchoolConnection(requestId);
+    alert('Connection request removed.');
+    this.refreshUI();
+    this.renderSchoolConnections();
+  }
+
+  // Disconnects an established link
+  removeSchoolConnection(connectionId) {
+    if (confirm('Are you sure you want to disconnect from this school? This will NOT disband existing active student matches, but you will no longer be able to propose new matches.')) {
+      window.db.deleteSchoolConnection(connectionId);
+      
+      const teacher = this.getLoggedTeacher();
+      const name = teacher ? teacher.name : 'Teacher';
+      window.db.addLog('School Disconnected', `Removed school connection.`, name);
+
+      alert('Disconnected successfully.');
+      this.refreshUI();
+      this.renderSchoolConnections();
     }
   }
 
@@ -2961,9 +3275,11 @@ class App {
     document.getElementById('flagged-words-input').value = settings.flaggedKeywords.join(', ');
     document.getElementById('attachments-toggle').checked = settings.attachmentsEnabled;
 
-    // Populate school profile
-    // Under this role Mrs. Smith is coordinator for school_1
-    const schoolId = 'school_1';
+    const teacher = this.getLoggedTeacher();
+    const schoolId = teacher ? teacher.schoolId : 'school_1';
+    if (teacher) {
+      document.getElementById('coordinator-bio-input').value = teacher.bio || '';
+    }
     const school = window.db.getSchool(schoolId);
     if (school) {
       document.getElementById('school-desc-input').value = school.description || '';
@@ -3042,9 +3358,14 @@ class App {
     const description = document.getElementById('school-desc-input').value.trim();
     const logoUrl = document.getElementById('school-logo-select').value;
     const photoUrl = document.getElementById('school-photo-select').value;
+    const bio = document.getElementById('coordinator-bio-input').value.trim();
 
-    const schoolId = 'school_1'; // Mrs. Smith's school
+    const teacher = this.getLoggedTeacher();
+    const schoolId = teacher ? teacher.schoolId : 'school_1';
     window.db.updateSchool(schoolId, { description, logoUrl, photoUrl });
+    if (teacher) {
+      window.db.updateCoordinator(teacher.id, { bio });
+    }
 
     alert('School profile updated successfully! Matches and exchange partner students will see the updated spotlight.');
     this.refreshUI();

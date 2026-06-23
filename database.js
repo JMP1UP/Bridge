@@ -126,8 +126,9 @@ const defaultDatabase = {
     attachmentsEnabled: false
   },
   coordinators: [
-    { id: 'coord_1', name: 'Mrs. Smith', email: 'smith@leicesterhigh.edu', schoolId: 'school_1', isSchoolAdmin: true },
-    { id: 'coord_2', name: 'Herr Wagner', email: 'wagner@goethe.edu', schoolId: 'school_2', isSchoolAdmin: false }
+    { id: 'coord_1', name: 'Mrs. Smith', email: 'smith@leicesterhigh.edu', schoolId: 'school_1', isSchoolAdmin: true, bio: "Languages coordinator at Leicester High School. I have been teaching English and German for 12 years." },
+    { id: 'coord_2', name: 'Herr Wagner', email: 'wagner@goethe.edu', schoolId: 'school_2', isSchoolAdmin: false, bio: "Coordinator for international exchanges at Goethe-Gymnasium. Passionate about linking students globally." },
+    { id: 'coord_3', name: 'M. Dupont', email: 'dupont@lycee.edu', schoolId: 'school_3', isSchoolAdmin: true, bio: "Enseignant de langues au Lycée Saint-Exupéry à Lyon. Passionné par l'échange culturel et linguistique." }
   ],
   schoolRequests: [
     { id: 'req_1', name: 'Oakridge Academy', country: 'United Kingdom', city: 'London', language: 'en', code: 'OAK-UK', coordinatorName: 'Mr. David Green', coordinatorEmail: 'david@oakridge.edu', status: 'Pending', requestedAt: '2026-06-21T09:00:00Z' }
@@ -171,6 +172,9 @@ const defaultDatabase = {
   projectMessages: [
     { id: 'pmsg_1', projectId: 'proj_1', senderId: 'stud_1', senderName: 'Harriet Potter', text: 'Hi everyone! Excited to work on this cultural comparison project together.', timestamp: '2026-06-18T11:00:00Z' },
     { id: 'pmsg_2', projectId: 'proj_1', senderId: 'stud_7', senderName: 'Lukas Schmidt', text: 'Hallo Harriet! Me too. Let\'s write about afternoon tea and pretzels.', timestamp: '2026-06-18T11:15:00Z' }
+  ],
+  schoolConnections: [
+    { id: 'conn_1', fromSchoolId: 'school_1', toSchoolId: 'school_2', status: 'Connected', connectedAt: '2026-05-10T10:00:00Z', requestMessage: 'Seeded connection', requestorBio: 'System Seed' }
   ]
 };
 
@@ -193,8 +197,9 @@ class LocalDB {
     const isOldProposedMatchSeed = data && data.matches && data.matches.some(m => m.id === 'match_5' && m.studentIds[0] !== null);
     const isMissingCoordMessages = data && !data.coordinatorMessages;
     const isMissingProjects = data && (!data.projects || !data.projectMessages);
+    const isMissingConnections = data && (!data.schoolConnections || !data.coordinators || data.coordinators.length < 3);
 
-    if (!data || hasOldName || isMissingTables || isMissingPhotos || isMissingBiog || isMissingResolvedFlags || isOldProposedMatchSeed || isMissingCoordMessages || isMissingProjects) {
+    if (!data || hasOldName || isMissingTables || isMissingPhotos || isMissingBiog || isMissingResolvedFlags || isOldProposedMatchSeed || isMissingCoordMessages || isMissingProjects || isMissingConnections) {
       localStorage.setItem(DB_KEY, JSON.stringify(defaultDatabase));
     }
   }
@@ -243,6 +248,39 @@ class LocalDB {
   getProjects() { return this.getTable('projects'); }
   getProject(id) { return this.getProjects().find(p => p.id === id); }
   getProjectMessages() { return this.getTable('projectMessages'); }
+  getSchoolConnections() { return this.getTable('schoolConnections'); }
+  addSchoolConnection(conn) {
+    const list = this.getSchoolConnections();
+    const newConn = {
+      id: 'conn_' + Date.now(),
+      status: 'Pending',
+      createdAt: new Date().toISOString(),
+      ...conn
+    };
+    list.push(newConn);
+    this.saveTable('schoolConnections', list);
+    return newConn;
+  }
+  updateSchoolConnection(id, updates) {
+    const list = this.getSchoolConnections();
+    const index = list.findIndex(c => c.id === id);
+    if (index !== -1) {
+      list[index] = { ...list[index], ...updates };
+      this.saveTable('schoolConnections', list);
+    }
+  }
+  deleteSchoolConnection(id) {
+    const list = this.getSchoolConnections().filter(c => c.id !== id);
+    this.saveTable('schoolConnections', list);
+  }
+  updateCoordinator(id, updates) {
+    const list = this.getCoordinators();
+    const index = list.findIndex(c => c.id === id);
+    if (index !== -1) {
+      list[index] = { ...list[index], ...updates };
+      this.saveTable('coordinators', list);
+    }
+  }
 
   // Action helpers
   addSchoolRequest(req) {
