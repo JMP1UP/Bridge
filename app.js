@@ -797,17 +797,6 @@ class App {
           </div>
         </div>
 
-        <!-- Submitted Articles section -->
-        <div style="margin-top: 1.75rem; border-top: 1px solid var(--panel-border); padding-top: 1.5rem;">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
-            <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.05em; margin: 0; text-transform: uppercase;">✍️ ${translations.stud_culture || "My Articles"}</h4>
-            <button class="btn btn-secondary btn-small" style="padding: 0.2rem 0.6rem; font-size: 0.75rem;" onclick="app.switchTab('stud-culture'); app.showArticleForm(true);">+ ${translations.write_article_btn || "Write Article"}</button>
-          </div>
-          <div id="student-dashboard-articles-list" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 280px; overflow-y: auto; padding-right: 0.25rem;">
-            <!-- Dynamic articles list goes here -->
-          </div>
-        </div>
-
         <!-- Recent Cultural Discoveries section -->
         <div style="margin-top: 1.75rem; border-top: 1px solid var(--panel-border); padding-top: 1.5rem;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
@@ -833,17 +822,6 @@ class App {
           <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.75rem;">${noMatchDesc}</p>
           <div style="display: flex; gap: 0.5rem;">
             <button class="btn btn-secondary btn-small" onclick="app.switchTab('stud-culture')">${writeArtBtnText}</button>
-          </div>
-        </div>
-
-        <!-- Submitted Articles section -->
-        <div style="margin-top: 1.75rem; border-top: 1px solid var(--panel-border); padding-top: 1.5rem;">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
-            <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.05em; margin: 0; text-transform: uppercase;">✍️ ${translations.stud_culture || "My Articles"}</h4>
-            <button class="btn btn-secondary btn-small" style="padding: 0.2rem 0.6rem; font-size: 0.75rem;" onclick="app.switchTab('stud-culture'); app.showArticleForm(true);">+ ${translations.write_article_btn || "Write Article"}</button>
-          </div>
-          <div id="student-dashboard-articles-list" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 280px; overflow-y: auto; padding-right: 0.25rem;">
-            <!-- Dynamic articles list goes here -->
           </div>
         </div>
 
@@ -946,60 +924,6 @@ class App {
         `;
         articlesContainer.appendChild(item);
       });
-    }
-
-    // Render the student's authored articles in the dashboard welcome card section
-    const dbArticlesContainer = document.getElementById('student-dashboard-articles-list');
-    if (dbArticlesContainer) {
-      const studentArticles = window.db.getArticles().filter(a => a.authorId === student.id);
-      dbArticlesContainer.innerHTML = '';
-      
-      if (studentArticles.length === 0) {
-        const noArticlesText = translations.no_articles_submitted || "No articles submitted yet.";
-        dbArticlesContainer.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1.5rem; border: 1px dashed var(--panel-border); border-radius: 8px;">${noArticlesText}</p>`;
-      } else {
-        studentArticles.forEach(art => {
-          const item = document.createElement('div');
-          item.style.padding = '0.75rem';
-          item.style.background = 'rgba(255,255,255,0.02)';
-          item.style.border = '1px solid var(--panel-border)';
-          item.style.borderRadius = '8px';
-          item.style.display = 'flex';
-          item.style.flexDirection = 'column';
-          item.style.gap = '0.4rem';
-          item.style.cursor = 'pointer';
-          item.className = 'dashboard-article-item';
-          item.title = 'Click to read article';
-          item.addEventListener('click', () => this.openStudentArticleDetail(art.id));
-          
-          let statusBadge = '';
-          if (art.status === 'Approved') statusBadge = `<span class="badge badge-success" style="font-size: 0.7rem; padding: 0.15rem 0.4rem;">${this.interfaceLang === 'de' ? 'Freigegeben' : 'Approved'}</span>`;
-          else if (art.status === 'Pending') statusBadge = `<span class="badge badge-warning" style="font-size: 0.7rem; padding: 0.15rem 0.4rem;">${this.interfaceLang === 'de' ? 'Ausstehend' : 'Pending'}</span>`;
-          else statusBadge = `<span class="badge badge-danger" style="font-size: 0.7rem; padding: 0.15rem 0.4rem;">${this.interfaceLang === 'de' ? 'Abgelehnt' : 'Rejected'}</span>`;
-
-          const photoHtml = art.photoUrl
-            ? `<img src="${art.photoUrl}" alt="Article thumb" style="width: 36px; height: 36px; object-fit: cover; border-radius: 6px; margin-right: 0.75rem;">`
-            : '<div style="width: 36px; height: 36px; background: rgba(0,0,0,0.15); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; margin-right: 0.75rem; color: var(--text-muted);">📷</div>';
-
-          // Get snippet of content
-          const snippet = art.content.length > 80 ? art.content.substring(0, 80) + '...' : art.content;
-
-          item.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-              <div style="display: flex; align-items: center; min-width: 0;">
-                ${photoHtml}
-                <div style="min-width: 0;">
-                  <h5 style="font-size: 0.85rem; font-weight: 600; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-color);">${art.title}</h5>
-                  <span style="font-size: 0.7rem; color: var(--text-muted);">${new Date(art.submittedAt).toLocaleDateString()}</span>
-                </div>
-              </div>
-              <div style="flex-shrink: 0; margin-left: 0.5rem;">${statusBadge}</div>
-            </div>
-            <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0; line-height: 1.25;">${snippet}</p>
-          `;
-          dbArticlesContainer.appendChild(item);
-        });
-      }
     }
 
     // Render the recent 5 approved articles from connected schools (including own school)
