@@ -850,9 +850,9 @@ class App {
       `;
     }
 
-    // News Feed rendering
+    // News Feed rendering (specific to student's school, posted by their teacher)
     const newsContainer = document.getElementById('student-news-feed');
-    const news = window.db.getNews();
+    const news = window.db.getNews().filter(n => n.schoolId === student.schoolId);
     
     newsContainer.innerHTML = '';
     news.forEach(item => {
@@ -1002,60 +1002,109 @@ class App {
     const chatListContainer = document.getElementById('student-chat-list');
     const chatEmptyState = document.getElementById('chat-empty-state');
     const chatActiveState = document.getElementById('chat-active-state');
+    const discoveriesBoardState = document.getElementById('chat-discoveries-board-state');
+
+    if (!discoveriesBoardState) return;
 
     // Get matches for this student
     const activeMatches = window.db.getMatches().filter(m => m.active && m.studentIds.includes(student.id));
 
+    // Clear sidebar list
     chatListContainer.innerHTML = '';
+
+    // Set default active view to discoveries board if none selected
+    if (!this.activeMatchId) {
+      this.activeMatchId = 'discoveries_board';
+    }
+
+    // 1. Render Cultural Discoveries Board item at the top
+    const boardItem = document.createElement('div');
+    boardItem.className = `chat-item ${this.activeMatchId === 'discoveries_board' ? 'active' : ''}`;
+    boardItem.style.background = this.activeMatchId === 'discoveries_board' ? 'rgba(var(--secondary-rgb), 0.15)' : 'rgba(255,255,255,0.02)';
+    boardItem.style.borderLeft = this.activeMatchId === 'discoveries_board' ? '3px solid var(--secondary)' : '3px solid transparent';
+    boardItem.style.padding = '0.75rem 1rem';
+    boardItem.style.display = 'flex';
+    boardItem.style.alignItems = 'center';
+    boardItem.style.gap = '0.75rem';
+    boardItem.style.cursor = 'pointer';
+    boardItem.style.borderRadius = '8px';
+    boardItem.style.marginBottom = '0.5rem';
+
+    boardItem.innerHTML = `
+      <div class="user-avatar" style="width: 32px; height: 32px; font-size: 0.95rem; background: linear-gradient(135deg, var(--secondary) 0%, var(--accent) 100%); display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+        ✨
+      </div>
+      <div class="chat-item-meta" style="flex-grow: 1; overflow: hidden;">
+        <div class="chat-item-name" style="font-weight: 700; color: var(--text-primary);">
+          <span>Cultural Discoveries</span>
+        </div>
+        <div class="chat-item-preview" style="color: var(--secondary); font-size: 0.75rem; font-weight: 600;">Stories Board</div>
+      </div>
+    `;
+    boardItem.addEventListener('click', () => {
+      this.activeMatchId = 'discoveries_board';
+      this.renderStudentChat();
+    });
+    chatListContainer.appendChild(boardItem);
+
+    // 2. Render matched penpals in sidebar list
     if (activeMatches.length === 0) {
-      chatListContainer.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-muted); padding: 1rem; text-align: center;">No matched pen pals yet.</p>`;
-      chatEmptyState.style.display = 'flex';
+      const emptyNote = document.createElement('p');
+      emptyNote.style.fontSize = '0.8rem';
+      emptyNote.style.color = 'var(--text-muted)';
+      emptyNote.style.padding = '1rem';
+      emptyNote.style.textAlign = 'center';
+      emptyNote.textContent = 'No matched pen pals yet.';
+      chatListContainer.appendChild(emptyNote);
+    } else {
+      activeMatches.forEach(match => {
+        const partnerId = match.studentIds.find(id => id !== student.id);
+        const partner = window.db.getStudent(partnerId);
+        const partnerName = this.getStudentDisplayName(partner);
+        const messages = window.db.getMessages().filter(m => m.matchId === match.id);
+        const lastMsg = messages[messages.length - 1];
+
+        const item = document.createElement('div');
+        item.className = `chat-item ${this.activeMatchId === match.id ? 'active' : ''}`;
+        
+        let badgeStatus = '';
+        if (match.paused) {
+          badgeStatus = `<span class="badge badge-danger btn-small" style="font-size: 0.6rem; padding: 0.1rem 0.35rem;">Paused</span>`;
+        }
+
+        item.innerHTML = `
+          <div class="user-avatar" style="width: 32px; height: 32px; font-size: 0.8rem;">
+            ${partnerName.split(' ').map(n => n[0]).join('') || '?'}
+          </div>
+          <div class="chat-item-meta">
+            <div class="chat-item-name">
+              <span>${partnerName}</span>
+              ${badgeStatus}
+            </div>
+            <div class="chat-item-preview">${lastMsg ? lastMsg.text : 'Start chatting...'}</div>
+          </div>
+        `;
+
+        item.addEventListener('click', () => {
+          this.activeMatchId = match.id;
+          this.renderStudentChat();
+        });
+
+        chatListContainer.appendChild(item);
+      });
+    }
+
+    // 3. Render appropriate main view
+    if (this.activeMatchId === 'discoveries_board') {
+      chatEmptyState.style.display = 'none';
       chatActiveState.style.display = 'none';
+      discoveriesBoardState.style.display = 'flex';
+      this.renderDiscoveriesBoard(student);
       return;
     }
 
-    // Set first match as default if none selected
-    if (!this.activeMatchId) {
-      this.activeMatchId = activeMatches[0].id;
-    }
-
-    activeMatches.forEach(match => {
-      const partnerId = match.studentIds.find(id => id !== student.id);
-      const partner = window.db.getStudent(partnerId);
-      const partnerName = this.getStudentDisplayName(partner);
-      const messages = window.db.getMessages().filter(m => m.matchId === match.id);
-      const lastMsg = messages[messages.length - 1];
-
-      const item = document.createElement('div');
-      item.className = `chat-item ${this.activeMatchId === match.id ? 'active' : ''}`;
-      
-      let badgeStatus = '';
-      if (match.paused) {
-        badgeStatus = `<span class="badge badge-danger btn-small" style="font-size: 0.6rem; padding: 0.1rem 0.35rem;">Paused</span>`;
-      }
-
-      item.innerHTML = `
-        <div class="user-avatar" style="width: 32px; height: 32px; font-size: 0.8rem;">
-          ${partnerName.split(' ').map(n => n[0]).join('') || '?'}
-        </div>
-        <div class="chat-item-meta">
-          <div class="chat-item-name">
-            <span>${partnerName}</span>
-            ${badgeStatus}
-          </div>
-          <div class="chat-item-preview">${lastMsg ? lastMsg.text : 'Start chatting...'}</div>
-        </div>
-      `;
-
-      item.addEventListener('click', () => {
-        this.activeMatchId = match.id;
-        this.renderStudentChat();
-      });
-
-      chatListContainer.appendChild(item);
-    });
-
     // Render active chat
+    discoveriesBoardState.style.display = 'none';
     const currentMatch = activeMatches.find(m => m.id === this.activeMatchId);
     if (currentMatch) {
       chatEmptyState.style.display = 'none';
@@ -1123,6 +1172,116 @@ class App {
 
       // Auto-scroll feed to bottom
       feed.scrollTop = feed.scrollHeight;
+    }
+  }
+
+  renderDiscoveriesBoard(student) {
+    const container = document.getElementById('chat-discoveries-board-state');
+    if (!container) return;
+
+    // Get linked schools: own school + schools of active matched penpals
+    const linkedSchoolIds = [student.schoolId];
+    const activeMatches = window.db.getMatches().filter(m => m.active && m.studentIds.includes(student.id));
+    activeMatches.forEach(m => {
+      const partnerId = m.studentIds.find(id => id !== student.id);
+      const partner = window.db.getStudent(partnerId);
+      if (partner && !linkedSchoolIds.includes(partner.schoolId)) {
+        linkedSchoolIds.push(partner.schoolId);
+      }
+    });
+
+    // Get approved articles from linked schools
+    const articles = window.db.getArticles().filter(a => a.status === 'Approved' && linkedSchoolIds.includes(a.schoolId));
+
+    // Sort: most likes first, then date descending
+    const sortedArticles = [...articles].sort((a, b) => {
+      const likesDiff = (b.likes || 0) - (a.likes || 0);
+      if (likesDiff !== 0) return likesDiff;
+      return new Date(b.submittedAt) - new Date(a.submittedAt);
+    });
+
+    let articlesHtml = '';
+    if (sortedArticles.length === 0) {
+      articlesHtml = `
+        <div style="text-align: center; color: var(--text-muted); padding: 3rem; font-size: 0.9rem;">
+          <span style="font-size: 2.5rem; display: block; margin-bottom: 0.75rem;">📖</span>
+          No cultural articles published from your linked schools yet.
+        </div>
+      `;
+    } else {
+      articlesHtml = `
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
+          ${sortedArticles.map(art => {
+            const author = window.db.getStudent(art.authorId);
+            const school = window.db.getSchool(art.schoolId);
+            const authorName = this.getStudentDisplayName(author);
+            const schoolFlag = this.getSchoolFlag(school?.country);
+            const dateStr = new Date(art.submittedAt).toLocaleDateString();
+
+            const photoHtml = art.photoUrl
+              ? `<img src="${art.photoUrl}" alt="${art.title} photo" style="width: 100%; height: 160px; object-fit: cover; border-top-left-radius: 12px; border-top-right-radius: 12px;">`
+              : '';
+
+            const paddingStyle = art.photoUrl ? 'padding: 1.25rem;' : 'padding: 1.25rem; border-radius: 12px;';
+
+            return `
+              <div class="panel article-board-card" style="display: flex; flex-direction: column; background: rgba(255,255,255,0.015); border: 1px solid var(--panel-border); border-radius: 12px; overflow: hidden; height: 100%;">
+                ${photoHtml}
+                <div style="${paddingStyle} display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between; gap: 0.75rem;">
+                  <div>
+                    <h4 style="font-weight: 800; font-size: 1.15rem; margin: 0 0 0.35rem 0; color: var(--text-primary); line-height: 1.35;">${art.title}</h4>
+                    <div style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem; font-weight: 500;">
+                      ${schoolFlag} <span>${school?.name}</span> • <span>${authorName}</span>
+                    </div>
+                    <p style="font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary); margin: 0; text-align: justify; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;">
+                      ${art.content}
+                    </p>
+                  </div>
+                  
+                  <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--panel-border); padding-top: 0.75rem; margin-top: 0.5rem;">
+                    <span style="font-size: 0.7rem; color: var(--text-muted);">${dateStr}</span>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                      <button class="btn btn-secondary btn-small" onclick="app.likeArticleFromBoard('${art.id}')" style="display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.5rem; font-size: 0.75rem; border-radius: 6px; font-weight: 600;">
+                        ❤️ <span>${art.likes || 0}</span>
+                      </button>
+                      <button class="btn btn-primary btn-small" onclick="app.openStudentArticleDetail('${art.id}')" style="padding: 0.25rem 0.55rem; font-size: 0.75rem; border-radius: 6px; font-weight: 600;">Read Full</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    container.innerHTML = `
+      <div style="border-bottom: 1px solid var(--panel-border); padding-bottom: 0.75rem; margin-bottom: 1.25rem;">
+        <h3 style="font-family: var(--font-title); font-size: 1.45rem; font-weight: 800; margin: 0; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+          ✨ Cultural Discoveries Board
+        </h3>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0.25rem 0 0 0; font-weight: 500;">
+          Stories, lifestyle, and traditions published by students in your connected school community.
+        </p>
+      </div>
+      
+      ${articlesHtml}
+    `;
+  }
+
+  likeArticleFromBoard(articleId) {
+    const articles = window.db.getArticles();
+    const art = articles.find(a => a.id === articleId);
+    if (art) {
+      art.likes = (art.likes || 0) + 1;
+      window.db.saveTable('articles', articles);
+      
+      // Add Audit log
+      const student = window.db.getStudent(this.currentStudentId);
+      const studentName = student ? student.name : 'Student';
+      window.db.addLog('Article Liked', `Student ${studentName} liked article "${art.title}".`, 'Student');
+      
+      this.renderStudentChat(); // Refresh
     }
   }
 
