@@ -85,7 +85,8 @@ const UI_TRANSLATIONS = {
     level_getting_started: "Getting Started 🌱",
     level_chatty_friends: "Chatty Friends! 💬",
     level_great_penpals: "Great Pen Pals! 🌟",
-    level_super_friends: "Super Friends! 💖"
+    level_super_friends: "Super Friends! 💖",
+    auto_translate: "Auto-Translate"
   },
   de: {
     stud_dashboard: "Schüler-Dashboard",
@@ -172,7 +173,8 @@ const UI_TRANSLATIONS = {
     level_getting_started: "Erste Schritte 🌱",
     level_chatty_friends: "Schreibfreudig! 💬",
     level_great_penpals: "Super Brieffreunde! 🌟",
-    level_super_friends: "Beste Freunde! 💖"
+    level_super_friends: "Beste Freunde! 💖",
+    auto_translate: "Auto-Übersetzung"
   }
 };
 

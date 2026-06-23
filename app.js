@@ -257,6 +257,34 @@ class App {
     // Translation helper draft compose
     document.getElementById('translate-compose-btn').addEventListener('click', () => this.draftTranslation());
 
+    // Auto-translate toggle event listener
+    this.autoTranslateEnabled = localStorage.getItem('bridge_auto_translate') === 'true';
+    const autoToggle = document.getElementById('auto-translate-toggle');
+    if (autoToggle) {
+      autoToggle.checked = this.autoTranslateEnabled;
+      autoToggle.addEventListener('change', (e) => {
+        this.autoTranslateEnabled = e.target.checked;
+        localStorage.setItem('bridge_auto_translate', this.autoTranslateEnabled);
+        const translateBtn = document.getElementById('translate-compose-btn');
+        if (translateBtn) {
+          translateBtn.style.display = this.autoTranslateEnabled ? 'none' : 'inline-block';
+        }
+        if (this.autoTranslateEnabled) {
+          this.handleAutoTranslate();
+        }
+      });
+    }
+
+    // Key input listener on textarea for auto translation
+    const textarea = document.getElementById('chat-textarea');
+    if (textarea) {
+      textarea.addEventListener('input', () => {
+        if (this.autoTranslateEnabled) {
+          this.handleAutoTranslate();
+        }
+      });
+    }
+
     // Report safety concern form listener
     document.getElementById('student-report-btn').addEventListener('click', () => this.openModal('report-concern-modal'));
     document.getElementById('report-concern-form').addEventListener('submit', (e) => this.handleReportConcern(e));
@@ -1148,6 +1176,16 @@ class App {
         document.getElementById('translate-compose-btn').disabled = false;
       }
 
+      // Configure auto-translate initial UI state
+      const autoToggle = document.getElementById('auto-translate-toggle');
+      if (autoToggle) {
+        autoToggle.checked = this.autoTranslateEnabled;
+      }
+      const translateBtn = document.getElementById('translate-compose-btn');
+      if (translateBtn) {
+        translateBtn.style.display = this.autoTranslateEnabled ? 'none' : 'inline-block';
+      }
+
       // Populate Message Feed bubbles
       const feed = document.getElementById('chat-message-feed');
       feed.innerHTML = '';
@@ -1315,6 +1353,31 @@ class App {
       previewSpan.setAttribute('data-draft', translated);
       previewSpan.title = translated;
     }
+  }
+
+  // Handle auto translate (debounced)
+  handleAutoTranslate() {
+    if (!this.autoTranslateEnabled) return;
+
+    const textarea = document.getElementById('chat-textarea');
+    const previewSpan = document.getElementById('compose-translation-preview');
+    if (!textarea || !previewSpan) return;
+
+    if (this.autoTranslateTimeout) {
+      clearTimeout(this.autoTranslateTimeout);
+    }
+
+    const text = textarea.value.trim();
+    if (!text) {
+      previewSpan.textContent = '';
+      previewSpan.removeAttribute('data-draft');
+      previewSpan.title = '';
+      return;
+    }
+
+    this.autoTranslateTimeout = setTimeout(() => {
+      this.draftTranslation();
+    }, 800);
   }
 
   // Send message implementation

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bridge – connecting students across cultures</title>
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=1.1.7">
+  <link rel="stylesheet" href="style.css?v=1.1.8">
 </head>
 <body>
   
@@ -311,6 +311,10 @@
                   <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                     <div class="translation-bar" style="display: flex; gap: 0.5rem; align-items: center;">
                       <button class="btn btn-secondary btn-small" id="translate-compose-btn" style="padding: 0.35rem 0.75rem; border: none; background: transparent;">📝 <span data-localize="translate">Draft Translation</span></button>
+                      <label style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; cursor: pointer; user-select: none; color: var(--text-secondary); margin-left: 0.25rem; border-left: 1px solid rgba(255,255,255,0.15); padding-left: 0.5rem;">
+                        <input type="checkbox" id="auto-translate-toggle" style="cursor: pointer; width: 14px; height: 14px; accent-color: var(--primary);">
+                        <span data-localize="auto_translate">Auto</span>
+                      </label>
                       <span id="compose-translation-preview" style="font-style: italic; color: var(--text-secondary); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
                     </div>
                     <button class="btn btn-secondary btn-small" id="toggle-assistant-btn" onclick="app.toggleLanguageAssistant()" style="padding: 0.55rem 0.85rem;">💡 <span data-localize="helper">Helper</span></button>
@@ -1803,7 +1807,7 @@
 
   <!-- Core Scripts -->
   <script src="database.js?v=1.1.2"></script>
-  <script src="translation.js?v=1.1.2"></script>
-  <script src="app.js?v=1.1.7"></script>
+  <script src="translation.js?v=1.1.3"></script>
+  <script src="app.js?v=1.1.8"></script>
 </body>
 </html>
