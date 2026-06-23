@@ -4763,6 +4763,145 @@ class App {
     }
   }
 
+  // Preview draft before submitting for review
+  previewSubmittedArticle() {
+    const titleInput = document.getElementById('art-title');
+    const contentInput = document.getElementById('art-content');
+    const langSelect = document.getElementById('art-lang');
+    const previewImg = document.getElementById('article-photo-preview');
+
+    const title = titleInput ? titleInput.value.trim() : '';
+    const content = contentInput ? contentInput.value.trim() : '';
+    const lang = langSelect ? langSelect.value.toUpperCase() : 'EN';
+    
+    if (!title || !content) {
+      alert('Please enter a title and content before previewing.');
+      return;
+    }
+
+    const student = window.db.getStudent(this.currentStudentId);
+    const school = student ? window.db.getSchool(student.schoolId) : null;
+    const authorName = student ? student.name : 'Unknown Author';
+    const schoolName = school ? school.name : 'Unknown School';
+
+    const container = document.getElementById('article-detail-content');
+    if (!container) return;
+
+    const photoHtml = (previewImg && previewImg.style.display !== 'none' && previewImg.src)
+      ? `<img src="${previewImg.src}" alt="${title} photo" style="width: 100%; height: 200px; object-fit: cover; border-radius: 12px; margin-bottom: 0.5rem;">`
+      : '';
+
+    container.innerHTML = `
+      ${photoHtml}
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+        <div>
+          <h4 style="font-weight: 700; font-size: 1.25rem; margin: 0; color: var(--text-primary);">${title}</h4>
+          <span style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 500;">
+            By ${authorName} • ${schoolName} (${lang})
+          </span>
+        </div>
+        <div><span class="badge badge-warning">Draft Preview</span></div>
+      </div>
+
+      <div class="panel" style="padding: 1rem; background: rgba(255,255,255,0.01); border-color: var(--panel-border); margin-top: 0.5rem;">
+        <p style="font-size: 0.9rem; line-height: 1.6; color: var(--text-secondary); margin: 0; text-align: justify; white-space: pre-wrap;">
+          ${content}
+        </p>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; border-top: 1px solid var(--panel-border); padding-top: 1rem;">
+        <span style="font-size: 0.75rem; color: var(--text-muted);">Preview Mode</span>
+        <button class="btn btn-secondary" onclick="app.closeModal('article-detail-modal')">Close Preview</button>
+      </div>
+    `;
+
+    this.openModal('article-detail-modal');
+  }
+
+  // Open and initialize project deck preview modal
+  previewProjectDeck() {
+    if (!this.activeProjectId) return;
+    const project = window.db.getProject(this.activeProjectId);
+    if (!project || !project.slides || project.slides.length === 0) return;
+
+    // Temporarily capture any unsaved edits on the current active slide in the editor
+    const titleInput = document.getElementById('proj-art-title');
+    const contentInput = document.getElementById('proj-art-content');
+    if (titleInput && contentInput && project.slides[this.activeSlideIndex]) {
+      const activeSlide = project.slides[this.activeSlideIndex];
+      activeSlide.title = titleInput.value.trim() || 'Untitled Slide';
+      activeSlide.content = contentInput.value.trim() || '';
+      activeSlide.photoUrl = this.currentProjArticlePhotoDataUrl || activeSlide.photoUrl || '';
+    }
+
+    this.previewSlideIndex = 0;
+    this.renderPreviewProjectSlide();
+    this.openModal('project-deck-preview-modal');
+  }
+
+  // Render a specific preview slide in the modal
+  renderPreviewProjectSlide() {
+    if (!this.activeProjectId) return;
+    const project = window.db.getProject(this.activeProjectId);
+    if (!project || !project.slides) return;
+
+    const slides = project.slides;
+    if (this.previewSlideIndex >= slides.length) this.previewSlideIndex = slides.length - 1;
+    if (this.previewSlideIndex < 0) this.previewSlideIndex = 0;
+
+    const slide = slides[this.previewSlideIndex];
+    const viewerCard = document.getElementById('proj-preview-viewer-card');
+    const progressEl = document.getElementById('proj-preview-viewer-progress');
+
+    if (viewerCard && slide) {
+      const author = slide.author || 'Author';
+      if (slide.layout === 'split') {
+        viewerCard.innerHTML = `
+          <div style="display: grid; grid-template-columns: 1fr 1fr; height: 100%; width: 100%;">
+            <div style="background: rgba(0,0,0,0.25); border-right: 1px solid var(--panel-border); height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+              ${slide.photoUrl ? `<img src="${slide.photoUrl}" style="width: 100%; height: 100%; object-fit: cover;">` : `<span style="font-size: 0.8rem; color: var(--text-muted);">No image uploaded</span>`}
+            </div>
+            <div style="padding: 1.5rem; display: flex; flex-direction: column; overflow-y: auto; justify-content: center;">
+              <h4 class="viewer-card-title">${slide.title || 'Untitled Slide'}</h4>
+              <p style="font-size: 0.85rem; line-height: 1.6; color: var(--text-secondary); margin: 0; white-space: pre-wrap;">${slide.content || 'No content written yet.'}</p>
+              <span style="font-size: 0.7rem; color: var(--text-muted); margin-top: 1rem; font-style: italic;">By ${author}</span>
+            </div>
+          </div>
+        `;
+      } else {
+        viewerCard.innerHTML = `
+          <div style="padding: 2rem 2.5rem; display: flex; flex-direction: column; overflow-y: auto; justify-content: center; height: 100%; width: 100%;">
+            <h4 class="viewer-card-title" style="font-size: 1.3rem; text-align: center; margin-bottom: 1rem;">${slide.title || 'Untitled Slide'}</h4>
+            <p style="font-size: 0.9rem; line-height: 1.7; color: var(--text-secondary); margin: 0; white-space: pre-wrap; text-align: center; max-width: 480px; margin-left: auto; margin-right: auto;">${slide.content || 'No content written yet.'}</p>
+            <span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 1.5rem; font-style: italic; text-align: center;">By ${author}</span>
+          </div>
+        `;
+      }
+    }
+
+    if (progressEl) {
+      progressEl.textContent = `Card ${this.previewSlideIndex + 1} of ${slides.length}`;
+    }
+  }
+
+  // Previous slide in preview
+  prevPreviewProjectSlide() {
+    if (this.previewSlideIndex > 0) {
+      this.previewSlideIndex--;
+      this.renderPreviewProjectSlide();
+    }
+  }
+
+  // Next slide in preview
+  nextPreviewProjectSlide() {
+    if (!this.activeProjectId) return;
+    const project = window.db.getProject(this.activeProjectId);
+    if (project && project.slides && this.previewSlideIndex < project.slides.length - 1) {
+      this.previewSlideIndex++;
+      this.renderPreviewProjectSlide();
+    }
+  }
+
   saveProjectSlideStateSilent(layoutOverride = null) {
     if (!this.activeProjectId) return;
     const project = window.db.getProject(this.activeProjectId);
