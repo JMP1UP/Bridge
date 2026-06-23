@@ -92,6 +92,26 @@ class App {
     window.addEventListener('DOMContentLoaded', () => this.init());
   }
 
+  getStudentDisplayName(stud) {
+    if (!stud) return 'Unknown';
+    let viewerSchoolId = 'school_1';
+    if (this.currentRole === 'student') {
+      const viewerStudent = window.db.getStudent(this.currentStudentId);
+      if (viewerStudent) viewerSchoolId = viewerStudent.schoolId;
+    } else if (this.currentRole === 'teacher') {
+      const viewerTeacher = this.getLoggedTeacher();
+      if (viewerTeacher) viewerSchoolId = viewerTeacher.schoolId;
+    } else if (this.currentRole === 'admin') {
+      return stud.name;
+    }
+    
+    if (stud.schoolId === viewerSchoolId) {
+      return stud.name;
+    } else {
+      return stud.name.split(' ')[0];
+    }
+  }
+
   init() {
     this.isLoggedIn = false;
 
@@ -656,7 +676,7 @@ class App {
       badge.className = "badge badge-success";
       badge.textContent = translations.matched_status || "Matched";
       
-      const titleText = `${translations.welcome_title_matched || "Your Pen Pal is"} <span class="clickable-partner-link" style="cursor: pointer; text-decoration: underline;" onclick="app.openStudentDetailModal('${partner?.id}')" title="Click to view partner profile">${partner?.name || 'Unknown'}</span>`;
+      const titleText = `${translations.welcome_title_matched || "Your Pen Pal is"} <span class="clickable-partner-link" style="cursor: pointer; text-decoration: underline;" onclick="app.openStudentDetailModal('${partner?.id}')" title="Click to view partner profile">${this.getStudentDisplayName(partner)}</span>`;
       const schoolLabel = translations.school_label || "School";
       const ageLabel = translations.age_label || "Age";
       const yGroupLabel = translations.year_group_label || "Year group";
@@ -985,6 +1005,7 @@ class App {
     activeMatches.forEach(match => {
       const partnerId = match.studentIds.find(id => id !== student.id);
       const partner = window.db.getStudent(partnerId);
+      const partnerName = this.getStudentDisplayName(partner);
       const messages = window.db.getMessages().filter(m => m.matchId === match.id);
       const lastMsg = messages[messages.length - 1];
 
@@ -998,11 +1019,11 @@ class App {
 
       item.innerHTML = `
         <div class="user-avatar" style="width: 32px; height: 32px; font-size: 0.8rem;">
-          ${partner?.name.split(' ').map(n => n[0]).join('') || '?'}
+          ${partnerName.split(' ').map(n => n[0]).join('') || '?'}
         </div>
         <div class="chat-item-meta">
           <div class="chat-item-name">
-            <span>${partner?.name || 'Partner'}</span>
+            <span>${partnerName}</span>
             ${badgeStatus}
           </div>
           <div class="chat-item-preview">${lastMsg ? lastMsg.text : 'Start chatting...'}</div>
@@ -1026,9 +1047,10 @@ class App {
       const partnerId = currentMatch.studentIds.find(id => id !== student.id);
       const partner = window.db.getStudent(partnerId);
       const partnerSchool = window.db.getSchool(partner?.schoolId);
+      const partnerName = this.getStudentDisplayName(partner);
 
-      document.getElementById('chat-partner-avatar').textContent = partner?.name.split(' ').map(n => n[0]).join('') || '?';
-      document.getElementById('chat-partner-name').textContent = partner?.name;
+      document.getElementById('chat-partner-avatar').textContent = partnerName.split(' ').map(n => n[0]).join('') || '?';
+      document.getElementById('chat-partner-name').textContent = partnerName;
       document.getElementById('chat-partner-school').textContent = `${partnerSchool?.name} • ${partnerSchool?.country}`;
 
       // Paused Banner and composing settings
@@ -1474,7 +1496,13 @@ class App {
     const tbody = document.getElementById('student-roster-tbody');
     const teacher = this.getLoggedTeacher();
     const schoolId = teacher ? teacher.schoolId : 'school_1';
-    const students = window.db.getStudents().filter(s => s.schoolId === schoolId);
+    const students = window.db.getStudents().filter(s => s.schoolId === schoolId).sort((a, b) => {
+      const aUnmatched = a.matchStatus === 'unmatched';
+      const bUnmatched = b.matchStatus === 'unmatched';
+      if (aUnmatched && !bUnmatched) return -1;
+      if (!aUnmatched && bUnmatched) return 1;
+      return a.name.localeCompare(b.name);
+    });
     
     tbody.innerHTML = '';
     students.forEach(stud => {
@@ -1491,7 +1519,10 @@ class App {
 
       const row = document.createElement('tr');
       row.innerHTML = `
-        <td style="font-weight: 600;">${stud.name}<br><span style="font-size: 0.75rem; font-weight: normal; color: var(--text-secondary);">${stud.email}</span></td>
+        <td style="font-weight: 600;">
+          <span class="clickable-student-roster-name" style="cursor: pointer; text-decoration: underline; color: var(--secondary);" onclick="app.openTeacherStudentProfileModal('${stud.id}')">${stud.name}</span>
+          <br><span style="font-size: 0.75rem; font-weight: normal; color: var(--text-secondary);">${stud.email}</span>
+        </td>
         <td>${stud.age} • ${stud.gender}</td>
         <td>${stud.yearGroup}<br><span style="font-size: 0.75rem; color: var(--text-muted);">${school ? school.name : 'Unknown'}</span></td>
         <td>${statusBadge}</td>
@@ -1689,8 +1720,14 @@ class App {
     const teacher = this.getLoggedTeacher();
     const schoolId = teacher ? teacher.schoolId : 'school_1';
 
-    // Show all local students (matched and unmatched)
-    const myStudents = students.filter(s => s.schoolId === schoolId).sort((a, b) => a.name.localeCompare(b.name));
+    // Show all local students (matched and unmatched) sorted: unmatched first, then alphabetically
+    const myStudents = students.filter(s => s.schoolId === schoolId).sort((a, b) => {
+      const aUnmatched = a.matchStatus === 'unmatched';
+      const bUnmatched = b.matchStatus === 'unmatched';
+      if (aUnmatched && !bUnmatched) return -1;
+      if (!aUnmatched && bUnmatched) return 1;
+      return a.name.localeCompare(b.name);
+    });
 
     // Reset selection tracking variables
     this.selectedMatchIds = [];
@@ -2039,7 +2076,7 @@ class App {
         const bUnmatched = b.matchStatus === 'unmatched';
         if (aUnmatched && !bUnmatched) return -1;
         if (!aUnmatched && bUnmatched) return 1;
-        return 0;
+        return a.name.localeCompare(b.name);
       });
 
       if (sortedStudents.length === 0) {
@@ -3214,6 +3251,10 @@ class App {
       `;
     }
 
+    const loggedTeacher = this.getLoggedTeacher();
+    const loggedTeacherSchoolId = loggedTeacher ? loggedTeacher.schoolId : null;
+    const isOwnSchool = this.currentRole === 'admin' || (this.currentRole === 'teacher' && schoolId === loggedTeacherSchoolId);
+
     let rosterHtml = '';
     if (students.length === 0) {
       rosterHtml = '<p style="font-size: 0.8rem; color: var(--text-muted); font-style: italic; padding: 0.5rem 0;">No students registered for this school.</p>';
@@ -3232,10 +3273,12 @@ class App {
             <tbody>
               ${students.map(s => {
                 const badgeClass = s.matchStatus === 'matched' ? 'badge-success' : (s.matchStatus === 'proposed' ? 'badge-warning' : 'badge-secondary');
+                const displayName = isOwnSchool ? s.name : s.name.split(' ')[0];
+                const displayEmail = isOwnSchool ? s.email : '[Hidden - GDPR]';
                 return `
                   <tr style="border-bottom: 1px solid var(--panel-border);">
-                    <td style="padding: 0.5rem; font-weight: 600;">${s.name}</td>
-                    <td style="padding: 0.5rem; color: var(--text-secondary);">${s.email}</td>
+                    <td style="padding: 0.5rem; font-weight: 600;">${displayName}</td>
+                    <td style="padding: 0.5rem; color: var(--text-secondary);">${displayEmail}</td>
                     <td style="padding: 0.5rem;">Age ${s.age} (${s.yearGroup})</td>
                     <td style="padding: 0.5rem;"><span class="badge ${badgeClass}">${s.matchStatus}</span></td>
                   </tr>
@@ -3354,10 +3397,16 @@ class App {
     if (!student) return;
     const school = window.db.getSchool(student.schoolId);
     
-    const initials = student.name.split(' ').map(n => n[0]).join('');
+    const displayName = this.getStudentDisplayName(student);
+    const initials = displayName.split(' ').map(n => n[0]).join('');
     const biogToShow = student.personalBiogStatus === 'Approved' && student.personalBiog
       ? student.personalBiog
       : '<em>No biography shared yet.</em>';
+
+    const modalContent = document.querySelector('#student-profile-modal .modal-content');
+    if (modalContent) {
+      modalContent.style.maxWidth = '500px';
+    }
 
     const container = document.getElementById('student-profile-content');
     if (!container) return;
@@ -3368,7 +3417,7 @@ class App {
           ${initials}
         </div>
         <div>
-          <h4 style="font-weight: 700; font-size: 1.35rem; margin: 0; color: var(--text-primary);">${student.name}</h4>
+          <h4 style="font-weight: 700; font-size: 1.35rem; margin: 0; color: var(--text-primary);">${displayName}</h4>
           <span class="badge badge-info" style="margin-top: 0.35rem;">Age ${student.age} • ${student.yearGroup}</span>
         </div>
       </div>
@@ -3408,6 +3457,178 @@ class App {
     this.closeModal('student-profile-modal');
     setTimeout(() => {
       this.openSchoolDetail(schoolId);
+    }, 150);
+  }
+
+  // Opens detailed student profile inspector modal for teachers
+  openTeacherStudentProfileModal(studentId) {
+    const student = window.db.getStudent(studentId);
+    if (!student) return;
+    const school = window.db.getSchool(student.schoolId);
+
+    const modalContent = document.querySelector('#student-profile-modal .modal-content');
+    if (modalContent) {
+      modalContent.style.maxWidth = '700px';
+    }
+
+    const container = document.getElementById('student-profile-content');
+    if (!container) return;
+
+    // 1. Get matched students info
+    const matches = window.db.getMatches().filter(m => m.active && m.studentIds.includes(studentId));
+    let matchesHtml = '';
+    if (matches.length === 0) {
+      matchesHtml = `
+        <div style="font-size: 0.85rem; color: var(--text-muted); padding: 0.5rem 0; font-style: italic;">
+          No active penpal matches.
+        </div>
+      `;
+    } else {
+      matchesHtml = matches.map(match => {
+        const partnerId = match.studentIds.find(id => id !== studentId);
+        const partner = window.db.getStudent(partnerId);
+        const partnerSchool = partner ? window.db.getSchool(partner.schoolId) : null;
+        if (!partner) return '';
+
+        const partnerFirstName = partner.name.split(' ')[0]; // GDPR
+        const partnerBiog = partner.personalBiog || partner.pendingBiog || 'No biography text written by this student yet.';
+        
+        return `
+          <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--panel-border); padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 0.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.25rem;">
+              <div>
+                <strong style="color: var(--secondary); font-size: 0.9rem;">${partnerFirstName}</strong>
+                <span style="font-size: 0.75rem; color: var(--text-secondary);">(${partner.gender} • ${partner.age} y/o)</span>
+              </div>
+              <span class="badge badge-success" style="font-size: 0.65rem; padding: 0.1rem 0.35rem; border-radius: 4px; font-weight: 700;">Active Match</span>
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">School: ${partnerSchool ? partnerSchool.name : 'Unknown School'}</div>
+            <div style="font-size: 0.8rem; font-style: italic; color: var(--text-secondary); background: rgba(0,0,0,0.1); padding: 0.5rem; border-radius: 4px;">
+              "${partnerBiog}"
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 2. Get student's articles
+    const articles = window.db.getArticles().filter(a => a.authorId === studentId);
+    let articlesHtml = '';
+    if (articles.length === 0) {
+      articlesHtml = `
+        <div style="font-size: 0.85rem; color: var(--text-muted); padding: 0.5rem 0; font-style: italic;">
+          No articles written by this student.
+        </div>
+      `;
+    } else {
+      articlesHtml = `
+        <div style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 180px; overflow-y: auto; padding-right: 0.25rem;">
+          ${articles.map(art => {
+            let badgeClass = art.status === 'Approved' ? 'badge-success' : (art.status === 'Pending' ? 'badge-warning' : 'badge-danger');
+            return `
+              <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.01); border: 1px solid var(--panel-border); padding: 0.5rem 0.75rem; border-radius: 6px; gap: 0.5rem;">
+                <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-grow: 1;">
+                  <strong style="font-size: 0.85rem; color: var(--text-primary);">${art.title}</strong>
+                  <span class="badge ${badgeClass}" style="font-size: 0.6rem; padding: 0.05rem 0.25rem; margin-left: 0.35rem;">${art.status}</span>
+                </div>
+                <button class="btn btn-secondary btn-small" onclick="app.loadArticleFromProfile('${art.id}')" style="padding: 0.2rem 0.45rem; font-size: 0.7rem; font-weight: 600; border-radius: 4px;">Load</button>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    // 3. Get student's projects
+    const projects = window.db.getProjects().filter(p => p.creatorSchoolStudentIds.includes(studentId) || p.targetSchoolStudentIds.includes(studentId));
+    let projectsHtml = '';
+    if (projects.length === 0) {
+      projectsHtml = `
+        <div style="font-size: 0.85rem; color: var(--text-muted); padding: 0.5rem 0; font-style: italic;">
+          No projects assigned to this student.
+        </div>
+      `;
+    } else {
+      projectsHtml = `
+        <div style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 180px; overflow-y: auto; padding-right: 0.25rem;">
+          ${projects.map(proj => {
+            return `
+              <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.01); border: 1px solid var(--panel-border); padding: 0.5rem 0.75rem; border-radius: 6px; gap: 0.5rem;">
+                <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-grow: 1;">
+                  <strong style="font-size: 0.85rem; color: var(--text-primary);">${proj.title}</strong>
+                  <span class="badge badge-info" style="font-size: 0.6rem; padding: 0.05rem 0.25rem; margin-left: 0.35rem;">${proj.status}</span>
+                </div>
+                <button class="btn btn-secondary btn-small" onclick="app.loadProjectFromProfile('${proj.id}')" style="padding: 0.2rem 0.45rem; font-size: 0.7rem; font-weight: 600; border-radius: 4px;">Load</button>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    const biogText = student.personalBiog || student.pendingBiog || 'No biography details provided.';
+
+    container.innerHTML = `
+      <div style="display: flex; gap: 1rem; align-items: center; border-bottom: 1px solid var(--panel-border); padding-bottom: 0.75rem;">
+        <div class="user-avatar" style="width: 54px; height: 54px; font-size: 1.4rem; background: linear-gradient(135deg, var(--secondary) 0%, var(--accent) 100%);">
+          ${student.name.split(' ').map(n => n[0]).join('')}
+        </div>
+        <div>
+          <h4 style="font-weight: 700; font-size: 1.2rem; margin: 0; color: var(--text-primary);">${student.name}</h4>
+          <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem; font-weight: 500;">
+            ${student.email} • Age ${student.age} • ${student.gender} • ${student.yearGroup}
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem;">
+            Engagement: <strong>${student.activityLevel}</strong> | Status: <strong>${student.invitationStatus}</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Biography Section -->
+      <div class="panel" style="padding: 0.85rem; background: rgba(255,255,255,0.01); border-color: var(--panel-border); margin-top: 0.5rem;">
+        <h5 style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; margin-top: 0;">Student Biography</h5>
+        <p style="font-size: 0.85rem; line-height: 1.4; color: var(--text-secondary); margin: 0; text-align: justify; font-style: ${student.personalBiog ? 'normal' : 'italic'};">
+          "${biogText}"
+        </p>
+      </div>
+
+      <!-- Matched Pen Pals Section -->
+      <div style="margin-top: 0.5rem;">
+        <h5 style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem;">Matched Pen Pals (${matches.length})</h5>
+        ${matchesHtml}
+      </div>
+
+      <!-- Two Column Layout for Articles and Projects -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 0.75rem; border-top: 1px dashed var(--panel-border); padding-top: 0.75rem;">
+        <div>
+          <h5 style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; margin-top: 0;">Articles</h5>
+          ${articlesHtml}
+        </div>
+        <div>
+          <h5 style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; margin-top: 0;">Projects</h5>
+          ${projectsHtml}
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 1rem; border-top: 1px solid var(--panel-border); padding-top: 0.75rem;">
+        <button class="btn btn-secondary" onclick="app.closeModal('student-profile-modal')">Close Profile</button>
+      </div>
+    `;
+
+    this.openModal('student-profile-modal');
+  }
+
+  loadArticleFromProfile(articleId) {
+    this.closeModal('student-profile-modal');
+    setTimeout(() => {
+      this.openStudentArticleDetail(articleId);
+    }, 150);
+  }
+
+  loadProjectFromProfile(projectId) {
+    this.closeModal('student-profile-modal');
+    setTimeout(() => {
+      this.openReviewProjectModal(projectId);
     }, 150);
   }
 
