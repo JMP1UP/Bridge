@@ -1247,7 +1247,7 @@ class App {
       `;
     } else {
       articlesHtml = `
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem;">
           ${sortedArticles.map(art => {
             const author = window.db.getStudent(art.authorId);
             const school = window.db.getSchool(art.schoolId);
@@ -1256,32 +1256,32 @@ class App {
             const dateStr = new Date(art.submittedAt).toLocaleDateString();
 
             const photoHtml = art.photoUrl
-              ? `<img src="${art.photoUrl}" alt="${art.title} photo" style="width: 100%; height: 160px; object-fit: cover; border-top-left-radius: 12px; border-top-right-radius: 12px;">`
-              : '';
+              ? `<img src="${art.photoUrl}" alt="${art.title} photo" style="width: 100%; height: 110px; object-fit: cover; border-top-left-radius: 12px; border-top-right-radius: 12px;">`
+              : `<div style="width: 100%; height: 110px; background: rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--text-muted); border-top-left-radius: 12px; border-top-right-radius: 12px;">📷</div>`;
 
-            const paddingStyle = art.photoUrl ? 'padding: 1.25rem;' : 'padding: 1.25rem; border-radius: 12px;';
+            const paddingStyle = 'padding: 0.85rem;';
 
             return `
               <div class="panel article-board-card" style="display: flex; flex-direction: column; background: rgba(255,255,255,0.015); border: 1px solid var(--panel-border); border-radius: 12px; overflow: hidden; height: 100%;">
                 ${photoHtml}
-                <div style="${paddingStyle} display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between; gap: 0.75rem;">
+                <div style="${paddingStyle} display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between; gap: 0.6rem;">
                   <div>
-                    <h4 style="font-weight: 800; font-size: 1.15rem; margin: 0 0 0.35rem 0; color: var(--text-primary); line-height: 1.35;">${art.title}</h4>
-                    <div style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem; font-weight: 500;">
-                      ${schoolFlag} <span>${school?.name}</span> • <span>${authorName}</span>
+                    <h4 style="font-weight: 700; font-size: 0.95rem; margin: 0 0 0.25rem 0; color: var(--text-primary); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${art.title}">${art.title}</h4>
+                    <div style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.5rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                      ${schoolFlag} <span style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="${school?.name || 'Unknown School'}">${school?.name || 'Unknown School'}</span> • <span title="${authorName}">${authorName}</span>
                     </div>
-                    <p style="font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary); margin: 0; text-align: justify; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;">
+                    <p style="font-size: 0.78rem; line-height: 1.45; color: var(--text-secondary); margin: 0; text-align: justify; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
                       ${art.content}
                     </p>
                   </div>
                   
-                  <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--panel-border); padding-top: 0.75rem; margin-top: 0.5rem;">
-                    <span style="font-size: 0.7rem; color: var(--text-muted);">${dateStr}</span>
-                    <div style="display: flex; gap: 0.5rem; align-items: center;">
-                      <button class="btn btn-secondary btn-small" onclick="app.likeArticleFromBoard('${art.id}')" style="display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.5rem; font-size: 0.75rem; border-radius: 6px; font-weight: 600;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--panel-border); padding-top: 0.5rem; margin-top: 0.4rem;">
+                    <span style="font-size: 0.65rem; color: var(--text-muted);">${dateStr}</span>
+                    <div style="display: flex; gap: 0.4rem; align-items: center;">
+                      <button class="btn btn-secondary btn-small" onclick="app.likeArticleFromBoard('${art.id}')" style="display: flex; align-items: center; gap: 0.2rem; padding: 0.2rem 0.4rem; font-size: 0.7rem; border-radius: 6px; font-weight: 600;">
                         ❤️ <span>${art.likes || 0}</span>
                       </button>
-                      <button class="btn btn-primary btn-small" onclick="app.openStudentArticleDetail('${art.id}')" style="padding: 0.25rem 0.55rem; font-size: 0.75rem; border-radius: 6px; font-weight: 600;">Read Full</button>
+                      <button class="btn btn-primary btn-small" onclick="app.openStudentArticleDetail('${art.id}')" style="padding: 0.2rem 0.45rem; font-size: 0.7rem; border-radius: 6px; font-weight: 600;">Read Full</button>
                     </div>
                   </div>
                 </div>
