@@ -4522,12 +4522,16 @@ class App {
 
       // Get member names
       const allStudentIds = [...activeProject.creatorSchoolStudentIds, ...activeProject.targetSchoolStudentIds];
-      const memberNames = allStudentIds.map(sid => {
+      const memberNamesHtml = allStudentIds.map(sid => {
         const s = window.db.getStudent(sid);
-        return s ? s.name : 'Unknown';
+        if (!s) return 'Unknown';
+        const school = window.db.getSchool(s.schoolId);
+        const flag = this.getSchoolFlag(school?.country);
+        const displayName = this.getStudentDisplayName(s);
+        return `<span style="display: inline-flex; align-items: center; gap: 0.25rem; vertical-align: middle;">${flag} ${displayName}</span>`;
       }).join(', ');
 
-      document.getElementById('project-meta').textContent = `${schoolText} • ${memberNames}`;
+      document.getElementById('project-meta').innerHTML = `${schoolText} • ${memberNamesHtml}`;
 
       // Status badge
       const badgeEl = document.getElementById('project-status-badge');
@@ -4730,7 +4734,11 @@ class App {
 
           let senderHeader = '';
           if (!isSent) {
-            senderHeader = `<div class="message-sender" style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 0.2rem; font-weight: 600;">${msg.senderName}</div>`;
+            const sender = window.db.getStudent(msg.senderId);
+            const senderSchool = sender ? window.db.getSchool(sender.schoolId) : null;
+            const flag = senderSchool ? this.getSchoolFlag(senderSchool.country) : '';
+            const displayName = sender ? this.getStudentDisplayName(sender) : msg.senderName;
+            senderHeader = `<div class="message-sender" style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 0.2rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.25rem; vertical-align: middle;">${flag} ${displayName}</div>`;
           }
 
           row.innerHTML = `
