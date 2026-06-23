@@ -754,8 +754,8 @@ class App {
           </div>
           <div>
             <h3>${titleText}</h3>
-            <p style="color: var(--text-secondary); font-size: 0.9rem;">🏫 ${schoolLabel}: <span class="clickable-school-link" onclick="app.openSchoolDetail('${school?.id}')">${school?.name}</span> (${school?.city}, ${school?.country})</p>
-            <p style="color: var(--text-secondary); font-size: 0.9rem;">🎂 ${ageLabel}: ${partner?.age} • ${yGroupLabel}: ${partner?.yearGroup}</p>
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">${this.getSchoolFlag(school?.country)} ${schoolLabel}: <span class="clickable-school-link" onclick="app.openSchoolDetail('${school?.id}')">${school?.name}</span> (${school?.city}, ${school?.country})</p>
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">${ageLabel}: ${partner?.age} • ${yGroupLabel}: ${partner?.yearGroup}</p>
             <button class="btn btn-primary btn-small" style="margin-top: 0.5rem;" onclick="app.switchTab('stud-chat')">${sendMsgBtnText}</button>
           </div>
         </div>
@@ -3435,7 +3435,7 @@ class App {
       <div class="panel" style="padding: 1rem; background: rgba(255,255,255,0.01); border-color: var(--panel-border);">
         <h5 style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">School Connection</h5>
         <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <div style="font-size: 1.5rem;">🏫</div>
+          <div style="font-size: 1.5rem;">${this.getSchoolFlag(school?.country)}</div>
           <div style="text-align: left;">
             <h6 style="margin: 0; font-size: 0.9rem; font-weight: 700;">
               <span class="clickable-school-link" style="text-decoration: underline; color: var(--secondary); cursor: pointer;" onclick="app.openSchoolDetailFromStudentModal('${student.schoolId}')">
