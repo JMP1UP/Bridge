@@ -3951,21 +3951,8 @@ class App {
     const activeSlide = project.slides[this.activeSlideIndex];
     if (activeSlide) {
       activeSlide.layout = layoutType;
-      if (layoutType === 'text-only') {
-        document.getElementById('proj-slide-photo-group').style.display = 'none';
-      } else {
-        document.getElementById('proj-slide-photo-group').style.display = 'block';
-      }
-      
-      const splitBtn = document.getElementById('layout-split-btn');
-      const textBtn = document.getElementById('layout-text-btn');
-      if (layoutType === 'split') {
-        if (splitBtn) splitBtn.classList.add('active-layout');
-        if (textBtn) textBtn.classList.remove('active-layout');
-      } else {
-        if (textBtn) textBtn.classList.add('active-layout');
-        if (splitBtn) splitBtn.classList.remove('active-layout');
-      }
+      this.saveProjectSlideStateSilent();
+      this.renderStudentProjects();
     }
   }
 
