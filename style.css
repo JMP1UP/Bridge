@@ -473,6 +473,11 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
+}
+
+#chat-active-state, #teacher-chat-active-state {
+  min-height: 0;
 }
 
 .chat-header {
@@ -497,6 +502,7 @@ body {
   flex-direction: column;
   gap: 1rem;
   background: rgba(0,0,0,0.05);
+  min-height: 0;
 }
 
 .message-row {

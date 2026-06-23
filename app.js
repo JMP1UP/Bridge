@@ -1297,6 +1297,7 @@ class App {
 
     previewSpan.textContent = this.interfaceLang === 'de' ? 'Übersetze...' : 'Translating...';
     previewSpan.removeAttribute('data-draft');
+    previewSpan.title = '';
 
     try {
       const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|${targetLang}`;
@@ -1306,11 +1307,13 @@ class App {
 
       previewSpan.textContent = `Draft: ${translated}`;
       previewSpan.setAttribute('data-draft', translated);
+      previewSpan.title = translated;
     } catch (err) {
       console.error("Real translation failed, falling back to mock:", err);
       const translated = window.translator.mockTranslate(text, sourceLang, targetLang);
       previewSpan.textContent = `Draft: ${translated}`;
       previewSpan.setAttribute('data-draft', translated);
+      previewSpan.title = translated;
     }
   }
 
@@ -1332,6 +1335,7 @@ class App {
     textarea.value = '';
     previewSpan.textContent = '';
     previewSpan.removeAttribute('data-draft');
+    previewSpan.title = '';
 
     // Reload UI
     this.refreshUI();
