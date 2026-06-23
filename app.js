@@ -807,6 +807,17 @@ class App {
             <!-- Dynamic articles list goes here -->
           </div>
         </div>
+
+        <!-- Recent Cultural Discoveries section -->
+        <div style="margin-top: 1.75rem; border-top: 1px solid var(--panel-border); padding-top: 1.5rem;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+            <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.05em; margin: 0; text-transform: uppercase;">✨ ${translations.shared_publications_label || "Cultural Discoveries"}</h4>
+            <button class="btn btn-secondary btn-small" style="padding: 0.2rem 0.6rem; font-size: 0.75rem;" onclick="app.switchTab('stud-chat'); app.activeMatchId = 'discoveries_board'; app.refreshUI();">${this.interfaceLang === 'de' ? 'Alle lesen' : 'Read All'}</button>
+          </div>
+          <div id="student-dashboard-recent-discoveries-list" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 320px; overflow-y: auto; padding-right: 0.25rem;">
+            <!-- Dynamic discoveries list goes here -->
+          </div>
+        </div>
       `;
     } else {
       badge.className = "badge badge-warning";
@@ -833,6 +844,17 @@ class App {
           </div>
           <div id="student-dashboard-articles-list" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 280px; overflow-y: auto; padding-right: 0.25rem;">
             <!-- Dynamic articles list goes here -->
+          </div>
+        </div>
+
+        <!-- Recent Cultural Discoveries section -->
+        <div style="margin-top: 1.75rem; border-top: 1px solid var(--panel-border); padding-top: 1.5rem;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+            <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.05em; margin: 0; text-transform: uppercase;">✨ ${translations.shared_publications_label || "Cultural Discoveries"}</h4>
+            <button class="btn btn-secondary btn-small" style="padding: 0.2rem 0.6rem; font-size: 0.75rem;" onclick="app.switchTab('stud-chat'); app.activeMatchId = 'discoveries_board'; app.refreshUI();">${this.interfaceLang === 'de' ? 'Alle lesen' : 'Read All'}</button>
+          </div>
+          <div id="student-dashboard-recent-discoveries-list" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 320px; overflow-y: auto; padding-right: 0.25rem;">
+            <!-- Dynamic discoveries list goes here -->
           </div>
         </div>
       `;
@@ -976,6 +998,65 @@ class App {
             <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0; line-height: 1.25;">${snippet}</p>
           `;
           dbArticlesContainer.appendChild(item);
+        });
+      }
+    }
+
+    // Render the recent 5 approved articles from connected schools (including own school)
+    const dbDiscoveriesContainer = document.getElementById('student-dashboard-recent-discoveries-list');
+    if (dbDiscoveriesContainer) {
+      const connections = window.db.getSchoolConnections().filter(c => 
+        c.status === 'Connected' && (c.fromSchoolId === student.schoolId || c.toSchoolId === student.schoolId)
+      );
+      const linkedSchoolIds = [student.schoolId, ...connections.map(c => c.fromSchoolId === student.schoolId ? c.toSchoolId : c.fromSchoolId)];
+
+      // Query approved articles written by others in linked schools
+      const recentArticles = window.db.getArticles().filter(a => 
+        a.status === 'Approved' && 
+        a.authorId !== student.id && 
+        linkedSchoolIds.includes(a.schoolId)
+      );
+
+      // Sort by date descending and slice top 5
+      const sortedRecent = [...recentArticles].sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt)).slice(0, 5);
+
+      dbDiscoveriesContainer.innerHTML = '';
+      if (sortedRecent.length === 0) {
+        const noRecentText = this.interfaceLang === 'de' ? 'Keine neuen Beiträge vorhanden.' : 'No recent articles available.';
+        dbDiscoveriesContainer.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1.5rem; border: 1px dashed var(--panel-border); border-radius: 8px;">${noRecentText}</p>`;
+      } else {
+        sortedRecent.forEach(art => {
+          const item = document.createElement('div');
+          item.style.padding = '0.75rem';
+          item.style.background = 'rgba(255,255,255,0.02)';
+          item.style.border = '1px solid var(--panel-border)';
+          item.style.borderRadius = '8px';
+          item.style.display = 'flex';
+          item.style.alignItems = 'center';
+          item.style.gap = '0.75rem';
+          item.style.cursor = 'pointer';
+          item.className = 'dashboard-article-item';
+          item.title = 'Click to read article';
+          item.addEventListener('click', () => this.openStudentArticleDetail(art.id));
+
+          const school = window.db.getSchool(art.schoolId);
+          const flag = this.getSchoolFlag(school?.country);
+
+          const photoHtml = art.photoUrl
+            ? `<img src="${art.photoUrl}" alt="Article thumb" style="width: 42px; height: 42px; object-fit: cover; border-radius: 6px; flex-shrink: 0;">`
+            : '<div style="width: 42px; height: 42px; background: rgba(0,0,0,0.15); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; color: var(--text-muted);">📷</div>';
+
+          item.innerHTML = `
+            ${photoHtml}
+            <div style="min-width: 0; flex-grow: 1;">
+              <h5 style="font-size: 0.85rem; font-weight: 600; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-color);">${art.title}</h5>
+              <div style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.7rem; color: var(--text-muted); margin-top: 0.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                ${flag} <span style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${school ? school.name : 'Unknown School'}</span>
+              </div>
+            </div>
+            <div style="font-size: 1rem; flex-shrink: 0;">➡️</div>
+          `;
+          dbDiscoveriesContainer.appendChild(item);
         });
       }
     }
@@ -1221,16 +1302,11 @@ class App {
     const container = document.getElementById('chat-discoveries-board-state');
     if (!container) return;
 
-    // Get linked schools: own school + schools of active matched penpals
-    const linkedSchoolIds = [student.schoolId];
-    const activeMatches = window.db.getMatches().filter(m => m.active && m.studentIds.includes(student.id));
-    activeMatches.forEach(m => {
-      const partnerId = m.studentIds.find(id => id !== student.id);
-      const partner = window.db.getStudent(partnerId);
-      if (partner && !linkedSchoolIds.includes(partner.schoolId)) {
-        linkedSchoolIds.push(partner.schoolId);
-      }
-    });
+    // Get linked schools: own school + formally connected schools
+    const connections = window.db.getSchoolConnections().filter(c => 
+      c.status === 'Connected' && (c.fromSchoolId === student.schoolId || c.toSchoolId === student.schoolId)
+    );
+    const linkedSchoolIds = [student.schoolId, ...connections.map(c => c.fromSchoolId === student.schoolId ? c.toSchoolId : c.fromSchoolId)];
 
     // Get approved articles from linked schools
     const articles = window.db.getArticles().filter(a => a.status === 'Approved' && linkedSchoolIds.includes(a.schoolId));
