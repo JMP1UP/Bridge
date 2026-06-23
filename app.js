@@ -641,11 +641,13 @@ class App {
     if (!this.isLoggedIn) return;
     // Redraw based on role
     if (this.currentRole === 'student') {
+      const student = window.db.getStudent(this.currentStudentId);
       this.renderStudentDashboard();
       this.renderStudentChat();
       this.renderLanguageWidget();
       this.populateStudentSettings();
       this.renderStudentProjects();
+      if (student) this.renderDiscoveriesBoard(student);
     } else if (this.currentRole === 'teacher') {
       this.renderTeacherDashboard();
       this.renderStudentRoster();
@@ -801,7 +803,7 @@ class App {
         <div style="margin-top: 1.75rem; border-top: 1px solid var(--panel-border); padding-top: 1.5rem;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
             <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.05em; margin: 0; text-transform: uppercase;">✨ ${translations.shared_publications_label || "Cultural Discoveries"}</h4>
-            <button class="btn btn-secondary btn-small" style="padding: 0.2rem 0.6rem; font-size: 0.75rem;" onclick="app.switchTab('stud-chat'); app.activeMatchId = 'discoveries_board'; app.refreshUI();">${this.interfaceLang === 'de' ? 'Alle lesen' : 'Read All'}</button>
+            <button class="btn btn-secondary btn-small" style="padding: 0.2rem 0.6rem; font-size: 0.75rem;" onclick="app.switchTab('stud-discoveries');">${this.interfaceLang === 'de' ? 'Alle lesen' : 'Read All'}</button>
           </div>
           <div id="student-dashboard-recent-discoveries-list" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 320px; overflow-y: auto; padding-right: 0.25rem;">
             <!-- Dynamic discoveries list goes here -->
@@ -829,7 +831,7 @@ class App {
         <div style="margin-top: 1.75rem; border-top: 1px solid var(--panel-border); padding-top: 1.5rem;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
             <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.05em; margin: 0; text-transform: uppercase;">✨ ${translations.shared_publications_label || "Cultural Discoveries"}</h4>
-            <button class="btn btn-secondary btn-small" style="padding: 0.2rem 0.6rem; font-size: 0.75rem;" onclick="app.switchTab('stud-chat'); app.activeMatchId = 'discoveries_board'; app.refreshUI();">${this.interfaceLang === 'de' ? 'Alle lesen' : 'Read All'}</button>
+            <button class="btn btn-secondary btn-small" style="padding: 0.2rem 0.6rem; font-size: 0.75rem;" onclick="app.switchTab('stud-discoveries');">${this.interfaceLang === 'de' ? 'Alle lesen' : 'Read All'}</button>
           </div>
           <div id="student-dashboard-recent-discoveries-list" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 320px; overflow-y: auto; padding-right: 0.25rem;">
             <!-- Dynamic discoveries list goes here -->
@@ -1049,9 +1051,8 @@ class App {
     const chatListContainer = document.getElementById('student-chat-list');
     const chatEmptyState = document.getElementById('chat-empty-state');
     const chatActiveState = document.getElementById('chat-active-state');
-    const discoveriesBoardState = document.getElementById('chat-discoveries-board-state');
 
-    if (!discoveriesBoardState) return;
+    if (!chatListContainer || !chatEmptyState || !chatActiveState) return;
 
     // Get matches for this student
     const activeMatches = window.db.getMatches().filter(m => m.active && m.studentIds.includes(student.id));
@@ -1059,9 +1060,9 @@ class App {
     // Clear sidebar list
     chatListContainer.innerHTML = '';
 
-    // Set default active view to discoveries board if none selected
-    if (!this.activeMatchId) {
-      this.activeMatchId = 'discoveries_board';
+    // Set default active view to first match if none selected
+    if (!this.activeMatchId || this.activeMatchId === 'discoveries_board') {
+      this.activeMatchId = activeMatches[0]?.id || null;
     }
 
     // 1. Render Cultural Discoveries Board item at the top
@@ -1142,16 +1143,7 @@ class App {
     }
 
     // 3. Render appropriate main view
-    if (this.activeMatchId === 'discoveries_board') {
-      chatEmptyState.style.display = 'none';
-      chatActiveState.style.display = 'none';
-      discoveriesBoardState.style.display = 'flex';
-      this.renderDiscoveriesBoard(student);
-      return;
-    }
-
     // Render active chat
-    discoveriesBoardState.style.display = 'none';
     const currentMatch = activeMatches.find(m => m.id === this.activeMatchId);
     if (currentMatch) {
       chatEmptyState.style.display = 'none';
@@ -1219,11 +1211,14 @@ class App {
 
       // Auto-scroll feed to bottom
       feed.scrollTop = feed.scrollHeight;
+    } else {
+      chatEmptyState.style.display = 'flex';
+      chatActiveState.style.display = 'none';
     }
   }
 
   renderDiscoveriesBoard(student) {
-    const container = document.getElementById('chat-discoveries-board-state');
+    const container = document.getElementById('new-discoveries-board-container');
     if (!container) return;
 
     // Get linked schools: own school + formally connected schools
@@ -1297,18 +1292,7 @@ class App {
       `;
     }
 
-    container.innerHTML = `
-      <div style="border-bottom: 1px solid var(--panel-border); padding-bottom: 0.75rem; margin-bottom: 1.25rem;">
-        <h3 style="font-family: var(--font-title); font-size: 1.45rem; font-weight: 800; margin: 0; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
-          ✨ Cultural Discoveries Board
-        </h3>
-        <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0.25rem 0 0 0; font-weight: 500;">
-          Stories, lifestyle, and traditions published by students in your connected school community.
-        </p>
-      </div>
-      
-      ${articlesHtml}
-    `;
+    container.innerHTML = articlesHtml;
   }
 
   likeArticleFromBoard(articleId) {
@@ -1323,7 +1307,7 @@ class App {
       const studentName = student ? student.name : 'Student';
       window.db.addLog('Article Liked', `Student ${studentName} liked article "${art.title}".`, 'Student');
       
-      this.renderStudentChat(); // Refresh
+      if (student) this.renderDiscoveriesBoard(student);
     }
   }
 

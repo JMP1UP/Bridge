@@ -3,6 +3,7 @@
 const UI_TRANSLATIONS = {
   en: {
     stud_dashboard: "Student Dashboard",
+    stud_discoveries: "Cultural Discoveries",
     stud_chat: "My Pen Pals",
     stud_culture: "My Articles",
     stud_projects: "Group Projects",
@@ -88,6 +89,7 @@ const UI_TRANSLATIONS = {
   },
   de: {
     stud_dashboard: "Schüler-Dashboard",
+    stud_discoveries: "Kulturelle Entdeckungen",
     stud_chat: "Meine Brieffreunde",
     stud_culture: "Meine Beiträge",
     stud_projects: "Gruppenprojekte",
