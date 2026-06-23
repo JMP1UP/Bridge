@@ -767,32 +767,14 @@ class App {
           </div>
         </div>
 
-        <!-- Exchange Engagement Metrics Grid -->
+        <!-- Submitted Articles section -->
         <div style="margin-top: 1.75rem; border-top: 1px solid var(--panel-border); padding-top: 1.5rem;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
-            <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.05em; margin: 0; text-transform: uppercase;">🚀 ${engagementMetricsTitle}</h4>
-            <span style="font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 20px; background: ${levelBadgeColor}; color: ${levelTextColor}; border: 1px solid ${levelBorderColor};">${connectionLevel}</span>
+            <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.05em; margin: 0; text-transform: uppercase;">✍️ ${translations.stud_culture || "My Articles"}</h4>
+            <button class="btn btn-secondary btn-small" style="padding: 0.2rem 0.6rem; font-size: 0.75rem;" onclick="app.switchTab('stud-culture'); app.showArticleForm(true);">+ ${translations.write_article_btn || "Write Article"}</button>
           </div>
-          
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.25rem;">
-            <div class="student-metric-card card-cyan">
-              <span class="student-metric-label">${activeExchangesLabel}</span>
-              <span class="student-metric-value">${pairedCount}</span>
-              <span class="student-metric-desc">${pairedStudentsText}</span>
-              <span class="student-metric-watermark">🌍</span>
-            </div>
-            <div class="student-metric-card card-blue">
-              <span class="student-metric-label">${chatHistoryLabel}</span>
-              <span class="student-metric-value">${msgCount}</span>
-              <span class="student-metric-desc">${messagesExchangedText}</span>
-              <span class="student-metric-watermark">💬</span>
-            </div>
-            <div class="student-metric-card card-purple">
-              <span class="student-metric-label">${sharedPubsLabel}</span>
-              <span class="student-metric-value">${artCount}</span>
-              <span class="student-metric-desc">${publishedArticlesText}</span>
-              <span class="student-metric-watermark">✨</span>
-            </div>
+          <div id="student-dashboard-articles-list" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 280px; overflow-y: auto; padding-right: 0.25rem;">
+            <!-- Dynamic articles list goes here -->
           </div>
         </div>
       `;
@@ -804,22 +786,6 @@ class App {
       const noMatchDesc = translations.welcome_desc_unmatched || "Your languages teacher will match you with a student from a partner school shortly.";
       const writeArtBtnText = translations.write_article_btn || "Write a Culture Article";
 
-      // Calculate global stats
-      const allMatches = window.db.getMatches();
-      const activeMatches = allMatches.filter(m => m.active);
-      const pairedCount = activeMatches.length * 2;
-      const artCount = window.db.getArticles().filter(a => a.status === 'Approved').length;
-
-      const pairedStudentsText = (translations.paired_students_text || "{count} active pen pals!").replace('{count}', pairedCount);
-      
-      const publishedArticlesText = artCount === 1
-        ? (translations.published_articles_text_singular || "1 story published!")
-        : (translations.published_articles_text_plural || "{count} stories published!").replace('{count}', artCount);
-
-      const activeExchangesLabel = translations.active_exchanges_label || "Global Pen Pals";
-      const sharedPubsLabel = translations.shared_publications_label || "Cultural Discoveries";
-      const globalStatisticsTitle = translations.global_statistics_title || "Bridge Community Stats";
-
       welcomeContainer.innerHTML = `
         <div style="margin-top: 1rem;">
           <h3>${noMatchTitle}</h3>
@@ -829,22 +795,14 @@ class App {
           </div>
         </div>
 
-        <!-- Global Engagement Metrics Grid -->
+        <!-- Submitted Articles section -->
         <div style="margin-top: 1.75rem; border-top: 1px solid var(--panel-border); padding-top: 1.5rem;">
-          <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.05em; margin-bottom: 1rem; text-transform: uppercase;">📊 ${globalStatisticsTitle}</h4>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.25rem;">
-            <div class="student-metric-card card-cyan">
-              <span class="student-metric-label">${activeExchangesLabel}</span>
-              <span class="student-metric-value">${pairedCount}</span>
-              <span class="student-metric-desc">${pairedStudentsText}</span>
-              <span class="student-metric-watermark">🌍</span>
-            </div>
-            <div class="student-metric-card card-purple">
-              <span class="student-metric-label">${sharedPubsLabel}</span>
-              <span class="student-metric-value">${artCount}</span>
-              <span class="student-metric-desc">${publishedArticlesText}</span>
-              <span class="student-metric-watermark">✨</span>
-            </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+            <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.05em; margin: 0; text-transform: uppercase;">✍️ ${translations.stud_culture || "My Articles"}</h4>
+            <button class="btn btn-secondary btn-small" style="padding: 0.2rem 0.6rem; font-size: 0.75rem;" onclick="app.switchTab('stud-culture'); app.showArticleForm(true);">+ ${translations.write_article_btn || "Write Article"}</button>
+          </div>
+          <div id="student-dashboard-articles-list" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 280px; overflow-y: auto; padding-right: 0.25rem;">
+            <!-- Dynamic articles list goes here -->
           </div>
         </div>
       `;
@@ -936,6 +894,60 @@ class App {
         `;
         articlesContainer.appendChild(item);
       });
+    }
+
+    // Render the student's authored articles in the dashboard welcome card section
+    const dbArticlesContainer = document.getElementById('student-dashboard-articles-list');
+    if (dbArticlesContainer) {
+      const studentArticles = window.db.getArticles().filter(a => a.authorId === student.id);
+      dbArticlesContainer.innerHTML = '';
+      
+      if (studentArticles.length === 0) {
+        const noArticlesText = translations.no_articles_submitted || "No articles submitted yet.";
+        dbArticlesContainer.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1.5rem; border: 1px dashed var(--panel-border); border-radius: 8px;">${noArticlesText}</p>`;
+      } else {
+        studentArticles.forEach(art => {
+          const item = document.createElement('div');
+          item.style.padding = '0.75rem';
+          item.style.background = 'rgba(255,255,255,0.02)';
+          item.style.border = '1px solid var(--panel-border)';
+          item.style.borderRadius = '8px';
+          item.style.display = 'flex';
+          item.style.flexDirection = 'column';
+          item.style.gap = '0.4rem';
+          item.style.cursor = 'pointer';
+          item.className = 'dashboard-article-item';
+          item.title = 'Click to read article';
+          item.addEventListener('click', () => this.openStudentArticleDetail(art.id));
+          
+          let statusBadge = '';
+          if (art.status === 'Approved') statusBadge = `<span class="badge badge-success" style="font-size: 0.7rem; padding: 0.15rem 0.4rem;">${this.interfaceLang === 'de' ? 'Freigegeben' : 'Approved'}</span>`;
+          else if (art.status === 'Pending') statusBadge = `<span class="badge badge-warning" style="font-size: 0.7rem; padding: 0.15rem 0.4rem;">${this.interfaceLang === 'de' ? 'Ausstehend' : 'Pending'}</span>`;
+          else statusBadge = `<span class="badge badge-danger" style="font-size: 0.7rem; padding: 0.15rem 0.4rem;">${this.interfaceLang === 'de' ? 'Abgelehnt' : 'Rejected'}</span>`;
+
+          const photoHtml = art.photoUrl
+            ? `<img src="${art.photoUrl}" alt="Article thumb" style="width: 36px; height: 36px; object-fit: cover; border-radius: 6px; margin-right: 0.75rem;">`
+            : '<div style="width: 36px; height: 36px; background: rgba(0,0,0,0.15); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; margin-right: 0.75rem; color: var(--text-muted);">📷</div>';
+
+          // Get snippet of content
+          const snippet = art.content.length > 80 ? art.content.substring(0, 80) + '...' : art.content;
+
+          item.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+              <div style="display: flex; align-items: center; min-width: 0;">
+                ${photoHtml}
+                <div style="min-width: 0;">
+                  <h5 style="font-size: 0.85rem; font-weight: 600; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-color);">${art.title}</h5>
+                  <span style="font-size: 0.7rem; color: var(--text-muted);">${new Date(art.submittedAt).toLocaleDateString()}</span>
+                </div>
+              </div>
+              <div style="flex-shrink: 0; margin-left: 0.5rem;">${statusBadge}</div>
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0; line-height: 1.25;">${snippet}</p>
+          `;
+          dbArticlesContainer.appendChild(item);
+        });
+      }
     }
   }
 
