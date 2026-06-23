@@ -2144,8 +2144,14 @@ class App {
       </div>
     `;
 
-    // 2. Partner Schools Cards
-    const partnerSchools = schools.filter(s => s.id !== ownSchoolId);
+    // 2. Partner Schools Cards (Only show connected partner schools)
+    const connections = window.db.getSchoolConnections().filter(c => 
+      c.status === 'Connected' && (c.fromSchoolId === ownSchoolId || c.toSchoolId === ownSchoolId)
+    );
+    const connectedSchoolIds = connections.map(c => 
+      c.fromSchoolId === ownSchoolId ? c.toSchoolId : c.fromSchoolId
+    );
+    const partnerSchools = schools.filter(s => s.id !== ownSchoolId && connectedSchoolIds.includes(s.id));
     partnerSchools.forEach(partner => {
       // Active count
       const activeCount = matches.filter(m => {
