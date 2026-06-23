@@ -1689,8 +1689,8 @@ class App {
     const teacher = this.getLoggedTeacher();
     const schoolId = teacher ? teacher.schoolId : 'school_1';
 
-    // Show only unmatched local students
-    const myStudents = students.filter(s => s.schoolId === schoolId && s.matchStatus === 'unmatched').sort((a, b) => a.name.localeCompare(b.name));
+    // Show all local students (matched and unmatched)
+    const myStudents = students.filter(s => s.schoolId === schoolId).sort((a, b) => a.name.localeCompare(b.name));
 
     // Reset selection tracking variables
     this.selectedMatchIds = [];
@@ -1698,7 +1698,7 @@ class App {
 
     colEn.innerHTML = '';
     if (myStudents.length === 0) {
-      colEn.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem; font-size: 0.85rem;">All students have been paired!</div>`;
+      colEn.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem; font-size: 0.85rem;">No students found for your school.</div>`;
     } else {
       myStudents.forEach(stud => {
         const card = document.createElement('div');
@@ -1710,10 +1710,30 @@ class App {
         card.style.padding = '0.75rem 1rem';
         card.style.cursor = 'pointer';
         
+        const myActiveMatches = window.db.getMatches().filter(m => m.active && m.studentIds.includes(stud.id));
+        let matchStatusText = '';
+        let badgeClass = '';
+        if (myActiveMatches.length > 0) {
+          matchStatusText = `Matched (${myActiveMatches.length})`;
+          badgeClass = 'badge-success';
+        } else {
+          const myProposals = window.db.getMatches().filter(m => !m.active && m.status === 'Proposed' && m.studentIds.includes(stud.id));
+          if (myProposals.length > 0) {
+            matchStatusText = `Proposed (${myProposals.length})`;
+            badgeClass = 'badge-warning';
+          } else {
+            matchStatusText = 'Unmatched';
+            badgeClass = 'badge-info';
+          }
+        }
+
         card.innerHTML = `
           <input type="checkbox" class="match-select-checkbox" value="${stud.id}" id="chk-match-${stud.id}" style="cursor: pointer; width: 16px; height: 16px;">
           <div style="flex-grow: 1;">
-            <h4 style="font-weight:600; font-size: 0.9rem; margin: 0; color: var(--text-primary);">${stud.name} (${stud.age} y/o)</h4>
+            <h4 style="font-weight:600; font-size: 0.9rem; margin: 0; color: var(--text-primary); display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; width: 100%;">
+              <span>${stud.name} (${stud.age} y/o)</span>
+              <span class="badge ${badgeClass}" style="font-size: 0.65rem; padding: 0.1rem 0.35rem; border-radius: 4px; font-weight: 700; white-space: nowrap;">${matchStatusText}</span>
+            </h4>
             <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0.2rem 0 0 0;">${stud.gender} • ${stud.yearGroup}</p>
           </div>
         `;

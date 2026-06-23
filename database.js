@@ -438,21 +438,6 @@ class LocalDB {
     const matches = this.getMatches();
     const match = matches.find(m => m.id === matchId);
     if (match) {
-      // Disband any other matches/proposals containing the newly assigned student
-      if (assignedStudentId) {
-        for (let i = matches.length - 1; i >= 0; i--) {
-          const m = matches[i];
-          if (m.id !== matchId && m.studentIds.includes(assignedStudentId)) {
-            m.studentIds.forEach(id => {
-              if (id && id !== assignedStudentId) {
-                this.updateStudent(id, { matchStatus: 'unmatched' });
-              }
-            });
-            matches.splice(i, 1);
-          }
-        }
-      }
-
       // Find the unassigned (null) slot in studentIds and assign the student
       if (assignedStudentId && !match.studentIds.includes(assignedStudentId)) {
         const nullIdx = match.studentIds.indexOf(null);
@@ -483,16 +468,26 @@ class LocalDB {
     const matchIndex = matches.findIndex(m => m.id === matchId);
     if (matchIndex !== -1) {
       const match = matches[matchIndex];
-      // Reset students status back to unmatched
-      match.studentIds.forEach(id => {
-        if (id) {
-          this.updateStudent(id, { matchStatus: 'unmatched' });
-        }
-      });
       
       // Remove match request
       matches.splice(matchIndex, 1);
       this.saveTable('matches', matches);
+
+      // Update students status based on remaining matches/proposals
+      match.studentIds.forEach(id => {
+        if (id) {
+          const studentMatches = matches.filter(m => m.studentIds.includes(id));
+          const hasActive = studentMatches.some(m => m.active);
+          const hasProposed = studentMatches.some(m => !m.active && m.status === 'Proposed');
+          if (hasActive) {
+            this.updateStudent(id, { matchStatus: 'matched' });
+          } else if (hasProposed) {
+            this.updateStudent(id, { matchStatus: 'proposed' });
+          } else {
+            this.updateStudent(id, { matchStatus: 'unmatched' });
+          }
+        }
+      });
       
       const names = match.studentIds.filter(id => id).map(id => this.getStudent(id)?.name || id).join(' & ');
       this.addLog('Match Declined/Withdrawn', `Declined/Withdrawn match proposal for: ${names || 'student'}.`, reviewerName);
@@ -514,16 +509,25 @@ class LocalDB {
     const matches = this.getMatches();
     const match = matches.find(m => m.id === matchId);
     if (match) {
-      // Set students status back to unmatched if not in another match
-      match.studentIds.forEach(id => {
-        // Simple check: does student have other active matches?
-        const remainingMatches = matches.filter(m => m.id !== matchId && m.active && m.studentIds.includes(id));
-        if (remainingMatches.length === 0) {
-          this.updateStudent(id, { matchStatus: 'unmatched' });
-        }
-      });
       match.active = false;
       this.saveTable('matches', matches);
+
+      // Update student matching status based on remaining active matches/proposals
+      match.studentIds.forEach(id => {
+        if (id) {
+          const remainingMatches = matches.filter(m => m.studentIds.includes(id));
+          const hasActive = remainingMatches.some(m => m.active);
+          const hasProposed = remainingMatches.some(m => !m.active && m.status === 'Proposed');
+          if (hasActive) {
+            this.updateStudent(id, { matchStatus: 'matched' });
+          } else if (hasProposed) {
+            this.updateStudent(id, { matchStatus: 'proposed' });
+          } else {
+            this.updateStudent(id, { matchStatus: 'unmatched' });
+          }
+        }
+      });
+      
       const studentNames = match.studentIds.map(id => this.getStudent(id)?.name).join(' & ');
       this.addLog('Match Removed', `Archived match between ${studentNames}.`, 'Teacher');
     }
