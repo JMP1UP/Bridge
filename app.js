@@ -3856,7 +3856,7 @@ class App {
     }
   }
 
-  saveProjectSlideStateSilent() {
+  saveProjectSlideStateSilent(layoutOverride = null) {
     if (!this.activeProjectId) return;
     const project = window.db.getProject(this.activeProjectId);
     if (!project || project.status === 'Published' || project.status === 'PendingPublish') return;
@@ -3870,6 +3870,9 @@ class App {
       activeSlide.title = titleInput.value.trim();
       activeSlide.content = contentInput.value.trim();
       activeSlide.photoUrl = this.currentProjArticlePhotoDataUrl || '';
+      if (layoutOverride) {
+        activeSlide.layout = layoutOverride;
+      }
       const student = window.db.getStudent(this.currentStudentId);
       activeSlide.author = student ? student.name : 'Student';
       project.articleLastUpdatedBy = student ? student.name : 'Student';
@@ -3950,8 +3953,7 @@ class App {
 
     const activeSlide = project.slides[this.activeSlideIndex];
     if (activeSlide) {
-      activeSlide.layout = layoutType;
-      this.saveProjectSlideStateSilent();
+      this.saveProjectSlideStateSilent(layoutType);
       this.renderStudentProjects();
     }
   }
