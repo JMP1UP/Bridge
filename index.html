@@ -465,6 +465,34 @@
 
               <!-- Project Workspace Subtabs -->
               <div class="project-subtab-nav" style="display: flex; justify-content: center; padding: 0.75rem 1.25rem; background: var(--panel-bg); border-bottom: 1px solid var(--panel-border);">
+                <style>
+                  .subtab-pill {
+                    flex: 1;
+                    border: none !important;
+                    background: transparent;
+                    padding: 0.55rem 1rem;
+                    font-size: 0.8rem;
+                    font-weight: 700;
+                    border-radius: 10px;
+                    cursor: pointer;
+                    color: var(--text-secondary);
+                    transition: all 0.2s;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 0.35rem;
+                    font-family: var(--font-body), inherit;
+                  }
+                  .subtab-pill:hover {
+                    color: var(--text-primary);
+                    background: rgba(255, 255, 255, 0.05);
+                  }
+                  .subtab-pill.active {
+                    color: #fff !important;
+                    background: var(--primary) !important;
+                    box-shadow: 0 4px 12px rgba(6, 182, 212, 0.35) !important;
+                  }
+                </style>
                 <div style="display: flex; background: rgba(0,0,0,0.25); padding: 0.25rem; border-radius: 12px; width: 100%; max-width: 480px; box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);">
                   <button class="subtab-pill active" id="proj-subtab-article" onclick="app.switchProjectSubtab('article')">
                     ✍️ Article
