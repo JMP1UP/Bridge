@@ -409,7 +409,7 @@ class LocalDB {
   proposeMatch(type, studentIds, proposedBySchoolId, pendingApprovalFromSchoolId) {
     const matches = this.getMatches();
     const newMatch = {
-      id: 'match_' + Date.now(),
+      id: 'match_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
       type,
       studentIds,
       active: false,

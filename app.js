@@ -1689,52 +1689,60 @@ class App {
     const teacher = this.getLoggedTeacher();
     const schoolId = teacher ? teacher.schoolId : 'school_1';
 
-    const myStudents = students.filter(s => s.schoolId === schoolId).sort((a, b) => {
-      if (a.matchStatus === 'unmatched' && b.matchStatus !== 'unmatched') return -1;
-      if (a.matchStatus !== 'unmatched' && b.matchStatus === 'unmatched') return 1;
-      return a.name.localeCompare(b.name);
-    });
+    // Show only unmatched local students
+    const myStudents = students.filter(s => s.schoolId === schoolId && s.matchStatus === 'unmatched').sort((a, b) => a.name.localeCompare(b.name));
 
     // Reset selection tracking variables
-    this.selectedMatchEn = null;
+    this.selectedMatchIds = [];
     document.getElementById('propose-match-btn').disabled = true;
 
     colEn.innerHTML = '';
-    myStudents.forEach(stud => {
-      let statusBadge = '';
-      if (stud.matchStatus === 'matched') statusBadge = '<span class="badge badge-success">Matched</span>';
-      else if (stud.matchStatus === 'proposed') statusBadge = '<span class="badge badge-warning">Proposed</span>';
-      else statusBadge = '<span class="badge badge-info">Unmatched</span>';
+    if (myStudents.length === 0) {
+      colEn.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem; font-size: 0.85rem;">All students have been paired!</div>`;
+    } else {
+      myStudents.forEach(stud => {
+        const card = document.createElement('div');
+        card.className = `match-card`;
+        card.setAttribute('data-id', stud.id);
+        card.style.display = 'flex';
+        card.style.alignItems = 'center';
+        card.style.gap = '0.75rem';
+        card.style.padding = '0.75rem 1rem';
+        card.style.cursor = 'pointer';
+        
+        card.innerHTML = `
+          <input type="checkbox" class="match-select-checkbox" value="${stud.id}" id="chk-match-${stud.id}" style="cursor: pointer; width: 16px; height: 16px;">
+          <div style="flex-grow: 1;">
+            <h4 style="font-weight:600; font-size: 0.9rem; margin: 0; color: var(--text-primary);">${stud.name} (${stud.age} y/o)</h4>
+            <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0.2rem 0 0 0;">${stud.gender} • ${stud.yearGroup}</p>
+          </div>
+        `;
 
-      const card = document.createElement('div');
-      card.className = `match-card`;
-      card.setAttribute('data-id', stud.id);
-      
-      card.innerHTML = `
-        <div>
-          <h4 style="font-weight:600; font-size: 0.9rem;">${stud.name} (${stud.age} y/o)</h4>
-          <p style="font-size: 0.75rem; color: var(--text-secondary);">${stud.gender} • ${stud.yearGroup}</p>
-        </div>
-        <div>${statusBadge}</div>
-      `;
-
-      // If matched or proposed, make card unselectable
-      if (stud.matchStatus === 'matched' || stud.matchStatus === 'proposed') {
-        card.style.opacity = '0.5';
-        card.style.cursor = 'not-allowed';
-      } else {
-        card.addEventListener('click', () => {
-          colEn.querySelectorAll('.match-card').forEach(c => c.classList.remove('selected'));
-          card.classList.add('selected');
-          this.selectedMatchEn = stud.id;
-          
+        const checkbox = card.querySelector('.match-select-checkbox');
+        checkbox.addEventListener('change', () => {
+          if (checkbox.checked) {
+            card.classList.add('selected');
+            if (!this.selectedMatchIds.includes(stud.id)) {
+              this.selectedMatchIds.push(stud.id);
+            }
+          } else {
+            card.classList.remove('selected');
+            this.selectedMatchIds = this.selectedMatchIds.filter(id => id !== stud.id);
+          }
           const partnerSchoolSelect = document.getElementById('partner-school-select');
-          document.getElementById('propose-match-btn').disabled = !this.selectedMatchEn || !partnerSchoolSelect.value;
+          document.getElementById('propose-match-btn').disabled = this.selectedMatchIds.length === 0 || !partnerSchoolSelect.value;
         });
-      }
 
-      colEn.appendChild(card);
-    });
+        card.addEventListener('click', (e) => {
+          if (e.target.tagName !== 'INPUT') {
+            checkbox.checked = !checkbox.checked;
+            checkbox.dispatchEvent(new Event('change'));
+          }
+        });
+
+        colEn.appendChild(card);
+      });
+    }
 
     // Populate partner school dropdown
     const partnerSelect = document.getElementById('partner-school-select');
@@ -1908,21 +1916,23 @@ class App {
   }
 
   // Create proposed match from teacher portal
+  // Create proposed matches from teacher portal
   proposeMatch() {
-    if (!this.selectedMatchEn) return;
+    if (!this.selectedMatchIds || this.selectedMatchIds.length === 0) return;
     const partnerSchoolId = document.getElementById('partner-school-select').value;
     if (!partnerSchoolId) return;
 
     const teacher = this.getLoggedTeacher();
     const ownSchoolId = teacher ? teacher.schoolId : 'school_1';
 
-    // Send single-student proposed match, Leicester student is first slot, Goethe is second (null)
-    const proposedStudentIds = [this.selectedMatchEn, null];
+    // Loop through all selected student IDs and propose a match for each
+    this.selectedMatchIds.forEach(studentId => {
+      window.db.proposeMatch('1-to-1', [studentId, null], ownSchoolId, partnerSchoolId);
+    });
+
+    alert(`Successfully sent match proposals for ${this.selectedMatchIds.length} student(s)! The partner school coordinator will review and assign pen pals.`);
     
-    window.db.proposeMatch('1-to-1', proposedStudentIds, ownSchoolId, partnerSchoolId);
-    alert('Match proposal submitted! The target partner school coordinator has received the anonymized details and can assign a match.');
-    
-    this.selectedMatchEn = null;
+    this.selectedMatchIds = [];
     this.refreshUI();
   }
 
@@ -1974,14 +1984,21 @@ class App {
     const age = partnerStudent ? `${partnerStudent.age} y/o` : 'Unknown';
     const gender = partnerStudent ? partnerStudent.gender : 'Unknown';
     const biog = partnerStudent ? (partnerStudent.personalBiog || 'No biography text available.') : 'No details available.';
+    const partnerFirstName = partnerStudent ? partnerStudent.name.split(' ')[0] : 'Partner';
+
+    const country = partnerSchool ? partnerSchool.country : '';
+    let flag = '🏫';
+    if (country.includes('Germany')) flag = '🇩🇪';
+    else if (country.includes('Kingdom') || country.includes('UK') || country.includes('Britain')) flag = '🇬🇧';
+    else if (country.includes('France')) flag = '🇫🇷';
 
     const proposerInfo = document.getElementById('assign-proposer-info');
     if (proposerInfo) {
       proposerInfo.innerHTML = `
         <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
-          <div style="font-size: 2.25rem;">🇩🇪</div>
+          <div style="font-size: 2.25rem;">${flag}</div>
           <div>
-            <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary);">${schoolName} Student</div>
+            <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary);">${partnerFirstName} (${schoolName})</div>
             <div style="font-size: 0.95rem; font-weight: 600; color: var(--secondary);">${age} • ${gender}</div>
           </div>
         </div>
@@ -2126,6 +2143,9 @@ class App {
     
     if (!incomingTbody || !sentTbody) return;
 
+    const teacher = this.getLoggedTeacher();
+    const ownSchoolId = teacher ? teacher.schoolId : 'school_1';
+
     const matches = window.db.getMatches().filter(m => m.status === 'Proposed');
 
     incomingTbody.innerHTML = '';
@@ -2136,22 +2156,22 @@ class App {
     let incomingCount = 0;
 
     matches.forEach(match => {
-      const myStudentId = match.studentIds.find(id => id && window.db.getStudent(id)?.schoolId === 'school_1');
-      const partnerStudentId = match.studentIds.find(id => id && window.db.getStudent(id)?.schoolId !== 'school_1');
+      const myStudentId = match.studentIds.find(id => id && window.db.getStudent(id)?.schoolId === ownSchoolId);
+      const partnerStudentId = match.studentIds.find(id => id && window.db.getStudent(id)?.schoolId !== ownSchoolId);
       const partnerStudent = partnerStudentId ? window.db.getStudent(partnerStudentId) : null;
-      const partnerSchoolId = match.proposedBySchoolId !== 'school_1' ? match.proposedBySchoolId : match.pendingApprovalFromSchoolId;
+      const partnerSchoolId = match.proposedBySchoolId !== ownSchoolId ? match.proposedBySchoolId : match.pendingApprovalFromSchoolId;
       const partnerSchool = window.db.getSchool(partnerSchoolId);
 
       const dateStr = match.createdAt ? new Date(match.createdAt).toLocaleDateString() : 'N/A';
 
-      if (match.pendingApprovalFromSchoolId === 'school_1') {
+      if (match.pendingApprovalFromSchoolId === ownSchoolId) {
         hasIncoming = true;
         incomingCount++;
 
         const age = partnerStudent ? `${partnerStudent.age} y/o` : 'Unknown';
         const gender = partnerStudent ? partnerStudent.gender : 'Unknown';
-        const biog = partnerStudent ? (partnerStudent.personalBiog || 'No biography text available.') : 'No details available.';
         const schoolName = partnerSchool ? partnerSchool.name : 'Exchange School';
+        const firstName = partnerStudent ? partnerStudent.name.split(' ')[0] : 'Unknown';
 
         const assignedStudentId = this.tempAssignments[match.id];
         const assignedStudent = assignedStudentId ? window.db.getStudent(assignedStudentId) : null;
@@ -2173,13 +2193,14 @@ class App {
 
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td onclick="app.openAssignStudentModal('${match.id}')" style="cursor: pointer;" title="Click to assign local student">
-            <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-              <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">${schoolName} Student</div>
-              <div style="font-size: 0.95rem; font-weight: 600; color: var(--secondary); margin-bottom: 0.25rem;">${age} • ${gender}</div>
-              <div style="font-size: 0.8rem; font-style: italic; background: rgba(255,255,255,0.05); padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); color: var(--text-secondary); line-height: 1.4;">
-                "${biog}"
+          <td>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+              <div>
+                <strong style="color: var(--text-primary); font-size: 0.95rem;">${firstName}</strong>
+                <span style="font-size: 0.8rem; color: var(--text-secondary); margin-left: 0.25rem;">(${gender} • ${age})</span>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem;">School: ${schoolName}</div>
               </div>
+              <button class="btn btn-secondary btn-small" onclick="app.openBioModal('${partnerStudentId}')" style="padding: 0.25rem 0.55rem; font-size: 0.7rem; font-weight: 600; border-radius: 6px;">📖 Read Bio</button>
             </div>
           </td>
           <td>${assignHtml}</td>
@@ -2190,7 +2211,7 @@ class App {
           </td>
         `;
         incomingTbody.appendChild(row);
-      } else if (match.proposedBySchoolId === 'school_1') {
+      } else if (match.proposedBySchoolId === ownSchoolId) {
         hasSent = true;
         const myStudent = myStudentId ? window.db.getStudent(myStudentId) : null;
 
@@ -2229,26 +2250,119 @@ class App {
     }
   }
 
-  // Handle switching sub-tabs inside matching view
   switchMatchingSubtab(subtab) {
     this.currentMatchingSubtab = subtab;
     const pairBtn = document.getElementById('subtab-pair-btn');
     const reqBtn = document.getElementById('subtab-requests-btn');
+    const activeBtn = document.getElementById('subtab-active-btn');
+    
     const pairDiv = document.getElementById('matching-subtab-pair');
     const reqDiv = document.getElementById('matching-subtab-requests');
+    const activeDiv = document.getElementById('matching-subtab-active');
 
-    if (!pairBtn || !reqBtn || !pairDiv || !reqDiv) return;
+    if (!pairBtn || !reqBtn || !activeBtn || !pairDiv || !reqDiv || !activeDiv) return;
+
+    pairBtn.classList.remove('active');
+    reqBtn.classList.remove('active');
+    activeBtn.classList.remove('active');
+    
+    pairDiv.style.display = 'none';
+    reqDiv.style.display = 'none';
+    activeDiv.style.display = 'none';
 
     if (subtab === 'pair') {
       pairBtn.classList.add('active');
-      reqBtn.classList.remove('active');
       pairDiv.style.display = 'block';
-      reqDiv.style.display = 'none';
-    } else {
-      pairBtn.classList.remove('active');
+    } else if (subtab === 'requests') {
       reqBtn.classList.add('active');
-      pairDiv.style.display = 'none';
       reqDiv.style.display = 'block';
+    } else if (subtab === 'active') {
+      activeBtn.classList.add('active');
+      activeDiv.style.display = 'block';
+      this.renderActiveMatches();
+    }
+  }
+
+  renderActiveMatches() {
+    const tbody = document.getElementById('active-matches-tbody');
+    if (!tbody) return;
+
+    const teacher = this.getLoggedTeacher();
+    const ownSchoolId = teacher ? teacher.schoolId : 'school_1';
+
+    const students = window.db.getStudents();
+    const myStudents = students.filter(s => s.schoolId === ownSchoolId);
+    const activeMatches = window.db.getMatches().filter(m => 
+      m.active && m.studentIds.some(id => myStudents.some(ms => ms.id === id))
+    );
+
+    tbody.innerHTML = '';
+    if (activeMatches.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No active matches connected yet.</td></tr>`;
+      return;
+    }
+
+    activeMatches.forEach(match => {
+      const myStudentId = match.studentIds.find(id => myStudents.some(ms => ms.id === id));
+      const partnerStudentId = match.studentIds.find(id => !myStudents.some(ms => ms.id === id));
+      
+      const myStudent = myStudentId ? window.db.getStudent(myStudentId) : null;
+      const partnerStudent = partnerStudentId ? window.db.getStudent(partnerStudentId) : null;
+      const partnerSchool = partnerStudent ? window.db.getSchool(partnerStudent.schoolId) : null;
+
+      const dateStr = match.createdAt ? new Date(match.createdAt).toLocaleDateString() : 'N/A';
+      const partnerFirstName = partnerStudent ? partnerStudent.name.split(' ')[0] : 'Unknown';
+
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td style="font-weight: 600;">
+          ${myStudent ? myStudent.name : 'Unknown'}<br>
+          <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: normal;">${myStudent?.gender} • ${myStudent?.age} y/o</span>
+        </td>
+        <td>
+          <div style="display: flex; align-items: center; justify-content: space-between; max-width: 220px;">
+            <div>
+              <strong style="color: var(--text-primary); font-size: 0.9rem;">${partnerFirstName}</strong>
+              <span style="font-size: 0.75rem; color: var(--text-secondary); margin-left: 0.25rem;">(${partnerStudent?.gender} • ${partnerStudent?.age} y/o)</span>
+            </div>
+            <button class="btn btn-secondary btn-small" onclick="app.openBioModal('${partnerStudentId}')" style="padding: 0.2rem 0.5rem; font-size: 0.7rem; font-weight: 600; border-radius: 6px;">📖 Read Bio</button>
+          </div>
+        </td>
+        <td>
+          <div style="font-weight: 600;">${partnerSchool ? partnerSchool.name : 'Partner School'}</div>
+          <span style="font-size: 0.75rem; color: var(--text-muted);">${partnerSchool ? partnerSchool.city + ', ' + partnerSchool.country : ''}</span>
+        </td>
+        <td>${dateStr}</td>
+        <td>
+          <button class="btn btn-secondary btn-small" onclick="app.deleteActiveMatch('${match.id}')" style="color: var(--danger); border-color: var(--danger); font-weight: 600;">Disband Match</button>
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
+
+  deleteActiveMatch(matchId) {
+    if (confirm('Are you sure you want to disband this penpal match? This will unlink the students and reset them to unmatched.')) {
+      window.db.deleteMatch(matchId);
+      alert('Match disbanded successfully.');
+      this.refreshUI();
+    }
+  }
+
+  openBioModal(studentId) {
+    const student = window.db.getStudent(studentId);
+    if (!student) return;
+
+    const firstName = student.name.split(' ')[0];
+    const biog = student.personalBiog || student.pendingBiog || 'No biography text written by this student yet.';
+
+    const titleEl = document.getElementById('bio-modal-title');
+    const bodyEl = document.getElementById('bio-modal-body');
+
+    if (titleEl && bodyEl) {
+      titleEl.textContent = `${firstName}'s Biography`;
+      bodyEl.textContent = `"${biog}"`;
+      this.openModal('view-bio-modal');
     }
   }
 

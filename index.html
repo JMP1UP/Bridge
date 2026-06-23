@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bridge – connecting students across cultures</title>
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=1.0.3">
+  <link rel="stylesheet" href="style.css?v=1.0.4">
 </head>
 <body>
   
@@ -776,11 +776,14 @@
         <!-- Matching Tool Subtabs Navigation -->
         <div class="subtabs-nav">
           <button class="subtab-btn active" id="subtab-pair-btn" onclick="app.switchMatchingSubtab('pair')">
-            Pair Students
+            Send Profiles
           </button>
           <button class="subtab-btn" id="subtab-requests-btn" onclick="app.switchMatchingSubtab('requests')">
             Match Requests
             <span class="badge badge-danger" id="matching-requests-badge" style="display: none; padding: 0.1rem 0.35rem; font-size: 0.65rem; border-radius: 10px;">0</span>
+          </button>
+          <button class="subtab-btn" id="subtab-active-btn" onclick="app.switchMatchingSubtab('active')">
+            Active Matches
           </button>
         </div>
 
@@ -792,9 +795,9 @@
           <div class="panel" style="margin-bottom: 1.5rem;">
             <div class="panel-header">
               <h2 class="panel-title">🤝 Pen Pal Matching Center</h2>
-              <button class="btn btn-primary" id="propose-match-btn" disabled>Propose Selected Student</button>
+              <button class="btn btn-primary" id="propose-match-btn" disabled>Send Profiles for Matching</button>
             </div>
-            <p style="font-size: 0.85rem; color: var(--text-secondary);">Select one unmatched student from your school on the left, then select the target partner school from the dropdown on the right to send a matching suggestion. To protect student privacy under GDPR, all requests are sent anonymously (showing only age, gender, and biography details).</p>
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">Select one or more unmatched students from your school on the left, then select the target partner school from the dropdown on the right to send matching suggestions. To protect student privacy under GDPR, all requests are sent anonymously (showing only first name, age, gender, and biography details).</p>
           </div>
 
           <div class="matching-container">
@@ -875,6 +878,31 @@
                 </thead>
                 <tbody id="sent-proposals-tbody">
                   <!-- Dynamic sent suggestions -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subtab 3: Active Matches -->
+        <div id="matching-subtab-active" style="display: none;">
+          <div class="panel">
+            <div class="panel-header">
+              <h3 class="panel-title">🤝 Connected Student Pairs</h3>
+            </div>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Our Student</th>
+                    <th>Partner Student</th>
+                    <th>Partner School</th>
+                    <th>Date Paired</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="active-matches-tbody">
+                  <!-- Dynamic active matches list -->
                 </tbody>
               </table>
             </div>
@@ -1694,9 +1722,25 @@
     </div>
   </div>
 
+  <!-- View Student Bio Modal -->
+  <div class="modal-overlay" id="view-bio-modal">
+    <div class="modal-content" style="max-width: 420px; border: 1px solid var(--panel-border); background: var(--panel-bg); box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-radius: 16px; padding: 1.5rem;">
+      <div class="modal-header" style="border-bottom: 1px solid var(--panel-border); padding-bottom: 0.75rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="panel-title" id="bio-modal-title" style="margin: 0; font-size: 1.1rem; color: var(--text-primary); font-family: var(--font-title); font-weight: 700;">Student Biography</h3>
+        <button class="modal-close" onclick="app.closeModal('view-bio-modal')" style="background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer;">&times;</button>
+      </div>
+      <div class="modal-body" id="bio-modal-body" style="font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary); white-space: pre-wrap; font-style: italic; background: rgba(0,0,0,0.15); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); min-height: 80px; max-height: 200px; overflow-y: auto;">
+        <!-- Bio goes here -->
+      </div>
+      <div style="display: flex; justify-content: flex-end; margin-top: 1.25rem;">
+        <button class="btn btn-secondary btn-small" onclick="app.closeModal('view-bio-modal')" style="padding: 0.4rem 1rem; font-size: 0.8rem; font-weight: 600;">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Core Scripts -->
-  <script src="database.js?v=1.0.3"></script>
-  <script src="translation.js?v=1.0.3"></script>
-  <script src="app.js?v=1.0.3"></script>
+  <script src="database.js?v=1.0.4"></script>
+  <script src="translation.js?v=1.0.4"></script>
+  <script src="app.js?v=1.0.4"></script>
 </body>
 </html>
