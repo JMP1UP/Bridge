@@ -492,6 +492,54 @@
                     background: var(--primary) !important;
                     box-shadow: 0 4px 12px rgba(6, 182, 212, 0.35) !important;
                   }
+
+                  /* Story Deck Custom CSS */
+                  .slide-thumb {
+                    flex-shrink: 0;
+                    padding: 0.45rem 1rem;
+                    border-radius: 10px;
+                    font-size: 0.75rem;
+                    font-weight: 700;
+                    background: rgba(255, 255, 255, 0.02);
+                    border: 1px solid var(--panel-border);
+                    color: var(--text-secondary);
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.35rem;
+                  }
+                  .slide-thumb:hover {
+                    background: rgba(255, 255, 255, 0.08);
+                    color: var(--text-primary);
+                  }
+                  .slide-thumb.active {
+                    background: rgba(6, 182, 212, 0.15);
+                    border-color: var(--primary);
+                    color: var(--primary);
+                  }
+                  .slide-thumb-add {
+                    background: transparent;
+                    border: 1px dashed var(--panel-border);
+                    color: var(--primary);
+                  }
+                  .slide-thumb-add:hover {
+                    background: rgba(6, 182, 212, 0.05);
+                    border-color: var(--primary);
+                  }
+
+                  .active-layout {
+                    background: rgba(6, 182, 212, 0.15) !important;
+                    color: var(--primary) !important;
+                    border: 1px solid rgba(6, 182, 212, 0.3) !important;
+                  }
+
+                  .viewer-card-title {
+                    font-family: var(--font-title);
+                    font-weight: 800;
+                    color: white;
+                    margin: 0 0 0.5rem 0;
+                  }
                 </style>
                 <div style="display: flex; background: rgba(0,0,0,0.25); padding: 0.25rem; border-radius: 12px; width: 100%; max-width: 480px; box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);">
                   <button class="subtab-pill active" id="proj-subtab-article" onclick="app.switchProjectSubtab('article')">
@@ -509,36 +557,73 @@
               <!-- Content Scroll Area -->
               <div style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; position: relative;">
                 
-                <!-- Article Workspace Panel -->
+                <!-- Article Workspace Panel (Slides Editor & Carousel Viewport) -->
                 <div id="proj-panel-article" style="display: flex; flex-direction: column; gap: 1rem; padding: 1.25rem; overflow-y: auto; height: 100%;">
-                  <!-- Quick Brief Tip Banner -->
-                  <div style="padding: 0.8rem 1rem; background: rgba(6, 182, 212, 0.04); border: 1px solid rgba(6, 182, 212, 0.15); border-radius: 12px; font-size: 0.8rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
-                    <span style="color: var(--text-secondary); line-height: 1.4;">💡 Keep your partner school's requirements in mind while writing. You can view the full instructions anytime.</span>
-                    <button class="btn btn-secondary btn-small" onclick="app.switchProjectSubtab('brief')" style="padding: 0.3rem 0.75rem; font-size: 0.75rem; white-space: nowrap;">View Brief</button>
-                  </div>
+                  
+                  <!-- Story Deck Editor Workspace (Only shown for editable/active states) -->
+                  <div id="proj-deck-editor" style="display: flex; flex-direction: column; gap: 1rem; flex-grow: 1;">
+                    <!-- Horizontal Slide Selector Bar -->
+                    <div style="display: flex; align-items: center; gap: 0.5rem; overflow-x: auto; padding: 0.25rem 0; margin-bottom: 0.25rem; border-bottom: 1px dashed var(--panel-border); padding-bottom: 0.75rem;" id="proj-slides-carousel-bar">
+                      <!-- Populated dynamically: slide buttons plus [+] Add Card button -->
+                    </div>
 
-                  <h4 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin: 0.25rem 0 0 0;">✍️ Collaborative Article Presentation</h4>
-                  <div class="form-group" style="margin-bottom: 0.75rem;">
-                    <label for="proj-art-title" style="font-size: 0.75rem; font-weight: 600;">Article Title</label>
-                    <input type="text" id="proj-art-title" class="form-control" style="font-size: 0.85rem;" placeholder="Choose a catchy title for your presentation..." required>
-                  </div>
-                  <div class="form-group" style="margin-bottom: 0.75rem;">
-                    <label for="proj-art-photo-input" style="font-size: 0.75rem; font-weight: 600;">Add Photograph (Multimedia)</label>
-                    <input type="file" id="proj-art-photo-input" class="form-control" accept="image/*" style="padding: 0.4rem 0.75rem; font-size: 0.8rem;">
-                    <div class="photo-preview-container" style="margin-top: 0.5rem; display: flex; align-items: center; justify-content: center; height: 130px; border: 1px dashed var(--panel-border); border-radius: 12px; overflow: hidden; background: rgba(0,0,0,0.15);">
-                      <img id="proj-article-photo-preview" src="" alt="Project Photo" style="height: 100%; width: 100%; object-fit: cover; display: none;">
-                      <span id="proj-article-photo-placeholder" style="font-size: 0.75rem; color: var(--text-muted);">No image uploaded</span>
+                    <!-- Slide Layout Picker -->
+                    <div class="form-group" style="margin-bottom: 0.5rem;" id="proj-slide-layout-group">
+                      <label style="font-size: 0.75rem; font-weight: 600; margin-bottom: 0.35rem; display: block;">Slide Layout</label>
+                      <div style="display: flex; background: rgba(0,0,0,0.25); padding: 0.2rem; border-radius: 8px; width: fit-content; gap: 0.25rem;">
+                        <button type="button" class="btn btn-secondary btn-small active-layout" id="layout-split-btn" onclick="app.setProjectSlideLayout('split')" style="padding: 0.35rem 0.85rem; font-size: 0.75rem; font-weight: 600; border-radius: 6px; border: none; background: transparent; cursor: pointer; transition: all 0.2s;">
+                          📷 Photo + Text
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-small" id="layout-text-btn" onclick="app.setProjectSlideLayout('text-only')" style="padding: 0.35rem 0.85rem; font-size: 0.75rem; font-weight: 600; border-radius: 6px; border: none; background: transparent; cursor: pointer; transition: all 0.2s;">
+                          📝 Text Only
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Editor Fields -->
+                    <div class="form-group" style="margin-bottom: 0.5rem;">
+                      <label for="proj-art-title" style="font-size: 0.75rem; font-weight: 600;">Slide Title</label>
+                      <input type="text" id="proj-art-title" class="form-control" style="font-size: 0.85rem;" placeholder="Give this slide a title..." required>
+                    </div>
+
+                    <!-- Slide Photo Group (Toggled by JS based on layout) -->
+                    <div class="form-group" style="margin-bottom: 0.5rem;" id="proj-slide-photo-group">
+                      <label for="proj-art-photo-input" style="font-size: 0.75rem; font-weight: 600;">Add Slide Photograph</label>
+                      <input type="file" id="proj-art-photo-input" class="form-control" accept="image/*" style="padding: 0.4rem 0.75rem; font-size: 0.8rem;">
+                      <div class="photo-preview-container" style="margin-top: 0.5rem; display: flex; align-items: center; justify-content: center; height: 110px; border: 1px dashed var(--panel-border); border-radius: 12px; overflow: hidden; background: rgba(0,0,0,0.15);">
+                        <img id="proj-article-photo-preview" src="" alt="Slide Photo Preview" style="height: 100%; width: 100%; object-fit: cover; display: none;">
+                        <span id="proj-article-photo-placeholder" style="font-size: 0.75rem; color: var(--text-muted);">No image uploaded</span>
+                      </div>
+                    </div>
+
+                    <div class="form-group" style="display: flex; flex-direction: column; flex-grow: 1; margin-bottom: 0.5rem; min-height: 160px;">
+                      <label for="proj-art-content" style="font-size: 0.75rem; font-weight: 600;">Slide Body Content</label>
+                      <textarea id="proj-art-content" class="form-control" style="font-size: 0.85rem; min-height: 140px; flex-grow: 1; resize: vertical;" placeholder="Explain your research or topic details for this slide..." required></textarea>
+                    </div>
+
+                    <!-- Editor Action Footer -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem; border-top: 1px solid var(--panel-border); padding-top: 0.75rem; padding-bottom: 0.5rem;">
+                      <span id="proj-article-last-updated" style="font-size: 0.7rem; color: var(--text-muted); font-style: italic;">Last updated: Not saved yet</span>
+                      <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <button class="btn btn-danger btn-small" id="proj-slide-delete-btn" onclick="app.deleteProjectSlide()" style="padding: 0.45rem 1rem;">🗑️ Delete Slide</button>
+                        <button class="btn btn-secondary btn-small" id="proj-art-save-btn" style="padding: 0.45rem 1rem;">Save Draft</button>
+                        <button class="btn btn-primary btn-small" id="proj-art-publish-btn" style="padding: 0.45rem 1.25rem;">Publish Project</button>
+                      </div>
                     </div>
                   </div>
-                  <div class="form-group" style="display: flex; flex-direction: column; flex-grow: 1; margin-bottom: 0.5rem; min-height: 200px;">
-                    <label for="proj-art-content" style="font-size: 0.75rem; font-weight: 600;">Article Body Content</label>
-                    <textarea id="proj-art-content" class="form-control" style="font-size: 0.85rem; min-height: 180px; flex-grow: 1; resize: vertical;" placeholder="Write your topic presentation here. Share your research and collaborate together..." required></textarea>
-                  </div>
-                  <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem; border-top: 1px solid var(--panel-border); padding-top: 0.75rem; padding-bottom: 0.5rem;">
-                    <span id="proj-article-last-updated" style="font-size: 0.7rem; color: var(--text-muted); font-style: italic;">Last updated: Not saved yet</span>
-                    <div style="display: flex; gap: 0.5rem;">
-                      <button class="btn btn-secondary btn-small" id="proj-art-save-btn" style="padding: 0.45rem 1rem;">Save Draft</button>
-                      <button class="btn btn-primary btn-small" id="proj-art-publish-btn" style="padding: 0.45rem 1.25rem;">Publish Project</button>
+
+                  <!-- Presentation Carousel Viewer (Shown when published/frozen) -->
+                  <div id="proj-deck-viewer" style="display: none; flex-direction: column; gap: 1rem; flex-grow: 1; align-items: center; justify-content: center; padding: 1rem 0;">
+                    <!-- Presentation slide viewport -->
+                    <div id="proj-viewer-card" style="width: 100%; max-width: 580px; height: 350px; background: rgba(0,0,0,0.25); border: 1px solid var(--panel-border); border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); display: flex; flex-direction: column; overflow: hidden; transition: all 0.3s;">
+                      <!-- Populated dynamically by JS -->
+                    </div>
+                    
+                    <!-- Carousel Navigation controls -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 320px; margin-top: 0.5rem;">
+                      <button class="btn btn-secondary" onclick="app.prevProjectSlide()" style="padding: 0.45rem 1rem; font-weight: bold; border-radius: 8px;">◀️ Prev</button>
+                      <span id="proj-viewer-progress" style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary);">Card 1 of 1</span>
+                      <button class="btn btn-primary" onclick="app.nextProjectSlide()" style="padding: 0.45rem 1rem; font-weight: bold; border-radius: 8px;">Next ▶️</button>
                     </div>
                   </div>
                 </div>

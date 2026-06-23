@@ -148,11 +148,23 @@ const defaultDatabase = {
       status: 'Active',
       creatorSchoolApproved: false,
       targetSchoolApproved: false,
-      articleTitle: 'A Taste of Two Cultures',
-      articleContent: 'In this project, we explore the rich traditions of afternoon tea in England and traditional Brezeln in Bavaria. We found many interesting details about how tea is served at 4 PM in Leicester High School, while in Goethe-Gymnasium, Brezeln are eaten for breakfast with white sausages...',
-      articlePhotoUrl: '',
-      articleLastUpdatedBy: 'Harriet Potter',
-      articleLastUpdatedAt: '2026-06-20T10:00:00Z',
+      slides: [
+        {
+          id: 'slide_1',
+          layout: 'split',
+          title: 'A Taste of Two Cultures',
+          content: 'In this project, we explore the rich traditions of afternoon tea in England and traditional Brezeln in Bavaria. We want to find out how our families celebrate and share food together.',
+          photoUrl: '',
+          author: 'Harriet Potter'
+        },
+        {
+          id: 'slide_2',
+          layout: 'text-only',
+          title: 'Tea vs. Pretzels',
+          content: 'We found many interesting details about how tea is served at 4 PM in Leicester High School, while in Goethe-Gymnasium, Brezeln are eaten for breakfast with white sausages. Our team had fun sharing these ideas!',
+          author: 'Lukas Schmidt'
+        }
+      ],
       createdAt: '2026-06-18T10:00:00Z'
     }
   ],
@@ -685,11 +697,16 @@ class LocalDB {
       id: 'proj_' + Date.now(),
       creatorSchoolApproved: false,
       targetSchoolApproved: false,
-      articleTitle: '',
-      articleContent: '',
-      articlePhotoUrl: '',
-      articleLastUpdatedBy: '',
-      articleLastUpdatedAt: '',
+      slides: [
+        {
+          id: 'slide_' + Date.now(),
+          layout: 'split',
+          title: '',
+          content: '',
+          photoUrl: '',
+          author: ''
+        }
+      ],
       createdAt: new Date().toISOString(),
       ...proj
     };

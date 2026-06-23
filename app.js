@@ -86,6 +86,7 @@ class App {
     this.onboardingSchoolsExpanded = false;
     this.activeCoordinatorId = null;
     this.currentProjArticlePhotoDataUrl = '';
+    this.activeSlideIndex = 0;
     
     // Bind listeners
     window.addEventListener('DOMContentLoaded', () => this.init());
@@ -824,13 +825,19 @@ class App {
       card.style.background = 'rgba(255,255,255,0.01)';
       card.style.border = '1px solid var(--panel-border)';
       
-      // Look up if this news item is for an article and has a photo
+      // Look up if this news item is for an article or project and has a photo
       let photoHtml = '';
       if (item.title.startsWith('Published: ')) {
         const artTitle = item.title.replace('Published: ', '').trim();
         const art = window.db.getArticles().find(a => a.title === artTitle);
         if (art && art.photoUrl) {
           photoHtml = `<img src="${art.photoUrl}" alt="${art.title} image" style="width: 100%; height: 140px; object-fit: cover; border-radius: 8px; margin-bottom: 0.75rem;">`;
+        }
+      } else if (item.title.startsWith('Project Published: ')) {
+        const projTitle = item.title.replace('Project Published: ', '').trim();
+        const proj = window.db.getProjects().find(p => p.title === projTitle);
+        if (proj && proj.slides && proj.slides[0] && proj.slides[0].photoUrl) {
+          photoHtml = `<img src="${proj.slides[0].photoUrl}" alt="${proj.title} image" style="width: 100%; height: 140px; object-fit: cover; border-radius: 8px; margin-bottom: 0.75rem;">`;
         }
       }
 
@@ -3553,6 +3560,7 @@ class App {
     // Set first project as default if none active or active not in list
     if (!this.activeProjectId || !projects.some(p => p.id === this.activeProjectId)) {
       this.activeProjectId = projects[0].id;
+      this.activeSlideIndex = 0;
     }
 
     projects.forEach(project => {
@@ -3587,8 +3595,9 @@ class App {
 
       item.addEventListener('click', () => {
         this.activeProjectId = project.id;
-        // Load current photo URL to state when switching projects
-        this.currentProjArticlePhotoDataUrl = project.articlePhotoUrl || '';
+        this.activeSlideIndex = 0;
+        const activeProject = window.db.getProject(project.id);
+        this.currentProjArticlePhotoDataUrl = (activeProject?.slides && activeProject.slides[0]) ? activeProject.slides[0].photoUrl || '' : '';
         // Reset input value to avoid leftover state
         const projArtPhotoInput = document.getElementById('proj-art-photo-input');
         if (projArtPhotoInput) projArtPhotoInput.value = '';
@@ -3636,50 +3645,169 @@ class App {
       // Brief
       document.getElementById('project-brief-text').textContent = activeProject.brief;
 
-      // Article Title & Content
-      const titleInput = document.getElementById('proj-art-title');
-      const contentInput = document.getElementById('proj-art-content');
-      const photoInput = document.getElementById('proj-art-photo-input');
-      const saveBtn = document.getElementById('proj-art-save-btn');
-      const publishBtn = document.getElementById('proj-art-publish-btn');
+      // Migrate project slides if using old database schema
+      if (!activeProject.slides) {
+        activeProject.slides = [
+          {
+            id: 'slide_1',
+            layout: activeProject.articlePhotoUrl ? 'split' : 'text-only',
+            title: activeProject.articleTitle || 'Untitled Slide',
+            content: activeProject.articleContent || '',
+            photoUrl: activeProject.articlePhotoUrl || '',
+            author: activeProject.articleLastUpdatedBy || 'Student'
+          }
+        ];
+        window.db.updateProject(activeProject.id, { slides: activeProject.slides });
+      }
+
+      // Bounds check activeSlideIndex
+      if (this.activeSlideIndex >= activeProject.slides.length) {
+        this.activeSlideIndex = activeProject.slides.length - 1;
+      }
+      if (this.activeSlideIndex < 0) {
+        this.activeSlideIndex = 0;
+      }
+
+      const activeSlide = activeProject.slides[this.activeSlideIndex];
+      const isReadOnly = activeProject.status === 'Published' || activeProject.status === 'PendingPublish';
+
+      // Toggle display modes (Editor vs Carousel Viewer)
+      const deckEditor = document.getElementById('proj-deck-editor');
+      const deckViewer = document.getElementById('proj-deck-viewer');
+
+      if (isReadOnly) {
+        // Show Presentation Carousel Viewer
+        if (deckEditor) deckEditor.style.display = 'none';
+        if (deckViewer) deckViewer.style.display = 'flex';
+
+        // Render current slide view
+        const viewerCard = document.getElementById('proj-viewer-card');
+        if (viewerCard && activeSlide) {
+          if (activeSlide.layout === 'split') {
+            viewerCard.innerHTML = `
+              <div style="display: grid; grid-template-columns: 1fr 1fr; height: 100%; width: 100%;">
+                <div style="background: rgba(0,0,0,0.25); border-right: 1px solid var(--panel-border); height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                  ${activeSlide.photoUrl ? `<img src="${activeSlide.photoUrl}" style="width: 100%; height: 100%; object-fit: cover;">` : `<span style="font-size: 0.8rem; color: var(--text-muted);">No image uploaded</span>`}
+                </div>
+                <div style="padding: 1.5rem; display: flex; flex-direction: column; overflow-y: auto; justify-content: center;">
+                  <h4 class="viewer-card-title">${activeSlide.title || 'Untitled Slide'}</h4>
+                  <p style="font-size: 0.85rem; line-height: 1.6; color: var(--text-secondary); margin: 0; white-space: pre-wrap;">${activeSlide.content || 'No content written yet.'}</p>
+                  ${activeSlide.author ? `<span style="font-size: 0.7rem; color: var(--text-muted); margin-top: 1rem; font-style: italic;">By ${activeSlide.author}</span>` : ''}
+                </div>
+              </div>
+            `;
+          } else {
+            viewerCard.innerHTML = `
+              <div style="padding: 2rem 2.5rem; display: flex; flex-direction: column; overflow-y: auto; justify-content: center; height: 100%; width: 100%;">
+                <h4 class="viewer-card-title" style="font-size: 1.3rem; text-align: center; margin-bottom: 1rem;">${activeSlide.title || 'Untitled Slide'}</h4>
+                <p style="font-size: 0.9rem; line-height: 1.7; color: var(--text-secondary); margin: 0; white-space: pre-wrap; text-align: center; max-width: 480px; margin-left: auto; margin-right: auto;">${activeSlide.content || 'No content written yet.'}</p>
+                ${activeSlide.author ? `<span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 1.5rem; font-style: italic; text-align: center;">By ${activeSlide.author}</span>` : ''}
+              </div>
+            `;
+          }
+        }
+
+        // Update progress bar
+        const progressEl = document.getElementById('proj-viewer-progress');
+        if (progressEl) {
+          progressEl.textContent = `Card ${this.activeSlideIndex + 1} of ${activeProject.slides.length}`;
+        }
+
+      } else {
+        // Show Slides Editor
+        if (deckEditor) deckEditor.style.display = 'flex';
+        if (deckViewer) deckViewer.style.display = 'none';
+
+        // Render Slides Horizontal Selection carousel bar
+        const carouselBar = document.getElementById('proj-slides-carousel-bar');
+        if (carouselBar) {
+          carouselBar.innerHTML = '';
+          activeProject.slides.forEach((slide, idx) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `slide-thumb ${this.activeSlideIndex === idx ? 'active' : ''}`;
+            btn.innerHTML = `
+              <span>Slide ${idx + 1}</span>
+              <span style="font-size: 0.65rem; opacity: 0.8; font-weight: 500;">(${slide.layout === 'split' ? '📷' : '📝'})</span>
+            `;
+            btn.addEventListener('click', () => {
+              this.switchProjectSlide(idx);
+            });
+            carouselBar.appendChild(btn);
+          });
+
+          // Add slide card button
+          const addBtn = document.createElement('button');
+          addBtn.type = 'button';
+          addBtn.className = 'slide-thumb slide-thumb-add';
+          addBtn.textContent = '➕ Add Card';
+          addBtn.addEventListener('click', () => {
+            this.addProjectSlide();
+          });
+          carouselBar.appendChild(addBtn);
+        }
+
+        // Populate slide editor inputs
+        const titleInput = document.getElementById('proj-art-title');
+        const contentInput = document.getElementById('proj-art-content');
+        const photoInput = document.getElementById('proj-art-photo-input');
+        const saveBtn = document.getElementById('proj-art-save-btn');
+        const publishBtn = document.getElementById('proj-art-publish-btn');
+        const deleteBtn = document.getElementById('proj-slide-delete-btn');
+
+        if (titleInput && contentInput && activeSlide) {
+          titleInput.value = activeSlide.title || '';
+          contentInput.value = activeSlide.content || '';
+          titleInput.readOnly = false;
+          contentInput.readOnly = false;
+
+          if (photoInput) photoInput.disabled = false;
+          if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.style.opacity = '1';
+          }
+          if (publishBtn) {
+            publishBtn.disabled = false;
+            publishBtn.style.opacity = '1';
+          }
+
+          // Toggle layout button active highlights
+          const splitBtn = document.getElementById('layout-split-btn');
+          const textBtn = document.getElementById('layout-text-btn');
+          if (activeSlide.layout === 'split') {
+            if (splitBtn) splitBtn.classList.add('active-layout');
+            if (textBtn) textBtn.classList.remove('active-layout');
+            document.getElementById('proj-slide-photo-group').style.display = 'block';
+          } else {
+            if (textBtn) textBtn.classList.add('active-layout');
+            if (splitBtn) splitBtn.classList.remove('active-layout');
+            document.getElementById('proj-slide-photo-group').style.display = 'none';
+          }
+
+          // Show/hide slide delete button
+          if (deleteBtn) {
+            deleteBtn.style.display = activeProject.slides.length > 1 ? 'block' : 'none';
+          }
+        }
+
+        // Render photo preview
+        const previewEl = document.getElementById('proj-article-photo-preview');
+        const placeholderEl = document.getElementById('proj-article-photo-placeholder');
+        if (previewEl && placeholderEl && activeSlide) {
+          if (activeSlide.photoUrl) {
+            previewEl.src = activeSlide.photoUrl;
+            previewEl.style.display = 'block';
+            placeholderEl.style.display = 'none';
+          } else {
+            previewEl.src = '';
+            previewEl.style.display = 'none';
+            placeholderEl.style.display = 'block';
+          }
+        }
+      }
+
+      // Update Last Updated Text
       const lastUpdatedEl = document.getElementById('proj-article-last-updated');
-
-      if (titleInput && contentInput) {
-        titleInput.value = activeProject.articleTitle || '';
-        contentInput.value = activeProject.articleContent || '';
-
-        const isReadOnly = activeProject.status === 'Published' || activeProject.status === 'PendingPublish';
-        titleInput.readOnly = isReadOnly;
-        contentInput.readOnly = isReadOnly;
-        if (photoInput) photoInput.disabled = isReadOnly;
-        if (saveBtn) saveBtn.disabled = isReadOnly;
-        if (publishBtn) publishBtn.disabled = isReadOnly;
-
-        if (isReadOnly) {
-          if (saveBtn) saveBtn.style.opacity = '0.5';
-          if (publishBtn) publishBtn.style.opacity = '0.5';
-        } else {
-          if (saveBtn) saveBtn.style.opacity = '1';
-          if (publishBtn) publishBtn.style.opacity = '1';
-        }
-      }
-
-      // Image preview
-      const previewEl = document.getElementById('proj-article-photo-preview');
-      const placeholderEl = document.getElementById('proj-article-photo-placeholder');
-      if (previewEl && placeholderEl) {
-        if (this.currentProjArticlePhotoDataUrl) {
-          previewEl.src = this.currentProjArticlePhotoDataUrl;
-          previewEl.style.display = 'block';
-          placeholderEl.style.display = 'none';
-        } else {
-          previewEl.src = '';
-          previewEl.style.display = 'none';
-          placeholderEl.style.display = 'block';
-        }
-      }
-
-      // Last updated info
       if (lastUpdatedEl) {
         if (activeProject.articleLastUpdatedAt) {
           const timeStr = new Date(activeProject.articleLastUpdatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -3728,6 +3856,141 @@ class App {
     }
   }
 
+  saveProjectSlideStateSilent() {
+    if (!this.activeProjectId) return;
+    const project = window.db.getProject(this.activeProjectId);
+    if (!project || project.status === 'Published' || project.status === 'PendingPublish') return;
+
+    const titleInput = document.getElementById('proj-art-title');
+    const contentInput = document.getElementById('proj-art-content');
+    if (!titleInput || !contentInput) return;
+
+    const activeSlide = project.slides[this.activeSlideIndex];
+    if (activeSlide) {
+      activeSlide.title = titleInput.value.trim();
+      activeSlide.content = contentInput.value.trim();
+      activeSlide.photoUrl = this.currentProjArticlePhotoDataUrl || '';
+      const student = window.db.getStudent(this.currentStudentId);
+      activeSlide.author = student ? student.name : 'Student';
+      project.articleLastUpdatedBy = student ? student.name : 'Student';
+      project.articleLastUpdatedAt = new Date().toISOString();
+      window.db.updateProject(this.activeProjectId, { 
+        slides: project.slides,
+        articleLastUpdatedBy: project.articleLastUpdatedBy,
+        articleLastUpdatedAt: project.articleLastUpdatedAt
+      });
+    }
+  }
+
+  switchProjectSlide(index) {
+    this.saveProjectSlideStateSilent();
+    this.activeSlideIndex = index;
+    const project = window.db.getProject(this.activeProjectId);
+    if (project && project.slides[index]) {
+      this.currentProjArticlePhotoDataUrl = project.slides[index].photoUrl || '';
+    } else {
+      this.currentProjArticlePhotoDataUrl = '';
+    }
+    const fileInput = document.getElementById('proj-art-photo-input');
+    if (fileInput) fileInput.value = '';
+    this.renderStudentProjects();
+  }
+
+  addProjectSlide() {
+    if (!this.activeProjectId) return;
+    const project = window.db.getProject(this.activeProjectId);
+    if (!project) return;
+
+    this.saveProjectSlideStateSilent();
+
+    const newSlide = {
+      id: 'slide_' + Date.now(),
+      layout: 'split',
+      title: '',
+      content: '',
+      photoUrl: '',
+      author: ''
+    };
+    project.slides.push(newSlide);
+    window.db.updateProject(this.activeProjectId, { slides: project.slides });
+
+    this.activeSlideIndex = project.slides.length - 1;
+    this.currentProjArticlePhotoDataUrl = '';
+    const fileInput = document.getElementById('proj-art-photo-input');
+    if (fileInput) fileInput.value = '';
+    this.renderStudentProjects();
+  }
+
+  deleteProjectSlide() {
+    if (!this.activeProjectId) return;
+    const project = window.db.getProject(this.activeProjectId);
+    if (!project || project.slides.length <= 1) return;
+
+    if (!confirm('Are you sure you want to delete this slide? This action cannot be undone.')) {
+      return;
+    }
+
+    project.slides.splice(this.activeSlideIndex, 1);
+    window.db.updateProject(this.activeProjectId, { slides: project.slides });
+
+    if (this.activeSlideIndex >= project.slides.length) {
+      this.activeSlideIndex = project.slides.length - 1;
+    }
+    const activeSlide = project.slides[this.activeSlideIndex];
+    this.currentProjArticlePhotoDataUrl = activeSlide ? activeSlide.photoUrl || '' : '';
+    const fileInput = document.getElementById('proj-art-photo-input');
+    if (fileInput) fileInput.value = '';
+    this.renderStudentProjects();
+  }
+
+  setProjectSlideLayout(layoutType) {
+    if (!this.activeProjectId) return;
+    const project = window.db.getProject(this.activeProjectId);
+    if (!project) return;
+
+    const activeSlide = project.slides[this.activeSlideIndex];
+    if (activeSlide) {
+      activeSlide.layout = layoutType;
+      if (layoutType === 'text-only') {
+        document.getElementById('proj-slide-photo-group').style.display = 'none';
+      } else {
+        document.getElementById('proj-slide-photo-group').style.display = 'block';
+      }
+      
+      const splitBtn = document.getElementById('layout-split-btn');
+      const textBtn = document.getElementById('layout-text-btn');
+      if (layoutType === 'split') {
+        if (splitBtn) splitBtn.classList.add('active-layout');
+        if (textBtn) textBtn.classList.remove('active-layout');
+      } else {
+        if (textBtn) textBtn.classList.add('active-layout');
+        if (splitBtn) splitBtn.classList.remove('active-layout');
+      }
+    }
+  }
+
+  prevProjectSlide() {
+    if (!this.activeProjectId) return;
+    const project = window.db.getProject(this.activeProjectId);
+    if (!project) return;
+
+    if (this.activeSlideIndex > 0) {
+      this.activeSlideIndex--;
+      this.renderStudentProjects();
+    }
+  }
+
+  nextProjectSlide() {
+    if (!this.activeProjectId) return;
+    const project = window.db.getProject(this.activeProjectId);
+    if (!project) return;
+
+    if (this.activeSlideIndex < project.slides.length - 1) {
+      this.activeSlideIndex++;
+      this.renderStudentProjects();
+    }
+  }
+
   saveProjectArticleDraft() {
     if (!this.activeProjectId) return;
     const project = window.db.getProject(this.activeProjectId);
@@ -3739,10 +4002,16 @@ class App {
 
     if (!titleInput || !contentInput) return;
 
+    const activeSlide = project.slides[this.activeSlideIndex];
+    if (activeSlide) {
+      activeSlide.title = titleInput.value.trim();
+      activeSlide.content = contentInput.value.trim();
+      activeSlide.photoUrl = this.currentProjArticlePhotoDataUrl || '';
+      activeSlide.author = student ? student.name : 'Student';
+    }
+
     const updates = {
-      articleTitle: titleInput.value.trim(),
-      articleContent: contentInput.value.trim(),
-      articlePhotoUrl: this.currentProjArticlePhotoDataUrl || '',
+      slides: project.slides,
       articleLastUpdatedBy: student ? student.name : 'Student',
       articleLastUpdatedAt: new Date().toISOString()
     };
@@ -3757,33 +4026,25 @@ class App {
     const project = window.db.getProject(this.activeProjectId);
     if (!project) return;
 
-    const titleInput = document.getElementById('proj-art-title');
-    const contentInput = document.getElementById('proj-art-content');
+    this.saveProjectSlideStateSilent();
 
-    if (!titleInput || !contentInput) return;
-
-    const title = titleInput.value.trim();
-    const content = contentInput.value.trim();
-
-    if (!title || !content) {
-      alert('Please write an article title and content before publishing.');
+    const incomplete = project.slides.some(s => !s.title.trim() || !s.content.trim());
+    if (incomplete) {
+      alert('Please fill out the title and content for all slides before publishing.');
       return;
     }
 
-    if (!confirm('Are you sure you want to publish this project? This will lock editing and submit it to both school coordinators for authorization.')) {
+    if (!confirm('Are you sure you want to publish this project? This will submit the Story Deck to both coordinators for review.')) {
       return;
     }
 
     const student = window.db.getStudent(this.currentStudentId);
     const updates = {
-      articleTitle: title,
-      articleContent: content,
-      articlePhotoUrl: this.currentProjArticlePhotoDataUrl || '',
-      articleLastUpdatedBy: student ? student.name : 'Student',
-      articleLastUpdatedAt: new Date().toISOString(),
       status: 'PendingPublish',
       creatorSchoolApproved: false,
-      targetSchoolApproved: false
+      targetSchoolApproved: false,
+      articleLastUpdatedBy: student ? student.name : 'Student',
+      articleLastUpdatedAt: new Date().toISOString()
     };
 
     window.db.updateProject(this.activeProjectId, updates);
@@ -3793,10 +4054,11 @@ class App {
       this.activeProjectId,
       'system',
       'System',
-      `${student ? student.name : 'A student'} submitted the project presentation for coordinator authorization.`
+      `${student ? student.name : 'A student'} submitted the project Story Deck for coordinator authorization.`
     );
 
     alert('Project submitted for authorization! Coordinators from both schools must approve before publication.');
+    this.activeSlideIndex = 0;
     this.renderStudentProjects();
   }
 
@@ -4095,6 +4357,9 @@ class App {
     const isMySchoolApproved = (project.creatorSchoolId === schoolId) ? creatorApproved : targetApproved;
     const showApproveButton = project.status === 'PendingPublish' && !isMySchoolApproved;
 
+    // Initialize slide index for review modal
+    this.reviewSlideIndex = 0;
+
     // Chat log history render
     const chatMsgs = window.db.getProjectMessages().filter(m => m.projectId === project.id);
     let chatHTML = '';
@@ -4127,16 +4392,18 @@ class App {
           <strong style="color: var(--secondary);">📋 Project Brief:</strong> ${project.brief}
         </div>
 
-        <div style="border-top: 1px solid var(--panel-border); padding-top: 0.75rem;">
-          <h5 style="margin: 0 0 0.5rem 0; font-size: 0.85rem; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">✍️ Student Presentation Article</h5>
-          <div style="background: rgba(0, 0, 0, 0.2); border: 1px solid var(--panel-border); border-radius: 12px; padding: 1rem; max-height: 180px; overflow-y: auto;">
-            <h6 style="margin: 0 0 0.5rem 0; font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">${project.articleTitle || 'Untitled Article'}</h6>
-            ${project.articlePhotoUrl ? `
-              <div style="margin-bottom: 0.75rem; border-radius: 8px; overflow: hidden; height: 110px; border: 1px solid var(--panel-border);">
-                <img src="${project.articlePhotoUrl}" style="width:100%; height:100%; object-fit:cover;">
-              </div>
-            ` : ''}
-            <p style="font-size: 0.8rem; line-height: 1.5; color: var(--text-secondary); margin: 0; white-space: pre-wrap;">${project.articleContent || 'No content written yet.'}</p>
+        <div style="border-top: 1px solid var(--panel-border); padding-top: 0.75rem; display: flex; flex-direction: column; align-items: center;">
+          <h5 style="align-self: flex-start; margin: 0 0 0.5rem 0; font-size: 0.85rem; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">✍️ Student Presentation Slides</h5>
+          
+          <!-- Presentation viewer inside review modal -->
+          <div id="proj-review-viewer-card" style="width: 100%; height: 260px; background: rgba(0,0,0,0.25); border: 1px solid var(--panel-border); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; transition: all 0.3s;">
+            <!-- Populated dynamically by renderReviewModalCarousel -->
+          </div>
+          
+          <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 280px; margin-top: 0.5rem;">
+            <button class="btn btn-secondary btn-small" onclick="app.prevReviewSlide('${project.id}')" style="padding: 0.25rem 0.65rem; font-weight: bold; border-radius: 6px;">◀️ Prev</button>
+            <span id="proj-review-viewer-progress" style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary);">Card 1 of 1</span>
+            <button class="btn btn-primary btn-small" onclick="app.nextReviewSlide('${project.id}')" style="padding: 0.25rem 0.65rem; font-weight: bold; border-radius: 6px;">Next ▶️</button>
           </div>
         </div>
 
@@ -4175,7 +4442,76 @@ class App {
       </div>
     `;
 
+    this.renderReviewModalCarousel(projectId);
     document.getElementById('review-project-modal').classList.add('active');
+  }
+
+  renderReviewModalCarousel(projectId) {
+    const project = window.db.getProject(projectId);
+    if (!project) return;
+
+    if (!project.slides) {
+      project.slides = [
+        {
+          id: 'slide_1',
+          layout: project.articlePhotoUrl ? 'split' : 'text-only',
+          title: project.articleTitle || 'Untitled Slide',
+          content: project.articleContent || '',
+          photoUrl: project.articlePhotoUrl || '',
+          author: project.articleLastUpdatedBy || 'Student'
+        }
+      ];
+      window.db.updateProject(project.id, { slides: project.slides });
+    }
+
+    const card = document.getElementById('proj-review-viewer-card');
+    if (!card) return;
+
+    const slide = project.slides[this.reviewSlideIndex];
+    if (!slide) return;
+
+    if (slide.layout === 'split') {
+      card.innerHTML = `
+        <div style="display: grid; grid-template-columns: 1fr 1fr; height: 100%; width: 100%;">
+          <div style="background: rgba(0,0,0,0.25); border-right: 1px solid var(--panel-border); height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+            ${slide.photoUrl ? `<img src="${slide.photoUrl}" style="width:100%; height:100%; object-fit:cover;">` : `<span style="font-size:0.75rem; color:var(--text-muted);">No image uploaded</span>`}
+          </div>
+          <div style="padding: 1.25rem; display: flex; flex-direction: column; overflow-y: auto; justify-content: center;">
+            <h5 style="margin:0 0 0.5rem 0; font-family:var(--font-title); font-weight:800; color:white; font-size:0.95rem;">${slide.title || 'Untitled Slide'}</h5>
+            <p style="font-size: 0.8rem; line-height: 1.5; color: var(--text-secondary); margin: 0; white-space: pre-wrap;">${slide.content || 'No content.'}</p>
+            ${slide.author ? `<span style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.75rem; font-style: italic;">By ${slide.author}</span>` : ''}
+          </div>
+        </div>
+      `;
+    } else {
+      card.innerHTML = `
+        <div style="padding: 1.5rem 2rem; display: flex; flex-direction: column; overflow-y: auto; justify-content: center; height: 100%; width: 100%;">
+          <h5 style="margin:0 0 0.75rem 0; font-family:var(--font-title); font-weight:800; color:white; font-size:1.1rem; text-align:center;">${slide.title || 'Untitled Slide'}</h5>
+          <p style="font-size: 0.85rem; line-height: 1.6; color: var(--text-secondary); margin: 0; white-space: pre-wrap; text-align: center; max-width: 420px; margin-left: auto; margin-right: auto;">${slide.content || 'No content.'}</p>
+          ${slide.author ? `<span style="font-size: 0.65rem; color: var(--text-muted); margin-top: 1rem; font-style: italic; text-align: center;">By ${slide.author}</span>` : ''}
+        </div>
+      `;
+    }
+
+    const progress = document.getElementById('proj-review-viewer-progress');
+    if (progress) {
+      progress.textContent = `Card ${this.reviewSlideIndex + 1} of ${project.slides.length}`;
+    }
+  }
+
+  prevReviewSlide(projectId) {
+    if (this.reviewSlideIndex > 0) {
+      this.reviewSlideIndex--;
+      this.renderReviewModalCarousel(projectId);
+    }
+  }
+
+  nextReviewSlide(projectId) {
+    const project = window.db.getProject(projectId);
+    if (project && this.reviewSlideIndex < project.slides.length - 1) {
+      this.reviewSlideIndex++;
+      this.renderReviewModalCarousel(projectId);
+    }
   }
 
   authorizeProjectPublication(projectId, approve) {
