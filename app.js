@@ -3593,6 +3593,7 @@ class App {
         const projArtPhotoInput = document.getElementById('proj-art-photo-input');
         if (projArtPhotoInput) projArtPhotoInput.value = '';
         this.renderStudentProjects();
+        this.switchProjectSubtab('article');
       });
 
       chatListContainer.appendChild(item);
@@ -3719,6 +3720,11 @@ class App {
 
         feed.scrollTop = feed.scrollHeight;
       }
+
+      // Keep current subtab active or default to article
+      const activeSubtabBtn = document.querySelector('.project-subtab-nav .subtab-btn.active');
+      const activeId = activeSubtabBtn ? activeSubtabBtn.id.replace('proj-subtab-', '') : 'article';
+      this.switchProjectSubtab(activeId);
     }
   }
 
@@ -4180,6 +4186,37 @@ class App {
     this.closeModal('review-project-modal');
     alert('Project authorized successfully!');
     this.refreshUI();
+  }
+
+  switchProjectSubtab(subtabId) {
+    const panels = ['article', 'chat', 'brief'];
+    panels.forEach(p => {
+      const el = document.getElementById(`proj-panel-${p}`);
+      if (el) {
+        el.style.display = 'none';
+      }
+    });
+
+    const targetEl = document.getElementById(`proj-panel-${subtabId}`);
+    if (targetEl) {
+      targetEl.style.display = 'flex';
+      if (subtabId === 'chat') {
+        const feed = document.getElementById('proj-chat-message-feed');
+        if (feed) feed.scrollTop = feed.scrollHeight;
+      }
+    }
+
+    panels.forEach(p => {
+      const btn = document.getElementById(`proj-subtab-${p}`);
+      if (btn) {
+        btn.classList.remove('active');
+      }
+    });
+
+    const targetBtn = document.getElementById(`proj-subtab-${subtabId}`);
+    if (targetBtn) {
+      targetBtn.classList.add('active');
+    }
   }
 
   // ================== LOGIN / LOGOUT PORTAL HELPERS ==================
