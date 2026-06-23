@@ -75,6 +75,8 @@ class App {
     this.currentRole = 'student'; // 'student', 'teacher', 'admin'
     this.currentStudentId = 'stud_1'; // Harry Potter by default
     this.activeMatchId = null;
+    this.activeProjectId = null;
+    this.currentCoordinatorId = 'coord_1';
     this.interfaceLang = 'en';
     this.theme = 'dark';
     this.currentMatchingSubtab = 'pair';
@@ -83,6 +85,7 @@ class App {
     this.selectedAssignStudentId = null;
     this.onboardingSchoolsExpanded = false;
     this.activeCoordinatorId = null;
+    this.currentProjArticlePhotoDataUrl = '';
     
     // Bind listeners
     window.addEventListener('DOMContentLoaded', () => this.init());
@@ -132,7 +135,8 @@ class App {
         btn.classList.add('active');
         const role = btn.getAttribute('data-dev-role');
         const studentId = btn.getAttribute('data-dev-id');
-        this.switchRole(role, studentId);
+        const coordId = btn.getAttribute('data-dev-coord-id');
+        this.switchRole(role, studentId, coordId);
       });
     });
 
@@ -334,8 +338,72 @@ class App {
       });
     });
 
+    // Collaborative Project Listeners
+    const projArtPhotoInput = document.getElementById('proj-art-photo-input');
+    const projArtPhotoPreview = document.getElementById('proj-article-photo-preview');
+    const projArtPhotoPlaceholder = document.getElementById('proj-article-photo-placeholder');
+    if (projArtPhotoInput) {
+      projArtPhotoInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          if (file.size > 1.5 * 1024 * 1024) {
+            alert('Image file is too large. Please select an image smaller than 1.5MB.');
+            projArtPhotoInput.value = '';
+            this.currentProjArticlePhotoDataUrl = '';
+            projArtPhotoPreview.style.display = 'none';
+            projArtPhotoPlaceholder.style.display = 'block';
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            this.currentProjArticlePhotoDataUrl = event.target.result;
+            projArtPhotoPreview.src = event.target.result;
+            projArtPhotoPreview.style.display = 'block';
+            projArtPhotoPlaceholder.style.display = 'none';
+          };
+          reader.readAsDataURL(file);
+        } else {
+          this.currentProjArticlePhotoDataUrl = '';
+          projArtPhotoPreview.style.display = 'none';
+          projArtPhotoPlaceholder.style.display = 'block';
+        }
+      });
+    }
+
+    const projSaveBtn = document.getElementById('proj-art-save-btn');
+    if (projSaveBtn) {
+      projSaveBtn.addEventListener('click', () => this.saveProjectArticleDraft());
+    }
+
+    const projPublishBtn = document.getElementById('proj-art-publish-btn');
+    if (projPublishBtn) {
+      projPublishBtn.addEventListener('click', () => this.publishProject());
+    }
+
+    const projSendBtn = document.getElementById('proj-chat-send-btn');
+    const projChatTextarea = document.getElementById('proj-chat-textarea');
+    if (projSendBtn && projChatTextarea) {
+      projSendBtn.addEventListener('click', () => this.sendProjectChatMessage());
+      projChatTextarea.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          this.sendProjectChatMessage();
+        }
+      });
+    }
+
+    const launchProjForm = document.getElementById('launch-project-form');
+    if (launchProjForm) {
+      launchProjForm.addEventListener('submit', (e) => this.handleProjectLaunch(e));
+    }
+
     // Load UI data
     this.refreshUI();
+  }
+
+  getLoggedTeacher() {
+    const coordinators = window.db.getCoordinators();
+    return coordinators.find(c => c.id === this.currentCoordinatorId) || coordinators[0];
   }
 
   // Update current role user card
@@ -353,11 +421,12 @@ class App {
       }
     } else if (this.currentRole === 'teacher') {
       const coordinators = window.db.getCoordinators();
-      const coord = coordinators.find(c => c.email === 'smith@leicesterhigh.edu');
+      const coord = coordinators.find(c => c.id === this.currentCoordinatorId) || coordinators[0];
       const isAdmin = coord ? coord.isSchoolAdmin : false;
-      nameEl.textContent = 'Mrs. Smith';
-      roleEl.textContent = `Languages Coordinator ${isAdmin ? '• School Admin' : ''}`;
-      avatarEl.textContent = 'MS';
+      const school = coord ? window.db.getSchool(coord.schoolId) : null;
+      nameEl.textContent = coord ? coord.name : 'Mrs. Smith';
+      roleEl.textContent = `Languages Coordinator ${isAdmin ? '• School Admin' : ''} (${school ? school.code : ''})`;
+      avatarEl.textContent = coord ? coord.name.split(' ').map(n => n[0]).join('') : 'MS';
     } else if (this.currentRole === 'admin') {
       nameEl.textContent = 'System Admin';
       roleEl.textContent = 'Platform Administrator';
@@ -474,7 +543,7 @@ class App {
   }
 
   // Developer switches roles
-  switchRole(role, studentId) {
+  switchRole(role, studentId, coordId) {
     this.currentRole = role;
     if (studentId) {
       this.currentStudentId = studentId;
@@ -489,7 +558,12 @@ class App {
       document.getElementById('ui-lang-selector').value = 'en';
     }
     
+    if (role === 'teacher') {
+      this.currentCoordinatorId = coordId || 'coord_1';
+    }
+    
     this.activeMatchId = null;
+    this.activeProjectId = null;
     this.updateUserBadge();
     this.renderNavigation();
   }
@@ -503,6 +577,7 @@ class App {
       this.renderStudentChat();
       this.renderLanguageWidget();
       this.populateStudentSettings();
+      this.renderStudentProjects();
     } else if (this.currentRole === 'teacher') {
       this.renderTeacherDashboard();
       this.renderStudentRoster();
@@ -511,6 +586,7 @@ class App {
       this.renderTeacherEditorDesk();
       this.populateTeacherSettings();
       this.renderTeacherMessages();
+      this.renderTeacherProjects();
     } else if (this.currentRole === 'admin') {
       this.renderAdminDashboard();
       this.renderAdminSchools();
@@ -1281,7 +1357,8 @@ class App {
 
   // Render own school details and linked partner school connections on staff dashboard
   renderTeacherSchoolSpotlight() {
-    const schoolId = 'school_1'; // Mrs. Smith's school (Leicester High School)
+    const teacher = this.getLoggedTeacher();
+    const schoolId = teacher ? teacher.schoolId : 'school_1';
     const school = window.db.getSchool(schoolId);
     const container = document.getElementById('teacher-school-spotlight-content');
     if (!container || !school) return;
@@ -1388,7 +1465,9 @@ class App {
   // Renders teacher list of students
   renderStudentRoster() {
     const tbody = document.getElementById('student-roster-tbody');
-    const students = window.db.getStudents().filter(s => s.schoolId === 'school_1');
+    const teacher = this.getLoggedTeacher();
+    const schoolId = teacher ? teacher.schoolId : 'school_1';
+    const students = window.db.getStudents().filter(s => s.schoolId === schoolId);
     
     tbody.innerHTML = '';
     students.forEach(stud => {
@@ -1599,8 +1678,9 @@ class App {
     const colEn = document.getElementById('match-col-en');
     const students = window.db.getStudents();
 
-    // Leicester High School is school_1
-    const schoolId = 'school_1';
+    // Dynamic school ID
+    const teacher = this.getLoggedTeacher();
+    const schoolId = teacher ? teacher.schoolId : 'school_1';
 
     const myStudents = students.filter(s => s.schoolId === schoolId).sort((a, b) => {
       if (a.matchStatus === 'unmatched' && b.matchStatus !== 'unmatched') return -1;
@@ -1683,7 +1763,8 @@ class App {
     const students = window.db.getStudents();
     const matches = window.db.getMatches();
 
-    const ownSchoolId = 'school_1';
+    const teacher = this.getLoggedTeacher();
+    const ownSchoolId = teacher ? teacher.schoolId : 'school_1';
     const ownSchool = window.db.getSchool(ownSchoolId);
     if (!ownSchool) return;
 
@@ -1825,10 +1906,13 @@ class App {
     const partnerSchoolId = document.getElementById('partner-school-select').value;
     if (!partnerSchoolId) return;
 
+    const teacher = this.getLoggedTeacher();
+    const ownSchoolId = teacher ? teacher.schoolId : 'school_1';
+
     // Send single-student proposed match, Leicester student is first slot, Goethe is second (null)
     const proposedStudentIds = [this.selectedMatchEn, null];
     
-    window.db.proposeMatch('1-to-1', proposedStudentIds, 'school_1', partnerSchoolId);
+    window.db.proposeMatch('1-to-1', proposedStudentIds, ownSchoolId, partnerSchoolId);
     alert('Match proposal submitted! The target partner school coordinator has received the anonymized details and can assign a match.');
     
     this.selectedMatchEn = null;
@@ -1842,7 +1926,10 @@ class App {
       return;
     }
 
-    window.db.confirmMatch(matchId, assignedStudentId, 'Teacher Mrs. Smith');
+    const teacher = this.getLoggedTeacher();
+    const teacherName = teacher ? `Teacher ${teacher.name}` : 'Teacher Mrs. Smith';
+
+    window.db.confirmMatch(matchId, assignedStudentId, teacherName);
     delete this.tempAssignments[matchId];
     alert('Match proposal approved! The pen pal link is now active and students can message each other.');
     this.refreshUI();
@@ -1850,7 +1937,9 @@ class App {
 
   declineProposal(matchId) {
     if (confirm('Are you sure you want to decline/withdraw this match suggestion?')) {
-      window.db.declineMatch(matchId, 'Teacher Mrs. Smith');
+      const teacher = this.getLoggedTeacher();
+      const teacherName = teacher ? `Teacher ${teacher.name}` : 'Teacher Mrs. Smith';
+      window.db.declineMatch(matchId, teacherName);
       if (this.tempAssignments[matchId]) {
         delete this.tempAssignments[matchId];
       }
@@ -1866,9 +1955,12 @@ class App {
     const match = matches.find(m => m.id === matchId);
     if (!match) return;
 
-    const partnerStudentId = match.studentIds.find(id => id && window.db.getStudent(id)?.schoolId !== 'school_1');
+    const teacher = this.getLoggedTeacher();
+    const ownSchoolId = teacher ? teacher.schoolId : 'school_1';
+
+    const partnerStudentId = match.studentIds.find(id => id && window.db.getStudent(id)?.schoolId !== ownSchoolId);
     const partnerStudent = partnerStudentId ? window.db.getStudent(partnerStudentId) : null;
-    const partnerSchoolId = match.proposedBySchoolId !== 'school_1' ? match.proposedBySchoolId : match.pendingApprovalFromSchoolId;
+    const partnerSchoolId = match.proposedBySchoolId !== ownSchoolId ? match.proposedBySchoolId : match.pendingApprovalFromSchoolId;
     const partnerSchool = window.db.getSchool(partnerSchoolId);
 
     const schoolName = partnerSchool ? partnerSchool.name : 'Exchange School';
@@ -1896,7 +1988,7 @@ class App {
     if (studentsListContainer) {
       studentsListContainer.innerHTML = '';
       
-      const allLocalStudents = window.db.getStudents().filter(s => s.schoolId === 'school_1');
+      const allLocalStudents = window.db.getStudents().filter(s => s.schoolId === ownSchoolId);
       
       const sortedStudents = [...allLocalStudents].sort((a, b) => {
         const aUnmatched = a.matchStatus === 'unmatched';
@@ -3324,7 +3416,8 @@ class App {
   }
 
   renderTeacherMessages() {
-    const myId = 'coord_1'; // Mrs. Smith
+    const teacher = this.getLoggedTeacher();
+    const myId = teacher ? teacher.id : 'coord_1';
     const coordinators = window.db.getCoordinators();
     const otherCoordinators = coordinators.filter(c => c.id !== myId);
     
@@ -3422,12 +3515,671 @@ class App {
     const textarea = document.getElementById('teacher-chat-textarea');
     if (!textarea || !textarea.value.trim() || !this.activeCoordinatorId) return;
 
-    const myId = 'coord_1'; // Mrs. Smith
+    const teacher = this.getLoggedTeacher();
+    const myId = teacher ? teacher.id : 'coord_1';
     const text = textarea.value.trim();
 
     window.db.addCoordinatorMessage(myId, this.activeCoordinatorId, text);
     textarea.value = '';
     this.renderTeacherMessages();
+  }
+
+  // ================== SHARED PROJECTS FEATURE METHODS ==================
+
+  renderStudentProjects() {
+    const student = window.db.getStudent(this.currentStudentId);
+    if (!student) return;
+
+    const chatListContainer = document.getElementById('student-project-list');
+    const projectEmptyState = document.getElementById('project-empty-state');
+    const projectActiveState = document.getElementById('project-active-state');
+
+    if (!chatListContainer || !projectEmptyState || !projectActiveState) return;
+
+    chatListContainer.innerHTML = '';
+
+    const projects = window.db.getProjects().filter(p => 
+      p.creatorSchoolStudentIds.includes(student.id) || 
+      p.targetSchoolStudentIds.includes(student.id)
+    );
+
+    if (projects.length === 0) {
+      chatListContainer.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-muted); padding: 1rem; text-align: center;">No projects found.</p>`;
+      projectEmptyState.style.display = 'flex';
+      projectActiveState.style.display = 'none';
+      return;
+    }
+
+    // Set first project as default if none active or active not in list
+    if (!this.activeProjectId || !projects.some(p => p.id === this.activeProjectId)) {
+      this.activeProjectId = projects[0].id;
+    }
+
+    projects.forEach(project => {
+      const messages = window.db.getProjectMessages().filter(m => m.projectId === project.id);
+      const lastMsg = messages[messages.length - 1];
+
+      const item = document.createElement('div');
+      item.className = `chat-item ${this.activeProjectId === project.id ? 'active' : ''}`;
+
+      let statusText = project.status;
+      let badgeClass = 'badge-info';
+      if (project.status === 'Published') {
+        badgeClass = 'badge-success';
+      } else if (project.status === 'PendingPublish' || project.status === 'Proposed') {
+        badgeClass = 'badge-warning';
+      }
+
+      const badgeStatus = `<span class="badge ${badgeClass}" style="font-size: 0.6rem; padding: 0.1rem 0.35rem;">${statusText}</span>`;
+
+      item.innerHTML = `
+        <div class="user-avatar" style="width: 32px; height: 32px; font-size: 0.8rem; background: var(--accent); display: flex; align-items: center; justify-content: center;">
+          📁
+        </div>
+        <div class="chat-item-meta">
+          <div class="chat-item-name">
+            <span>${project.title}</span>
+            ${badgeStatus}
+          </div>
+          <div class="chat-item-preview">${lastMsg ? lastMsg.text : 'Start collaborating...'}</div>
+        </div>
+      `;
+
+      item.addEventListener('click', () => {
+        this.activeProjectId = project.id;
+        // Load current photo URL to state when switching projects
+        this.currentProjArticlePhotoDataUrl = project.articlePhotoUrl || '';
+        // Reset input value to avoid leftover state
+        const projArtPhotoInput = document.getElementById('proj-art-photo-input');
+        if (projArtPhotoInput) projArtPhotoInput.value = '';
+        this.renderStudentProjects();
+      });
+
+      chatListContainer.appendChild(item);
+    });
+
+    const activeProject = projects.find(p => p.id === this.activeProjectId);
+    if (activeProject) {
+      projectEmptyState.style.display = 'none';
+      projectActiveState.style.display = 'flex';
+
+      // Set Title
+      document.getElementById('project-title').textContent = activeProject.title;
+
+      // Resolve schools & members
+      const creatorSchool = window.db.getSchool(activeProject.creatorSchoolId);
+      const targetSchool = window.db.getSchool(activeProject.targetSchoolId);
+      const schoolText = `${creatorSchool?.code || 'School 1'} & ${targetSchool?.code || 'School 2'}`;
+
+      // Get member names
+      const allStudentIds = [...activeProject.creatorSchoolStudentIds, ...activeProject.targetSchoolStudentIds];
+      const memberNames = allStudentIds.map(sid => {
+        const s = window.db.getStudent(sid);
+        return s ? s.name : 'Unknown';
+      }).join(', ');
+
+      document.getElementById('project-meta').textContent = `${schoolText} • ${memberNames}`;
+
+      // Status badge
+      const badgeEl = document.getElementById('project-status-badge');
+      badgeEl.textContent = activeProject.status;
+      badgeEl.className = 'badge';
+      if (activeProject.status === 'Published') {
+        badgeEl.classList.add('badge-success');
+      } else if (activeProject.status === 'PendingPublish' || activeProject.status === 'Proposed') {
+        badgeEl.classList.add('badge-warning');
+      } else {
+        badgeEl.classList.add('badge-info');
+      }
+
+      // Brief
+      document.getElementById('project-brief-text').textContent = activeProject.brief;
+
+      // Article Title & Content
+      const titleInput = document.getElementById('proj-art-title');
+      const contentInput = document.getElementById('proj-art-content');
+      const photoInput = document.getElementById('proj-art-photo-input');
+      const saveBtn = document.getElementById('proj-art-save-btn');
+      const publishBtn = document.getElementById('proj-art-publish-btn');
+      const lastUpdatedEl = document.getElementById('proj-article-last-updated');
+
+      if (titleInput && contentInput) {
+        titleInput.value = activeProject.articleTitle || '';
+        contentInput.value = activeProject.articleContent || '';
+
+        const isReadOnly = activeProject.status === 'Published' || activeProject.status === 'PendingPublish';
+        titleInput.readOnly = isReadOnly;
+        contentInput.readOnly = isReadOnly;
+        if (photoInput) photoInput.disabled = isReadOnly;
+        if (saveBtn) saveBtn.disabled = isReadOnly;
+        if (publishBtn) publishBtn.disabled = isReadOnly;
+
+        if (isReadOnly) {
+          if (saveBtn) saveBtn.style.opacity = '0.5';
+          if (publishBtn) publishBtn.style.opacity = '0.5';
+        } else {
+          if (saveBtn) saveBtn.style.opacity = '1';
+          if (publishBtn) publishBtn.style.opacity = '1';
+        }
+      }
+
+      // Image preview
+      const previewEl = document.getElementById('proj-article-photo-preview');
+      const placeholderEl = document.getElementById('proj-article-photo-placeholder');
+      if (previewEl && placeholderEl) {
+        if (this.currentProjArticlePhotoDataUrl) {
+          previewEl.src = this.currentProjArticlePhotoDataUrl;
+          previewEl.style.display = 'block';
+          placeholderEl.style.display = 'none';
+        } else {
+          previewEl.src = '';
+          previewEl.style.display = 'none';
+          placeholderEl.style.display = 'block';
+        }
+      }
+
+      // Last updated info
+      if (lastUpdatedEl) {
+        if (activeProject.articleLastUpdatedAt) {
+          const timeStr = new Date(activeProject.articleLastUpdatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const dateStr = new Date(activeProject.articleLastUpdatedAt).toLocaleDateString();
+          lastUpdatedEl.textContent = `Last updated by ${activeProject.articleLastUpdatedBy || 'system'} on ${dateStr} at ${timeStr}`;
+        } else {
+          lastUpdatedEl.textContent = 'Last updated: Not saved yet';
+        }
+      }
+
+      // Chat Feed
+      const feed = document.getElementById('proj-chat-message-feed');
+      if (feed) {
+        feed.innerHTML = '';
+        const chatMsgs = window.db.getProjectMessages().filter(m => m.projectId === activeProject.id);
+
+        chatMsgs.forEach(msg => {
+          const row = document.createElement('div');
+          const isSent = msg.senderId === student.id;
+          row.className = `message-row ${isSent ? 'sent' : 'received'}`;
+
+          let senderHeader = '';
+          if (!isSent) {
+            senderHeader = `<div class="message-sender" style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 0.2rem; font-weight: 600;">${msg.senderName}</div>`;
+          }
+
+          row.innerHTML = `
+            ${senderHeader}
+            <div class="message-bubble">
+              <div>${msg.text}</div>
+            </div>
+            <div class="message-meta">
+              ${new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </div>
+          `;
+          feed.appendChild(row);
+        });
+
+        feed.scrollTop = feed.scrollHeight;
+      }
+    }
+  }
+
+  saveProjectArticleDraft() {
+    if (!this.activeProjectId) return;
+    const project = window.db.getProject(this.activeProjectId);
+    if (!project) return;
+
+    const student = window.db.getStudent(this.currentStudentId);
+    const titleInput = document.getElementById('proj-art-title');
+    const contentInput = document.getElementById('proj-art-content');
+
+    if (!titleInput || !contentInput) return;
+
+    const updates = {
+      articleTitle: titleInput.value.trim(),
+      articleContent: contentInput.value.trim(),
+      articlePhotoUrl: this.currentProjArticlePhotoDataUrl || '',
+      articleLastUpdatedBy: student ? student.name : 'Student',
+      articleLastUpdatedAt: new Date().toISOString()
+    };
+
+    window.db.updateProject(this.activeProjectId, updates);
+    alert('Draft saved successfully!');
+    this.renderStudentProjects();
+  }
+
+  publishProject() {
+    if (!this.activeProjectId) return;
+    const project = window.db.getProject(this.activeProjectId);
+    if (!project) return;
+
+    const titleInput = document.getElementById('proj-art-title');
+    const contentInput = document.getElementById('proj-art-content');
+
+    if (!titleInput || !contentInput) return;
+
+    const title = titleInput.value.trim();
+    const content = contentInput.value.trim();
+
+    if (!title || !content) {
+      alert('Please write an article title and content before publishing.');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to publish this project? This will lock editing and submit it to both school coordinators for authorization.')) {
+      return;
+    }
+
+    const student = window.db.getStudent(this.currentStudentId);
+    const updates = {
+      articleTitle: title,
+      articleContent: content,
+      articlePhotoUrl: this.currentProjArticlePhotoDataUrl || '',
+      articleLastUpdatedBy: student ? student.name : 'Student',
+      articleLastUpdatedAt: new Date().toISOString(),
+      status: 'PendingPublish',
+      creatorSchoolApproved: false,
+      targetSchoolApproved: false
+    };
+
+    window.db.updateProject(this.activeProjectId, updates);
+
+    // Add a system log message in the group chat
+    window.db.addProjectMessage(
+      this.activeProjectId,
+      'system',
+      'System',
+      `${student ? student.name : 'A student'} submitted the project presentation for coordinator authorization.`
+    );
+
+    alert('Project submitted for authorization! Coordinators from both schools must approve before publication.');
+    this.renderStudentProjects();
+  }
+
+  sendProjectChatMessage() {
+    if (!this.activeProjectId) return;
+    const textarea = document.getElementById('proj-chat-textarea');
+    if (!textarea || !textarea.value.trim()) return;
+
+    const student = window.db.getStudent(this.currentStudentId);
+    if (!student) return;
+
+    const text = textarea.value.trim();
+    window.db.addProjectMessage(this.activeProjectId, student.id, student.name, text);
+    textarea.value = '';
+    this.renderStudentProjects();
+  }
+
+  renderTeacherProjects() {
+    const teacher = this.getLoggedTeacher();
+    if (!teacher) return;
+    const schoolId = teacher.schoolId;
+
+    // 1. Populate partner school select in Launch Project Form
+    const partnerSchoolSelect = document.getElementById('launch-proj-school');
+    if (partnerSchoolSelect) {
+      partnerSchoolSelect.innerHTML = '';
+      const schools = window.db.getSchools().filter(s => s.id !== schoolId);
+      schools.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = `${s.name} (${s.city}, ${s.country})`;
+        partnerSchoolSelect.appendChild(opt);
+      });
+    }
+
+    // 2. Populate student checkbox list in Launch Project Form
+    const launchStudentsList = document.getElementById('launch-proj-students-list');
+    if (launchStudentsList) {
+      launchStudentsList.innerHTML = '';
+      const localStudents = window.db.getStudents().filter(s => s.schoolId === schoolId);
+      if (localStudents.length === 0) {
+        launchStudentsList.innerHTML = `<span style="font-size: 0.8rem; color: var(--text-muted); padding: 0.5rem; display: block;">No students registered for your school.</span>`;
+      } else {
+        localStudents.forEach(s => {
+          const div = document.createElement('div');
+          div.style.display = 'flex';
+          div.style.alignItems = 'center';
+          div.style.gap = '0.5rem';
+          div.style.padding = '0.2rem 0';
+          div.innerHTML = `
+            <input type="checkbox" name="launch-student" value="${s.id}" id="chk-launch-${s.id}" style="cursor: pointer;">
+            <label for="chk-launch-${s.id}" style="font-size: 0.8rem; cursor: pointer; color: var(--text-primary); margin: 0;">
+              ${s.name} (${s.age} y/o)
+            </label>
+          `;
+          launchStudentsList.appendChild(div);
+        });
+      }
+    }
+
+    // 3. Populate Incoming Project Proposals
+    const proposalsTbody = document.getElementById('teach-pending-projects-tbody');
+    if (proposalsTbody) {
+      proposalsTbody.innerHTML = '';
+      const proposals = window.db.getProjects().filter(p => p.status === 'Proposed' && p.targetSchoolId === schoolId);
+      
+      if (proposals.length === 0) {
+        proposalsTbody.innerHTML = `
+          <tr>
+            <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+              No pending project proposals from partner schools.
+            </td>
+          </tr>
+        `;
+      } else {
+        proposals.forEach(p => {
+          const creatorSchool = window.db.getSchool(p.creatorSchoolId);
+          const creatorStudents = p.creatorSchoolStudentIds.map(sid => window.db.getStudent(sid)?.name || 'Unknown').join(', ');
+          
+          const localStudents = window.db.getStudents().filter(s => s.schoolId === schoolId);
+          let checkboxesHTML = '';
+          if (localStudents.length === 0) {
+            checkboxesHTML = `<span style="font-size: 0.75rem; color: var(--text-muted);">No local students available</span>`;
+          } else {
+            localStudents.forEach(s => {
+              checkboxesHTML += `
+                <div style="display: flex; align-items: center; gap: 0.35rem; padding: 0.15rem 0;">
+                  <input type="checkbox" class="chk-accept-${p.id}" value="${s.id}" id="chk-acc-${p.id}-${s.id}" style="cursor: pointer;">
+                  <label for="chk-acc-${p.id}-${s.id}" style="font-size: 0.75rem; cursor: pointer; color: var(--text-primary); margin: 0;">
+                    ${s.name}
+                  </label>
+                </div>
+              `;
+            });
+          }
+
+          const tr = document.createElement('tr');
+          tr.style.borderBottom = '1px solid var(--panel-border)';
+          tr.innerHTML = `
+            <td style="padding: 0.75rem; vertical-align: top;">
+              <div style="font-weight: 700; color: var(--text-primary); font-size: 0.85rem;">${p.title}</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem; line-height: 1.4; max-width: 250px;">
+                ${p.brief}
+              </div>
+            </td>
+            <td style="padding: 0.75rem; vertical-align: top;">
+              <div style="font-weight: 600; color: var(--secondary); font-size: 0.8rem;">${creatorSchool?.name || 'Partner School'}</div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.15rem;">
+                Students: ${creatorStudents}
+              </div>
+            </td>
+            <td style="padding: 0.75rem; vertical-align: top;">
+              <div style="max-height: 100px; overflow-y: auto; border: 1px solid var(--panel-border); border-radius: 8px; padding: 0.4rem; background: rgba(0,0,0,0.15); width: 180px;">
+                ${checkboxesHTML}
+              </div>
+            </td>
+            <td style="padding: 0.75rem; vertical-align: middle;">
+              <button class="btn btn-primary btn-small" onclick="app.acceptProject('${p.id}')" style="padding: 0.4rem 0.85rem; font-weight: 600; font-size: 0.75rem;">
+                Accept Proposal
+              </button>
+            </td>
+          `;
+          proposalsTbody.appendChild(tr);
+        });
+      }
+    }
+
+    // 4. Populate Active & Published Projects
+    const activeTbody = document.getElementById('teach-active-projects-tbody');
+    if (activeTbody) {
+      activeTbody.innerHTML = '';
+      const activeProjects = window.db.getProjects().filter(p => 
+        (p.creatorSchoolId === schoolId || p.targetSchoolId === schoolId) && p.status !== 'Proposed'
+      );
+
+      if (activeProjects.length === 0) {
+        activeTbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+              No active or published projects yet.
+            </td>
+          </tr>
+        `;
+      } else {
+        activeProjects.forEach(p => {
+          const creatorSchool = window.db.getSchool(p.creatorSchoolId);
+          const targetSchool = window.db.getSchool(p.targetSchoolId);
+          const cStudents = p.creatorSchoolStudentIds.map(sid => window.db.getStudent(sid)?.name || '').filter(Boolean).join(', ');
+          const tStudents = p.targetSchoolStudentIds.map(sid => window.db.getStudent(sid)?.name || '').filter(Boolean).join(', ');
+
+          const isMySchoolApproved = (p.creatorSchoolId === schoolId) ? p.creatorSchoolApproved : p.targetSchoolApproved;
+          const isPendingAction = p.status === 'PendingPublish' && !isMySchoolApproved;
+
+          let statusText = p.status;
+          let badgeClass = 'badge-info';
+          if (p.status === 'Published') {
+            badgeClass = 'badge-success';
+          } else if (p.status === 'PendingPublish') {
+            badgeClass = 'badge-warning';
+            statusText = 'Review Required';
+          }
+
+          const tr = document.createElement('tr');
+          tr.style.borderBottom = '1px solid var(--panel-border)';
+          tr.innerHTML = `
+            <td style="padding: 0.75rem; vertical-align: top; font-weight: 600; color: var(--text-primary); font-size: 0.85rem;">
+              ${p.title}
+            </td>
+            <td style="padding: 0.75rem; vertical-align: top; font-size: 0.75rem; color: var(--text-muted); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${p.brief}">
+              ${p.brief}
+            </td>
+            <td style="padding: 0.75rem; vertical-align: top; font-size: 0.75rem; line-height: 1.4; color: var(--text-secondary);">
+              <strong>${creatorSchool?.code || 'School 1'}:</strong> ${cStudents || 'None'}<br>
+              <strong>${targetSchool?.code || 'School 2'}:</strong> ${tStudents || 'None'}
+            </td>
+            <td style="padding: 0.75rem; vertical-align: middle;">
+              <span class="badge ${badgeClass}" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">${statusText}</span>
+            </td>
+            <td style="padding: 0.75rem; vertical-align: middle;">
+              ${isPendingAction ? `
+                <button class="btn btn-warning btn-small alert-pulse" onclick="app.openReviewProjectModal('${p.id}')" style="font-weight: 700; padding: 0.4rem 0.85rem; font-size: 0.75rem;">
+                  Review & Authorize
+                </button>
+              ` : `
+                <button class="btn btn-secondary btn-small" onclick="app.openReviewProjectModal('${p.id}')" style="padding: 0.4rem 0.85rem; font-size: 0.75rem;">
+                  Review Details
+                </button>
+              `}
+            </td>
+          `;
+          activeTbody.appendChild(tr);
+        });
+      }
+    }
+  }
+
+  handleProjectLaunch(e) {
+    e.preventDefault();
+    const teacher = this.getLoggedTeacher();
+    if (!teacher) return;
+
+    const titleInput = document.getElementById('launch-proj-title');
+    const briefInput = document.getElementById('launch-proj-brief');
+    const targetSchoolSelect = document.getElementById('launch-proj-school');
+
+    if (!titleInput || !briefInput || !targetSchoolSelect) return;
+
+    const selectedCheckboxes = document.querySelectorAll('#launch-proj-students-list input[name="launch-student"]:checked');
+    const selectedStudentIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+    if (selectedStudentIds.length === 0) {
+      alert('Please select at least one local student to launch the project.');
+      return;
+    }
+
+    const proj = {
+      title: titleInput.value.trim(),
+      brief: briefInput.value.trim(),
+      creatorSchoolId: teacher.schoolId,
+      targetSchoolId: targetSchoolSelect.value,
+      creatorSchoolStudentIds: selectedStudentIds,
+      targetSchoolStudentIds: [],
+      status: 'Proposed'
+    };
+
+    window.db.addProject(proj);
+    
+    // Reset form
+    document.getElementById('launch-project-form').reset();
+    
+    alert('Project proposal launched successfully! Sent to target partner school for review.');
+    this.refreshUI();
+  }
+
+  acceptProject(projectId) {
+    const teacher = this.getLoggedTeacher();
+    if (!teacher) return;
+
+    const selectedCheckboxes = document.querySelectorAll(`.chk-accept-${projectId}:checked`);
+    const selectedStudentIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+    if (selectedStudentIds.length === 0) {
+      alert('Please select at least one local student to join the project.');
+      return;
+    }
+
+    const project = window.db.getProject(projectId);
+    if (!project) return;
+
+    window.db.updateProject(projectId, {
+      targetSchoolStudentIds: selectedStudentIds,
+      status: 'Active'
+    });
+
+    // Add a system log message in the group chat
+    window.db.addProjectMessage(
+      projectId,
+      'system',
+      'System',
+      `Project accepted by coordinator ${teacher.name}. Added student(s): ${selectedStudentIds.map(sid => window.db.getStudent(sid)?.name || '').filter(Boolean).join(', ')}.`
+    );
+
+    alert('Proposal accepted! The project is now active for students of both schools.');
+    this.refreshUI();
+  }
+
+  openReviewProjectModal(projectId) {
+    const project = window.db.getProject(projectId);
+    if (!project) return;
+
+    const teacher = this.getLoggedTeacher();
+    if (!teacher) return;
+    const schoolId = teacher.schoolId;
+
+    const modalContent = document.getElementById('project-review-content');
+    if (!modalContent) return;
+
+    modalContent.innerHTML = '';
+
+    let badgeClass = 'badge-info';
+    if (project.status === 'Published') {
+      badgeClass = 'badge-success';
+    } else if (project.status === 'PendingPublish') {
+      badgeClass = 'badge-warning';
+    }
+
+    const creatorSchool = window.db.getSchool(project.creatorSchoolId);
+    const targetSchool = window.db.getSchool(project.targetSchoolId);
+
+    const creatorSchoolName = creatorSchool ? creatorSchool.name : 'Creator School';
+    const targetSchoolName = targetSchool ? targetSchool.name : 'Target School';
+
+    const creatorApproved = project.creatorSchoolApproved;
+    const targetApproved = project.targetSchoolApproved;
+
+    const isMySchoolApproved = (project.creatorSchoolId === schoolId) ? creatorApproved : targetApproved;
+    const showApproveButton = project.status === 'PendingPublish' && !isMySchoolApproved;
+
+    // Chat log history render
+    const chatMsgs = window.db.getProjectMessages().filter(m => m.projectId === project.id);
+    let chatHTML = '';
+    if (chatMsgs.length === 0) {
+      chatHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.75rem; padding: 0.5rem 0;">No messages yet.</div>`;
+    } else {
+      chatMsgs.forEach(msg => {
+        chatHTML += `
+          <div style="font-size: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.02); padding: 0.25rem 0; line-height: 1.4;">
+            <strong style="color: var(--text-primary);">${msg.senderName}:</strong> 
+            <span style="color: var(--text-secondary);">${msg.text}</span>
+            <span style="float: right; color: var(--text-muted); font-size: 0.65rem;">
+              ${new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          </div>
+        `;
+      });
+    }
+
+    modalContent.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div>
+            <h4 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">${project.title}</h4>
+            <span class="badge ${badgeClass}" style="margin-top: 0.35rem; font-size: 0.7rem; padding: 0.15rem 0.5rem;">${project.status}</span>
+          </div>
+        </div>
+
+        <div style="background: rgba(6, 182, 212, 0.03); border: 1px solid rgba(6, 182, 212, 0.1); border-radius: 12px; padding: 0.75rem; font-size: 0.8rem; line-height: 1.5;">
+          <strong style="color: var(--secondary);">📋 Project Brief:</strong> ${project.brief}
+        </div>
+
+        <div style="border-top: 1px solid var(--panel-border); padding-top: 0.75rem;">
+          <h5 style="margin: 0 0 0.5rem 0; font-size: 0.85rem; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">✍️ Student Presentation Article</h5>
+          <div style="background: rgba(0, 0, 0, 0.2); border: 1px solid var(--panel-border); border-radius: 12px; padding: 1rem; max-height: 180px; overflow-y: auto;">
+            <h6 style="margin: 0 0 0.5rem 0; font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">${project.articleTitle || 'Untitled Article'}</h6>
+            ${project.articlePhotoUrl ? `
+              <div style="margin-bottom: 0.75rem; border-radius: 8px; overflow: hidden; height: 110px; border: 1px solid var(--panel-border);">
+                <img src="${project.articlePhotoUrl}" style="width:100%; height:100%; object-fit:cover;">
+              </div>
+            ` : ''}
+            <p style="font-size: 0.8rem; line-height: 1.5; color: var(--text-secondary); margin: 0; white-space: pre-wrap;">${project.articleContent || 'No content written yet.'}</p>
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid var(--panel-border); padding-top: 0.75rem;">
+          <h5 style="margin: 0 0 0.5rem 0; font-size: 0.85rem; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">💬 Chat Audit Log</h5>
+          <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--panel-border); border-radius: 12px; padding: 0.75rem; max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.25rem;">
+            ${chatHTML}
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid var(--panel-border); padding-top: 0.75rem; display: flex; flex-direction: column; gap: 0.75rem;">
+          <h5 style="margin: 0; font-size: 0.85rem; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">🔑 Coordinator Approvals</h5>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.8rem;">
+            <div style="padding: 0.6rem; border-radius: 8px; border: 1px solid ${creatorApproved ? 'rgba(16, 185, 129, 0.2)' : 'var(--panel-border)'}; background: ${creatorApproved ? 'rgba(16, 185, 129, 0.05)' : 'rgba(0,0,0,0.1)'};">
+              <strong>${creatorSchoolName} (UK):</strong><br>
+              ${creatorApproved ? '<span style="color: #34d399; font-weight: 600;">✅ Authorized</span>' : '<span style="color: var(--text-muted);">⏳ Pending sign-off</span>'}
+            </div>
+            <div style="padding: 0.6rem; border-radius: 8px; border: 1px solid ${targetApproved ? 'rgba(16, 185, 129, 0.2)' : 'var(--panel-border)'}; background: ${targetApproved ? 'rgba(16, 185, 129, 0.05)' : 'rgba(0,0,0,0.1)'};">
+              <strong>${targetSchoolName} (DE):</strong><br>
+              ${targetApproved ? '<span style="color: #34d399; font-weight: 600;">✅ Authorized</span>' : '<span style="color: var(--text-muted);">⏳ Pending sign-off</span>'}
+            </div>
+          </div>
+
+          <!-- Action button -->
+          ${showApproveButton ? `
+            <button class="btn btn-primary" onclick="app.authorizeProjectPublication('${project.id}', true)" style="width: 100%; font-weight: 700; padding: 0.6rem 0; margin-top: 0.5rem;">
+              Authorize & Approve Publication
+            </button>
+          ` : `
+            <div style="text-align: center; font-size: 0.8rem; color: var(--text-muted); padding: 0.5rem; background: rgba(255,255,255,0.02); border-radius: 8px;">
+              ${project.status === 'Published' ? '🎉 Fully published!' : 'Approval pending student publication submission.'}
+            </div>
+          `}
+        </div>
+      </div>
+    `;
+
+    document.getElementById('review-project-modal').classList.add('active');
+  }
+
+  authorizeProjectPublication(projectId, approve) {
+    const teacher = this.getLoggedTeacher();
+    if (!teacher) return;
+
+    window.db.authorizeProject(projectId, teacher.id, approve);
+    this.closeModal('review-project-modal');
+    alert('Project authorized successfully!');
+    this.refreshUI();
   }
 
   // ================== LOGIN / LOGOUT PORTAL HELPERS ==================
@@ -3455,9 +4207,13 @@ class App {
     document.querySelector('.app-container').style.setProperty('display', 'flex', 'important');
   }
 
-  loginAsStaff(role) {
+  loginAsStaff(value) {
     this.isLoggedIn = true;
-    this.switchRole(role);
+    if (value === 'admin') {
+      this.switchRole('admin');
+    } else {
+      this.switchRole('teacher', null, value);
+    }
     document.getElementById('login-screen').style.display = 'none';
     document.querySelector('.app-container').style.setProperty('display', 'flex', 'important');
   }

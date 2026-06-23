@@ -135,6 +135,30 @@ const defaultDatabase = {
   coordinatorMessages: [
     { id: 'cmsg_1', senderId: 'coord_2', receiverId: 'coord_1', text: "Hello Mrs. Smith, I have approved the exchange proposals from our side. Looking forward to our students connecting!", timestamp: '2026-06-20T10:00:00Z', read: true },
     { id: 'cmsg_2', senderId: 'coord_1', receiverId: 'coord_2', text: "Wonderful, Herr Wagner! I will review and match them today. Let me know if you have any questions.", timestamp: '2026-06-20T10:30:00Z', read: true }
+  ],
+  projects: [
+    {
+      id: 'proj_1',
+      title: 'Our Cultural Traditions',
+      brief: 'Compare and write about the traditional foods and celebrations in our countries. Gather materials, write sections together, and publish for approval.',
+      creatorSchoolId: 'school_1',
+      targetSchoolId: 'school_2',
+      creatorSchoolStudentIds: ['stud_1', 'stud_2'],
+      targetSchoolStudentIds: ['stud_7', 'stud_8'],
+      status: 'Active',
+      creatorSchoolApproved: false,
+      targetSchoolApproved: false,
+      articleTitle: 'A Taste of Two Cultures',
+      articleContent: 'In this project, we explore the rich traditions of afternoon tea in England and traditional Brezeln in Bavaria. We found many interesting details about how tea is served at 4 PM in Leicester High School, while in Goethe-Gymnasium, Brezeln are eaten for breakfast with white sausages...',
+      articlePhotoUrl: '',
+      articleLastUpdatedBy: 'Harriet Potter',
+      articleLastUpdatedAt: '2026-06-20T10:00:00Z',
+      createdAt: '2026-06-18T10:00:00Z'
+    }
+  ],
+  projectMessages: [
+    { id: 'pmsg_1', projectId: 'proj_1', senderId: 'stud_1', senderName: 'Harriet Potter', text: 'Hi everyone! Excited to work on this cultural comparison project together.', timestamp: '2026-06-18T11:00:00Z' },
+    { id: 'pmsg_2', projectId: 'proj_1', senderId: 'stud_7', senderName: 'Lukas Schmidt', text: 'Hallo Harriet! Me too. Let\'s write about afternoon tea and pretzels.', timestamp: '2026-06-18T11:15:00Z' }
   ]
 };
 
@@ -156,8 +180,9 @@ class LocalDB {
     const isMissingResolvedFlags = data && data.flags && data.flags.length < 3;
     const isOldProposedMatchSeed = data && data.matches && data.matches.some(m => m.id === 'match_5' && m.studentIds[0] !== null);
     const isMissingCoordMessages = data && !data.coordinatorMessages;
+    const isMissingProjects = data && (!data.projects || !data.projectMessages);
 
-    if (!data || hasOldName || isMissingTables || isMissingPhotos || isMissingBiog || isMissingResolvedFlags || isOldProposedMatchSeed || isMissingCoordMessages) {
+    if (!data || hasOldName || isMissingTables || isMissingPhotos || isMissingBiog || isMissingResolvedFlags || isOldProposedMatchSeed || isMissingCoordMessages || isMissingProjects) {
       localStorage.setItem(DB_KEY, JSON.stringify(defaultDatabase));
     }
   }
@@ -203,6 +228,9 @@ class LocalDB {
   getSchoolRequests() { return this.getTable('schoolRequests'); }
   getSchoolRequest(id) { return this.getSchoolRequests().find(r => r.id === id); }
   getCoordinatorMessages() { return this.getTable('coordinatorMessages'); }
+  getProjects() { return this.getTable('projects'); }
+  getProject(id) { return this.getProjects().find(p => p.id === id); }
+  getProjectMessages() { return this.getTable('projectMessages'); }
 
   // Action helpers
   addSchoolRequest(req) {
@@ -649,6 +677,81 @@ class LocalDB {
     list.push(newMsg);
     this.saveTable('coordinatorMessages', list);
     return newMsg;
+  }
+
+  addProject(proj) {
+    const list = this.getProjects();
+    const newProj = {
+      id: 'proj_' + Date.now(),
+      creatorSchoolApproved: false,
+      targetSchoolApproved: false,
+      articleTitle: '',
+      articleContent: '',
+      articlePhotoUrl: '',
+      articleLastUpdatedBy: '',
+      articleLastUpdatedAt: '',
+      createdAt: new Date().toISOString(),
+      ...proj
+    };
+    list.push(newProj);
+    this.saveTable('projects', list);
+    this.addLog('Project Created', `Project "${proj.title}" launched.`, 'Teacher');
+    return newProj;
+  }
+
+  updateProject(id, updates) {
+    const list = this.getProjects();
+    const index = list.findIndex(p => p.id === id);
+    if (index !== -1) {
+      list[index] = { ...list[index], ...updates };
+      this.saveTable('projects', list);
+    }
+  }
+
+  addProjectMessage(projectId, senderId, senderName, text) {
+    const list = this.getProjectMessages();
+    const newMsg = {
+      id: 'pmsg_' + Date.now(),
+      projectId,
+      senderId,
+      senderName,
+      text,
+      timestamp: new Date().toISOString()
+    };
+    list.push(newMsg);
+    this.saveTable('projectMessages', list);
+    return newMsg;
+  }
+
+  authorizeProject(projectId, coordinatorId, status) {
+    const project = this.getProject(projectId);
+    if (!project) return;
+    const coord = this.getCoordinator(coordinatorId);
+    const coordName = coord ? coord.name : 'Teacher';
+    const schoolId = coord ? coord.schoolId : '';
+
+    if (project.creatorSchoolId === schoolId) {
+      project.creatorSchoolApproved = status;
+    } else if (project.targetSchoolId === schoolId) {
+      project.targetSchoolApproved = status;
+    }
+
+    if (project.creatorSchoolApproved && project.targetSchoolApproved) {
+      project.status = 'Published';
+      // Dynamically post a news item that the project is published!
+      this.addNews({
+        title: `Project Published: ${project.title}`,
+        content: `A collaborative project brief and presentation has been approved and published by coordinators.`,
+        postedBy: coordName,
+        schoolId: project.creatorSchoolId
+      });
+      this.addLog('Project Published', `Project "${project.title}" published with authorization from both schools.`, 'System');
+    } else {
+      project.status = 'PendingPublish';
+      this.addLog('Project Authorized', `Project "${project.title}" authorized by ${coordName}.`, coordName);
+    }
+    
+    this.updateProject(projectId, project);
   }
 }
 
