@@ -112,6 +112,16 @@ class App {
     }
   }
 
+  getSchoolFlag(country) {
+    if (!country) return '🏫';
+    const c = country.toLowerCase();
+    if (c.includes('germany') || c.includes('deutschland')) return '🇩🇪';
+    if (c.includes('united kingdom') || c.includes('uk') || c.includes('britain') || c.includes('england')) return '🇬🇧';
+    if (c.includes('france')) return '🇫🇷';
+    if (c.includes('spain')) return '🇪🇸';
+    return '🏫';
+  }
+
   init() {
     this.isLoggedIn = false;
 
@@ -1693,7 +1703,7 @@ class App {
 
     const school = window.db.getSchool(schoolId);
     if (school) {
-      nameEl.textContent = school.name;
+      nameEl.textContent = `${this.getSchoolFlag(school.country)} ${school.name}`;
       metaEl.textContent = `${school.country} • ${school.city}`;
       descEl.textContent = school.description || 'No description available for this school.';
       
@@ -1810,7 +1820,7 @@ class App {
     schools.forEach(s => {
       const opt = document.createElement('option');
       opt.value = s.id;
-      opt.textContent = `${s.name} (${s.country})`;
+      opt.textContent = `${this.getSchoolFlag(s.country)} ${s.name} (${s.country})`;
       partnerSelect.appendChild(opt);
     });
 
@@ -1853,7 +1863,7 @@ class App {
     html += `
       <div class="metric-card overview-link" style="cursor: default;">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; gap: 0.5rem;">
-          <h4 style="font-family: var(--font-title); font-weight: 700; font-size: 0.95rem; margin: 0; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; max-width: 180px;">${ownSchool.name}</h4>
+          <h4 style="font-family: var(--font-title); font-weight: 700; font-size: 0.95rem; margin: 0; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; max-width: 180px;">${this.getSchoolFlag(ownSchool.country)} ${ownSchool.name}</h4>
           <div style="display: flex; align-items: center; gap: 0.5rem;">
             <span class="info-icon-btn" onclick="event.stopPropagation(); app.openSchoolDetail('${ownSchool.id}')" title="View School Profile">ℹ️</span>
             <span style="font-size: 1.25rem;">📊</span>
@@ -1917,7 +1927,7 @@ class App {
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; gap: 0.5rem;">
             <div style="display: flex; align-items: center; gap: 0.5rem; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 140px;">
               ${logoHtml}
-              <h4 style="font-family: var(--font-title); font-weight: 700; font-size: 0.95rem; margin: 0; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden;">${partner.name}</h4>
+              <h4 style="font-family: var(--font-title); font-weight: 700; font-size: 0.95rem; margin: 0; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden;">${this.getSchoolFlag(partner.country)} ${partner.name}</h4>
             </div>
             <div style="display: flex; align-items: center; gap: 0.35rem; margin-left: auto;">
               <span class="info-icon-btn" onclick="event.stopPropagation(); app.openSchoolDetail('${partner.id}')" title="View School Profile">ℹ️</span>
@@ -3345,7 +3355,7 @@ class App {
       <div style="display: flex; align-items: center; gap: 1rem;">
         ${logoHtml}
         <div>
-          <h4 style="font-weight: 700; font-size: 1.25rem; margin: 0; color: var(--text-primary);">${school.name}</h4>
+          <h4 style="font-weight: 700; font-size: 1.25rem; margin: 0; color: var(--text-primary);">${this.getSchoolFlag(school.country)} ${school.name}</h4>
           <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">
             📍 ${school.city}, ${school.country} • Code: <strong style="color: var(--secondary);">${school.code}</strong>
           </span>
