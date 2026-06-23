@@ -1065,35 +1065,7 @@ class App {
       this.activeMatchId = activeMatches[0]?.id || null;
     }
 
-    // 1. Render Cultural Discoveries Board item at the top
-    const boardItem = document.createElement('div');
-    boardItem.className = `chat-item ${this.activeMatchId === 'discoveries_board' ? 'active' : ''}`;
-    boardItem.style.background = this.activeMatchId === 'discoveries_board' ? 'rgba(var(--secondary-rgb), 0.15)' : 'rgba(255,255,255,0.02)';
-    boardItem.style.borderLeft = this.activeMatchId === 'discoveries_board' ? '3px solid var(--secondary)' : '3px solid transparent';
-    boardItem.style.padding = '0.75rem 1rem';
-    boardItem.style.display = 'flex';
-    boardItem.style.alignItems = 'center';
-    boardItem.style.gap = '0.75rem';
-    boardItem.style.cursor = 'pointer';
-    boardItem.style.borderRadius = '8px';
-    boardItem.style.marginBottom = '0.5rem';
 
-    boardItem.innerHTML = `
-      <div class="user-avatar" style="width: 32px; height: 32px; font-size: 0.95rem; background: linear-gradient(135deg, var(--secondary) 0%, var(--accent) 100%); display: flex; align-items: center; justify-content: center; border-radius: 50%;">
-        ✨
-      </div>
-      <div class="chat-item-meta" style="flex-grow: 1; overflow: hidden;">
-        <div class="chat-item-name" style="font-weight: 700; color: var(--text-primary);">
-          <span>Cultural Discoveries</span>
-        </div>
-        <div class="chat-item-preview" style="color: var(--secondary); font-size: 0.75rem; font-weight: 600;">Stories Board</div>
-      </div>
-    `;
-    boardItem.addEventListener('click', () => {
-      this.activeMatchId = 'discoveries_board';
-      this.renderStudentChat();
-    });
-    chatListContainer.appendChild(boardItem);
 
     // 2. Render matched penpals in sidebar list
     if (activeMatches.length === 0) {
@@ -1312,19 +1284,34 @@ class App {
   }
 
   // Draft Translation button logic
-  draftTranslation() {
+  async draftTranslation() {
     const textarea = document.getElementById('chat-textarea');
     const previewSpan = document.getElementById('compose-translation-preview');
     const student = window.db.getStudent(this.currentStudentId);
     
-    if (!textarea.value || !student) return;
+    if (!textarea || !textarea.value.trim() || !student) return;
 
+    const text = textarea.value.trim();
     const sourceLang = student.language;
     const targetLang = sourceLang === 'en' ? 'de' : 'en';
 
-    const translated = window.translator.mockTranslate(textarea.value, sourceLang, targetLang);
-    previewSpan.textContent = `Draft: ${translated}`;
-    previewSpan.setAttribute('data-draft', translated);
+    previewSpan.textContent = this.interfaceLang === 'de' ? 'Übersetze...' : 'Translating...';
+    previewSpan.removeAttribute('data-draft');
+
+    try {
+      const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|${targetLang}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      const translated = data.responseData?.translatedText || text;
+
+      previewSpan.textContent = `Draft: ${translated}`;
+      previewSpan.setAttribute('data-draft', translated);
+    } catch (err) {
+      console.error("Real translation failed, falling back to mock:", err);
+      const translated = window.translator.mockTranslate(text, sourceLang, targetLang);
+      previewSpan.textContent = `Draft: ${translated}`;
+      previewSpan.setAttribute('data-draft', translated);
+    }
   }
 
   // Send message implementation
