@@ -112,13 +112,20 @@ class App {
     }
   }
 
-  getSchoolFlag(country) {
+  getSchoolFlag(country, size = 'small') {
     if (!country) return '🏫';
     const c = country.toLowerCase();
-    if (c.includes('germany') || c.includes('deutschland')) return '🇩🇪';
-    if (c.includes('united kingdom') || c.includes('uk') || c.includes('britain') || c.includes('england')) return '🇬🇧';
-    if (c.includes('france')) return '🇫🇷';
-    if (c.includes('spain')) return '🇪🇸';
+    let code = '';
+    if (c.includes('germany') || c.includes('deutschland')) code = 'de';
+    else if (c.includes('united kingdom') || c.includes('uk') || c.includes('britain') || c.includes('england')) code = 'gb';
+    else if (c.includes('france')) code = 'fr';
+    else if (c.includes('spain')) code = 'es';
+    
+    if (code) {
+      const width = size === 'large' ? 32 : 18;
+      const height = size === 'large' ? 24 : 13;
+      return `<img src="https://flagcdn.com/w40/${code}.png" width="${width}" height="${height}" alt="${country}" style="vertical-align: middle; border-radius: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.25); display: inline-block;">`;
+    }
     return '🏫';
   }
 
@@ -1703,7 +1710,7 @@ class App {
 
     const school = window.db.getSchool(schoolId);
     if (school) {
-      nameEl.textContent = `${this.getSchoolFlag(school.country)} ${school.name}`;
+      nameEl.innerHTML = `${this.getSchoolFlag(school.country)} ${school.name}`;
       metaEl.textContent = `${school.country} • ${school.city}`;
       descEl.textContent = school.description || 'No description available for this school.';
       
@@ -1820,7 +1827,7 @@ class App {
     schools.forEach(s => {
       const opt = document.createElement('option');
       opt.value = s.id;
-      opt.textContent = `${this.getSchoolFlag(s.country)} ${s.name} (${s.country})`;
+      opt.textContent = `${s.name} (${s.country})`;
       partnerSelect.appendChild(opt);
     });
 
@@ -1863,7 +1870,7 @@ class App {
     html += `
       <div class="metric-card overview-link" style="cursor: default;">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; gap: 0.5rem;">
-          <h4 style="font-family: var(--font-title); font-weight: 700; font-size: 0.95rem; margin: 0; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; max-width: 180px;">${this.getSchoolFlag(ownSchool.country)} ${ownSchool.name}</h4>
+          <h4 style="font-family: var(--font-title); font-weight: 700; font-size: 0.95rem; margin: 0; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; max-width: 180px; display: flex; align-items: center; gap: 0.35rem;">${this.getSchoolFlag(ownSchool.country)} <span>${ownSchool.name}</span></h4>
           <div style="display: flex; align-items: center; gap: 0.5rem;">
             <span class="info-icon-btn" onclick="event.stopPropagation(); app.openSchoolDetail('${ownSchool.id}')" title="View School Profile">ℹ️</span>
             <span style="font-size: 1.25rem;">📊</span>
@@ -1927,7 +1934,7 @@ class App {
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; gap: 0.5rem;">
             <div style="display: flex; align-items: center; gap: 0.5rem; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 140px;">
               ${logoHtml}
-              <h4 style="font-family: var(--font-title); font-weight: 700; font-size: 0.95rem; margin: 0; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden;">${this.getSchoolFlag(partner.country)} ${partner.name}</h4>
+              <h4 style="font-family: var(--font-title); font-weight: 700; font-size: 0.95rem; margin: 0; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; display: flex; align-items: center; gap: 0.35rem;">${this.getSchoolFlag(partner.country)} <span>${partner.name}</span></h4>
             </div>
             <div style="display: flex; align-items: center; gap: 0.35rem; margin-left: auto;">
               <span class="info-icon-btn" onclick="event.stopPropagation(); app.openSchoolDetail('${partner.id}')" title="View School Profile">ℹ️</span>
@@ -2054,10 +2061,7 @@ class App {
     const partnerFirstName = partnerStudent ? partnerStudent.name.split(' ')[0] : 'Partner';
 
     const country = partnerSchool ? partnerSchool.country : '';
-    let flag = '🏫';
-    if (country.includes('Germany')) flag = '🇩🇪';
-    else if (country.includes('Kingdom') || country.includes('UK') || country.includes('Britain')) flag = '🇬🇧';
-    else if (country.includes('France')) flag = '🇫🇷';
+    const flag = this.getSchoolFlag(country, 'large');
 
     const proposerInfo = document.getElementById('assign-proposer-info');
     if (proposerInfo) {
