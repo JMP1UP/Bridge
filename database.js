@@ -680,8 +680,8 @@ class LocalDB {
       if (mIdx !== -1) {
         msgs[mIdx].flagged = false;
         this.saveTable('messages', msgs);
-        // Unpause match if safety action is completed or resumed
-        if (actionTaken === 'Dismissed' || actionTaken === 'Resumed Conversation') {
+        // Unpause match if safety action is completed or resolved/resumed
+        if (actionTaken === 'Dismissed' || actionTaken === 'Resumed Conversation' || actionTaken === 'Mark as Resolved') {
           this.pauseMatch(msgs[mIdx].matchId, false);
         }
       }

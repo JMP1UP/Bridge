@@ -3277,7 +3277,7 @@ class App {
             <button class="btn btn-secondary btn-small" onclick="app.closeModal('resolve-flag-modal')">Close</button>
             <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2);" onclick="app.submitFlagResolution('${flag.id}', 'Cancel Link')">Cancel Student Link</button>
             <button class="btn btn-secondary btn-small" style="color: var(--warning); border-color: rgba(245, 158, 11, 0.2);" onclick="app.submitFlagResolution('${flag.id}', 'Suspend Chat')">Suspend Chat</button>
-            <button class="btn btn-primary btn-small" onclick="app.submitFlagResolution('${flag.id}', 'Resume Chat')">Resume Chat</button>
+            <button class="btn btn-primary btn-small" onclick="app.submitFlagResolution('${flag.id}', 'Mark as Resolved')">Mark as Resolved</button>
             <button class="btn btn-secondary btn-small" style="border-color: var(--success); color: var(--success);" onclick="app.submitFlagResolution('${flag.id}', 'Dismissed')">Dismiss / Safe</button>
           </div>
         </div>
@@ -3339,7 +3339,7 @@ class App {
           window.db.deleteMatch(msg.matchId);
         } else if (action === 'Suspend Chat') {
           window.db.pauseMatch(msg.matchId, true);
-        } else if (action === 'Resume Chat' || action === 'Dismissed') {
+        } else if (action === 'Mark as Resolved' || action === 'Dismissed') {
           window.db.pauseMatch(msg.matchId, false);
         }
       }
