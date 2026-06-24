@@ -1299,6 +1299,16 @@ class App {
       const safetyBanner = document.getElementById('chat-safety-banner');
       const composeArea = document.getElementById('chat-compose-area');
       
+      const settings = window.db.getSettings();
+      const translationEnabled = settings.translationEnabled !== false;
+
+      const translationBar = composeArea ? composeArea.querySelector('.translation-bar') : null;
+      const toggleAssistantBtn = document.getElementById('toggle-assistant-btn');
+      const assistantPanel = document.getElementById('student-language-widget-panel');
+      if (translationBar) translationBar.style.display = translationEnabled ? 'flex' : 'none';
+      if (toggleAssistantBtn) toggleAssistantBtn.style.display = translationEnabled ? 'inline-block' : 'none';
+      if (!translationEnabled && assistantPanel) assistantPanel.style.display = 'none';
+
       if (currentMatch.paused) {
         safetyBanner.style.display = 'flex';
         composeArea.style.opacity = '0.5';
@@ -1328,7 +1338,7 @@ class App {
 
       // Populate Message Feed bubbles
       const feed = document.getElementById('chat-message-feed');
-      feed.innerHTML = '';
+      if (feed) feed.innerHTML = '';
       
       const messages = window.db.getMessages().filter(m => m.matchId === currentMatch.id);
       messages.forEach(msg => {
@@ -1337,7 +1347,7 @@ class App {
         row.className = `message-row ${isSent ? 'sent' : 'received'}`;
         
         let transRow = '';
-        if (msg.translation) {
+        if (msg.translation && translationEnabled) {
           transRow = `<div class="message-translation">📝 ${msg.translation}</div>`;
         }
 
@@ -3677,6 +3687,10 @@ class App {
     const settings = window.db.getSettings();
     document.getElementById('flagged-words-input').value = settings.flaggedKeywords.join(', ');
     document.getElementById('attachments-toggle').checked = settings.attachmentsEnabled;
+    const transToggle = document.getElementById('translation-toggle');
+    if (transToggle) {
+      transToggle.checked = settings.translationEnabled !== false;
+    }
 
     const teacher = this.getLoggedTeacher();
     const schoolId = teacher ? teacher.schoolId : 'school_1';
@@ -3726,12 +3740,15 @@ class App {
   saveTeacherSettings() {
     const text = document.getElementById('flagged-words-input').value;
     const attachments = document.getElementById('attachments-toggle').checked;
+    const transToggle = document.getElementById('translation-toggle');
+    const translation = transToggle ? transToggle.checked : true;
 
     const keywords = text.split(',').map(k => k.trim()).filter(k => k.length > 0);
     
     window.db.saveSettings({
       flaggedKeywords: keywords,
-      attachmentsEnabled: attachments
+      attachmentsEnabled: attachments,
+      translationEnabled: translation
     });
 
     alert('Settings updated successfully! SafeGuard configuration updated.');
@@ -4987,6 +5004,9 @@ class App {
 
   // Toggles collapsing/expanding the Writing Assistant panel below chat
   toggleLanguageAssistant() {
+    const settings = window.db.getSettings();
+    if (settings.translationEnabled === false) return;
+
     const panel = document.getElementById('student-language-widget-panel');
     const btn = document.getElementById('toggle-assistant-btn');
     if (panel.style.display === 'none' || !panel.style.display) {
@@ -5346,7 +5366,8 @@ class App {
             title: activeProject.articleTitle || 'Untitled Slide',
             content: activeProject.articleContent || '',
             photoUrl: activeProject.articlePhotoUrl || '',
-            author: activeProject.articleLastUpdatedBy || 'Student'
+            author: activeProject.articleLastUpdatedBy || 'Student',
+            editableByOthers: true
           }
         ];
         window.db.updateProject(activeProject.id, { slides: activeProject.slides });
@@ -5450,22 +5471,48 @@ class App {
         if (titleInput && contentInput && activeSlide) {
           titleInput.value = activeSlide.title || '';
           contentInput.value = activeSlide.content || '';
-          titleInput.readOnly = false;
-          contentInput.readOnly = false;
 
-          if (photoInput) photoInput.disabled = false;
+          // Display Author Display text and Editable Toggle
+          const authorDisplay = document.getElementById('proj-slide-author-display');
+          const editableLabel = document.getElementById('proj-slide-editable-label');
+          const editableToggle = document.getElementById('proj-slide-editable-toggle');
+          if (authorDisplay) {
+            authorDisplay.textContent = `Author: ${activeSlide.author || 'Unknown'}`;
+          }
+
+          const isAuthor = activeSlide.author === student.name;
+          const isEditable = isAuthor || activeSlide.editableByOthers !== false;
+
+          if (editableLabel && editableToggle) {
+            if (isAuthor && activeProject.status !== 'Published' && activeProject.status !== 'PendingPublish') {
+              editableLabel.style.display = 'flex';
+              editableToggle.checked = activeSlide.editableByOthers !== false;
+              editableToggle.disabled = false;
+            } else {
+              editableLabel.style.display = 'none';
+              editableToggle.disabled = true;
+            }
+          }
+
+          titleInput.readOnly = !isEditable;
+          contentInput.readOnly = !isEditable;
+
+          if (photoInput) photoInput.disabled = !isEditable;
           if (saveBtn) {
-            saveBtn.disabled = false;
-            saveBtn.style.opacity = '1';
+            saveBtn.disabled = !isEditable;
+            saveBtn.style.opacity = isEditable ? '1' : '0.4';
           }
           if (publishBtn) {
-            publishBtn.disabled = false;
-            publishBtn.style.opacity = '1';
+            publishBtn.disabled = !isEditable;
+            publishBtn.style.opacity = isEditable ? '1' : '0.4';
           }
 
           // Toggle layout button active highlights
           const splitBtn = document.getElementById('layout-split-btn');
           const textBtn = document.getElementById('layout-text-btn');
+          if (splitBtn) splitBtn.style.pointerEvents = isEditable ? 'auto' : 'none';
+          if (textBtn) textBtn.style.pointerEvents = isEditable ? 'auto' : 'none';
+
           if (activeSlide.layout === 'split') {
             if (splitBtn) splitBtn.classList.add('active-layout');
             if (textBtn) textBtn.classList.remove('active-layout');
@@ -5478,7 +5525,7 @@ class App {
 
           // Show/hide slide delete button
           if (deleteBtn) {
-            deleteBtn.style.display = activeProject.slides.length > 1 ? 'block' : 'none';
+            deleteBtn.style.display = (activeProject.slides.length > 1 && isAuthor) ? 'block' : 'none';
           }
         }
 
@@ -5702,14 +5749,29 @@ class App {
 
     const activeSlide = project.slides[this.activeSlideIndex];
     if (activeSlide) {
+      const student = window.db.getStudent(this.currentStudentId);
+      const isAuthor = !activeSlide.author || activeSlide.author === (student ? student.name : '');
+      const isEditable = isAuthor || activeSlide.editableByOthers !== false;
+      if (!isEditable) return;
+
       activeSlide.title = titleInput.value.trim();
       activeSlide.content = contentInput.value.trim();
       activeSlide.photoUrl = this.currentProjArticlePhotoDataUrl || '';
       if (layoutOverride) {
         activeSlide.layout = layoutOverride;
       }
-      const student = window.db.getStudent(this.currentStudentId);
-      activeSlide.author = student ? student.name : 'Student';
+      
+      if (!activeSlide.author) {
+        activeSlide.author = student ? student.name : 'Student';
+      }
+      
+      if (isAuthor) {
+        const editableToggle = document.getElementById('proj-slide-editable-toggle');
+        if (editableToggle) {
+          activeSlide.editableByOthers = editableToggle.checked;
+        }
+      }
+
       project.articleLastUpdatedBy = student ? student.name : 'Student';
       project.articleLastUpdatedAt = new Date().toISOString();
       window.db.updateProject(this.activeProjectId, { 
@@ -5741,13 +5803,15 @@ class App {
 
     this.saveProjectSlideStateSilent();
 
+    const student = window.db.getStudent(this.currentStudentId);
     const newSlide = {
       id: 'slide_' + Date.now(),
       layout: 'split',
       title: '',
       content: '',
       photoUrl: '',
-      author: ''
+      author: student ? student.name : 'Student',
+      editableByOthers: true
     };
     project.slides.push(newSlide);
     window.db.updateProject(this.activeProjectId, { slides: project.slides });

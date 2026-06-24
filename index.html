@@ -662,7 +662,14 @@
                     </div>
 
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem; border-top: 1px solid var(--panel-border); padding-top: 0.75rem; padding-bottom: 0.5rem;">
-                      <span id="proj-article-last-updated" style="font-size: 0.7rem; color: var(--text-muted); font-style: italic;">Last updated: Not saved yet</span>
+                      <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                        <span id="proj-article-last-updated" style="font-size: 0.7rem; color: var(--text-muted); font-style: italic;">Last updated: Not saved yet</span>
+                        <div id="proj-slide-author-display" style="font-size: 0.7rem; color: var(--text-muted); font-style: italic;">Author: Unknown</div>
+                        <label id="proj-slide-editable-label" style="display: none; align-items: center; gap: 0.35rem; font-size: 0.75rem; color: var(--text-secondary); cursor: pointer; user-select: none;">
+                          <input type="checkbox" id="proj-slide-editable-toggle" style="width: 14px; height: 14px; accent-color: var(--primary);">
+                          <span>Editable by others</span>
+                        </label>
+                      </div>
                       <div style="display: flex; gap: 0.5rem; align-items: center;">
                         <button class="btn btn-danger btn-small" id="proj-slide-delete-btn" onclick="app.deleteProjectSlide()" style="padding: 0.45rem 1rem;">🗑️ Delete Slide</button>
                         <button class="btn btn-secondary btn-small" id="proj-art-preview-btn" onclick="app.previewProjectDeck()" style="padding: 0.45rem 1rem;">👁️ Preview Deck</button>
@@ -1098,6 +1105,13 @@
               <p style="font-size: 0.8rem; color: var(--text-secondary);">Allow students to attach photos and PDF assets directly in messages.</p>
             </div>
             <input type="checkbox" id="attachments-toggle" style="width: 20px; height: 20px;">
+          </div>
+          <div class="form-group" style="display: flex; flex-direction: row; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-top: 1px solid var(--panel-border);">
+            <div>
+              <h4 style="font-size: 0.95rem;">Enable Inline Translation Tool</h4>
+              <p style="font-size: 0.8rem; color: var(--text-secondary);">Allow students to view and trigger inline translation overlays in chats.</p>
+            </div>
+            <input type="checkbox" id="translation-toggle" style="width: 20px; height: 20px;">
           </div>
           <div style="display: flex; justify-content: flex-end;">
             <button class="btn btn-primary" id="save-teacher-settings-btn">Save Configuration</button>

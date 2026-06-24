@@ -123,7 +123,8 @@ const defaultDatabase = {
   settings: {
     flaggedKeywords: ['phone number', 'address', 'meet up', 'whatsapp', 'instagram', 'secret', 'treffen', 'handynummer', 'adresse', 'heimlich'],
     languages: ['en', 'de'],
-    attachmentsEnabled: false
+    attachmentsEnabled: false,
+    translationEnabled: true
   },
   coordinators: [
     { id: 'coord_1', name: 'Mrs. Smith', email: 'smith@leicesterhigh.edu', schoolId: 'school_1', isSchoolAdmin: true, bio: "Languages coordinator at Leicester High School. I have been teaching English and German for 12 years." },
@@ -156,14 +157,16 @@ const defaultDatabase = {
           title: 'A Taste of Two Cultures',
           content: 'In this project, we explore the rich traditions of afternoon tea in England and traditional Brezeln in Bavaria. We want to find out how our families celebrate and share food together.',
           photoUrl: '',
-          author: 'Harriet Potter'
+          author: 'Harriet Potter',
+          editableByOthers: true
         },
         {
           id: 'slide_2',
           layout: 'text-only',
           title: 'Tea vs. Pretzels',
           content: 'We found many interesting details about how tea is served at 4 PM in Leicester High School, while in Goethe-Gymnasium, Brezeln are eaten for breakfast with white sausages. Our team had fun sharing these ideas!',
-          author: 'Lukas Schmidt'
+          author: 'Lukas Schmidt',
+          editableByOthers: true
         }
       ],
       createdAt: '2026-06-18T10:00:00Z'
