@@ -3488,13 +3488,18 @@ class App {
         card.style.background = 'rgba(255,255,255,0.01)';
         card.style.border = '1px solid var(--panel-border)';
         card.style.padding = '1.25rem';
+        card.style.cursor = 'pointer';
+        card.style.transition = 'background-color 0.2s';
+        card.onclick = () => this.openStudentArticleDetail(art.id);
+        card.onmouseover = () => { card.style.background = 'rgba(255, 255, 255, 0.03)'; };
+        card.onmouseout = () => { card.style.background = 'rgba(255, 255, 255, 0.01)'; };
         
         let reviewActionsRow = '';
         if (art.status === 'Pending') {
           reviewActionsRow = `
             <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--panel-border);">
-              <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: var(--danger);" onclick="app.executeArticleReview('${art.id}', 'Rejected')">Reject</button>
-              <button class="btn btn-primary btn-small" onclick="app.executeArticleReview('${art.id}', 'Approved')">Approve & Publish</button>
+              <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: var(--danger);" onclick="event.stopPropagation(); app.executeArticleReview('${art.id}', 'Rejected')">Reject</button>
+              <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); app.executeArticleReview('${art.id}', 'Approved')">Approve & Publish</button>
             </div>
           `;
         } else {
@@ -3518,7 +3523,7 @@ class App {
             <div>${statusBadge}</div>
           </div>
           ${photoHtml}
-          <p style="font-size: 0.8rem; background: rgba(0,0,0,0.05); padding: 0.75rem; border-radius: 6px; line-height: 1.5; margin: 0;">
+          <p style="font-size: 0.85rem; font-family: var(--font-body); background: rgba(0,0,0,0.05); padding: 0.75rem; border-radius: 6px; line-height: 1.5; margin: 0; color: var(--text-primary);">
             ${art.content}
           </p>
           ${reviewActionsRow}
@@ -4618,14 +4623,14 @@ class App {
         <div>
           <h4 style="font-weight: 700; font-size: 1.25rem; margin: 0; color: var(--text-primary);">${art.title}</h4>
           <span style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 500;">
-            By ${author ? author.name : 'Unknown Author'} • ${school ? school.name : 'Unknown School'} (${art.language.toUpperCase()})
+            By ${author ? this.getStudentDisplayName(author) : 'Unknown Author'} • ${school ? school.name : 'Unknown School'} (${art.language.toUpperCase()})
           </span>
         </div>
         <div>${statusBadge}</div>
       </div>
 
-      <div class="panel" style="padding: 1rem; background: rgba(255,255,255,0.01); border-color: var(--panel-border); margin-top: 0.5rem;">
-        <p style="font-size: 0.9rem; line-height: 1.6; color: var(--text-secondary); margin: 0; text-align: justify; white-space: pre-wrap;">
+      <div class="panel" style="padding: 1.25rem; background: rgba(0,0,0,0.15); border-color: var(--panel-border); margin-top: 0.75rem; border-radius: 8px;">
+        <p style="font-size: 0.9rem; font-family: var(--font-body); line-height: 1.6; color: var(--text-primary); margin: 0; white-space: pre-wrap;">
           ${art.content}
         </p>
       </div>
