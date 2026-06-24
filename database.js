@@ -170,7 +170,7 @@ const defaultDatabase = {
     }
   ],
   projectMessages: [
-    { id: 'pmsg_1', projectId: 'proj_1', senderId: 'stud_1', senderName: 'Harriet Potter', text: 'Hi everyone! Excited to work on this cultural comparison project together.', timestamp: '2026-06-18T11:00:00Z' },
+    { id: 'pmsg_1', projectId: 'proj_1', senderId: 'stud_1', senderName: 'Harriet Potter', text: 'Hi everyone! Excited to work on this cultural group project together.', timestamp: '2026-06-18T11:00:00Z' },
     { id: 'pmsg_2', projectId: 'proj_1', senderId: 'stud_7', senderName: 'Lukas Schmidt', text: 'Hallo Harriet! Me too. Let\'s write about afternoon tea and pretzels.', timestamp: '2026-06-18T11:15:00Z' }
   ],
   schoolConnections: [

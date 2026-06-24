@@ -274,7 +274,9 @@ class App {
         localStorage.setItem('bridge_auto_translate', this.autoTranslateEnabled);
         const translateBtn = document.getElementById('translate-compose-btn');
         if (translateBtn) {
-          translateBtn.style.display = this.autoTranslateEnabled ? 'none' : 'inline-block';
+          translateBtn.disabled = this.autoTranslateEnabled;
+          translateBtn.style.opacity = this.autoTranslateEnabled ? '0.4' : '1';
+          translateBtn.style.cursor = this.autoTranslateEnabled ? 'not-allowed' : 'pointer';
         }
         if (this.autoTranslateEnabled) {
           this.handleAutoTranslate();
@@ -1267,7 +1269,7 @@ class App {
         composeArea.style.opacity = '1';
         document.getElementById('chat-textarea').disabled = false;
         document.getElementById('chat-send-btn').disabled = false;
-        document.getElementById('translate-compose-btn').disabled = false;
+        document.getElementById('translate-compose-btn').disabled = this.autoTranslateEnabled;
       }
 
       // Configure auto-translate initial UI state
@@ -1277,7 +1279,10 @@ class App {
       }
       const translateBtn = document.getElementById('translate-compose-btn');
       if (translateBtn) {
-        translateBtn.style.display = this.autoTranslateEnabled ? 'none' : 'inline-block';
+        const isButtonDisabled = this.autoTranslateEnabled || currentMatch.paused;
+        translateBtn.disabled = isButtonDisabled;
+        translateBtn.style.opacity = isButtonDisabled ? '0.4' : '1';
+        translateBtn.style.cursor = isButtonDisabled ? 'not-allowed' : 'pointer';
       }
 
       // Populate Message Feed bubbles
