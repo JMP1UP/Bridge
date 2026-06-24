@@ -5388,6 +5388,75 @@ class App {
       // Brief
       document.getElementById('project-brief-text').textContent = activeProject.brief;
 
+      // Chat Panel Participant List
+      const chatParticipantsList = document.getElementById('proj-chat-participants-list');
+      if (chatParticipantsList) {
+        chatParticipantsList.innerHTML = '';
+        const teamLabel = document.createElement('span');
+        teamLabel.style.fontWeight = '600';
+        teamLabel.style.fontSize = '0.75rem';
+        teamLabel.style.color = 'var(--text-muted)';
+        teamLabel.style.marginRight = '0.25rem';
+        teamLabel.textContent = 'Team:';
+        chatParticipantsList.appendChild(teamLabel);
+
+        allStudentIds.forEach(sid => {
+          const s = window.db.getStudent(sid);
+          if (!s) return;
+          const school = window.db.getSchool(s.schoolId);
+          const flag = school ? this.getSchoolFlag(school.country) : '🏫';
+          const displayName = this.getStudentDisplayName(s);
+          const isMe = sid === student.id;
+
+          const chip = document.createElement('span');
+          chip.style.display = 'inline-flex';
+          chip.style.alignItems = 'center';
+          chip.style.gap = '0.25rem';
+          chip.style.background = 'rgba(0, 0, 0, 0.15)';
+          chip.style.padding = '0.15rem 0.5rem';
+          chip.style.borderRadius = '6px';
+          chip.style.border = '1px solid var(--panel-border)';
+          chip.style.fontSize = '0.75rem';
+          chip.innerHTML = `${flag} <span style="${isMe ? 'font-weight: bold; color: var(--primary);' : 'font-weight: normal;'}">${displayName}${isMe ? ' (You)' : ''}</span>`;
+          chatParticipantsList.appendChild(chip);
+        });
+      }
+
+      // Brief Panel Participant List
+      const briefParticipantsList = document.getElementById('proj-brief-participants-list');
+      if (briefParticipantsList) {
+        briefParticipantsList.innerHTML = '';
+        allStudentIds.forEach(sid => {
+          const s = window.db.getStudent(sid);
+          if (!s) return;
+          const school = window.db.getSchool(s.schoolId);
+          const flag = school ? this.getSchoolFlag(school.country) : '🏫';
+          const displayName = this.getStudentDisplayName(s);
+          const isMe = sid === student.id;
+
+          const row = document.createElement('div');
+          row.style.display = 'flex';
+          row.style.alignItems = 'center';
+          row.style.justifyContent = 'space-between';
+          row.style.padding = '0.5rem 0.75rem';
+          row.style.borderRadius = '8px';
+          row.style.border = '1px solid var(--panel-border)';
+          row.style.background = 'var(--panel-bg)';
+          row.style.fontSize = '0.85rem';
+
+          row.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              ${flag}
+              <span style="${isMe ? 'font-weight: bold; color: var(--primary);' : 'font-weight: 600; color: var(--text-primary);'}">
+                ${displayName} ${isMe ? '(You)' : ''}
+              </span>
+            </div>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">${school ? school.name : 'Unknown School'}</span>
+          `;
+          briefParticipantsList.appendChild(row);
+        });
+      }
+
       // Migrate project slides if using old database schema
       if (!activeProject.slides) {
         activeProject.slides = [
