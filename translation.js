@@ -86,7 +86,8 @@ const UI_TRANSLATIONS = {
     level_chatty_friends: "Chatty Friends! 💬",
     level_great_penpals: "Great Pen Pals! 🌟",
     level_super_friends: "Super Friends! 💖",
-    auto_translate: "Auto-Translate"
+    auto_translate: "Auto-Translate",
+    accents_keyboard: "Accents & Umlauts"
   },
   de: {
     stud_dashboard: "Schüler-Dashboard",
@@ -174,7 +175,8 @@ const UI_TRANSLATIONS = {
     level_chatty_friends: "Schreibfreudig! 💬",
     level_great_penpals: "Super Brieffreunde! 🌟",
     level_super_friends: "Beste Freunde! 💖",
-    auto_translate: "Auto-Übersetzung"
+    auto_translate: "Auto-Übersetzung",
+    accents_keyboard: "Umlaute & Akzente"
   }
 };
 

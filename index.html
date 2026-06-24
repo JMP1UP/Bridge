@@ -311,6 +311,16 @@
 
               <!-- Chat Input compose area -->
               <div class="chat-input-area" id="chat-compose-area">
+                <!-- Special Character Keyboard -->
+                <div id="char-keyboard-panel" class="char-keyboard-panel" style="display: none;">
+                  <div class="char-keyboard-tabs">
+                    <span id="char-tab-de" class="char-tab active" onclick="app.switchCharKeyboardTab('de')">Deutsch</span>
+                    <span id="char-tab-fr" class="char-tab" onclick="app.switchCharKeyboardTab('fr')">Français</span>
+                    <span id="char-tab-es" class="char-tab" onclick="app.switchCharKeyboardTab('es')">Español</span>
+                    <span id="char-tab-symbols" class="char-tab" onclick="app.switchCharKeyboardTab('symbols')">Symbols</span>
+                  </div>
+                  <div id="char-keyboard-grid" class="char-keyboard-grid"></div>
+                </div>
                 <div class="chat-input-row">
                   <textarea class="chat-input" id="chat-textarea" placeholder="Type your message here..."></textarea>
                   <button class="btn btn-primary" id="chat-send-btn">
@@ -328,6 +338,7 @@
                       <span id="compose-translation-preview" style="font-style: italic; color: var(--text-secondary); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
                     </div>
                     <button class="btn btn-secondary btn-small" id="toggle-assistant-btn" onclick="app.toggleLanguageAssistant()" style="padding: 0.55rem 0.85rem;">💡 <span data-localize="helper">Helper</span></button>
+                    <button class="btn btn-secondary btn-small" id="toggle-char-keyboard-btn" onclick="app.toggleCharKeyboard()" style="padding: 0.55rem 0.85rem;">⌨️ <span data-localize="accents_keyboard">Accents</span></button>
                   </div>
                   <span style="font-size: 0.75rem; color: var(--text-muted);">Avoid sharing phone numbers, addresses or social accounts.</span>
                 </div>

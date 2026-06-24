@@ -4728,6 +4728,90 @@ class App {
     }
   }
 
+  // Toggles display of the special character keyboard
+  toggleCharKeyboard() {
+    const panel = document.getElementById('char-keyboard-panel');
+    const btn = document.getElementById('toggle-char-keyboard-btn');
+    if (panel.style.display === 'none' || !panel.style.display) {
+      panel.style.display = 'block';
+      btn.classList.add('active');
+      if (!this.charKeyboardTab) {
+        this.charKeyboardTab = 'de';
+      }
+      this.renderCharKeyboardChars();
+    } else {
+      panel.style.display = 'none';
+      btn.classList.remove('active');
+    }
+  }
+
+  // Switches language tab in special character keyboard
+  switchCharKeyboardTab(tab) {
+    this.charKeyboardTab = tab;
+    // Update active class on tab labels
+    const tabs = ['de', 'fr', 'es', 'symbols'];
+    tabs.forEach(t => {
+      const el = document.getElementById(`char-tab-${t}`);
+      if (el) {
+        if (t === tab) {
+          el.classList.add('active');
+        } else {
+          el.classList.remove('active');
+        }
+      }
+    });
+    this.renderCharKeyboardChars();
+  }
+
+  // Renders keyboard character keys dynamically
+  renderCharKeyboardChars() {
+    const grid = document.getElementById('char-keyboard-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    const charsMap = {
+      de: ['ä', 'ö', 'ü', 'ß', 'Ä', 'Ö', 'Ü'],
+      fr: ['é', 'è', 'à', 'ç', 'ù', 'â', 'ê', 'î', 'ô', 'û', 'ë', 'ï', 'œ', 'É', 'È', 'À', 'Ç'],
+      es: ['á', 'é', 'í', 'ó', 'ú', 'ñ', 'ü', '¡', '¿', 'Á', 'É', 'Í', 'Ó', 'Ú', 'Ñ'],
+      symbols: ['€', '£', '¥', '«', '»', '“', '”', '—']
+    };
+
+    const chars = charsMap[this.charKeyboardTab || 'de'] || [];
+    chars.forEach(char => {
+      const keyBtn = document.createElement('button');
+      keyBtn.type = 'button';
+      keyBtn.className = 'char-key';
+      keyBtn.textContent = char;
+      keyBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.insertChar(char);
+      });
+      grid.appendChild(keyBtn);
+    });
+  }
+
+  // Inserts a character at the cursor position in the student direct chat textarea
+  insertChar(char) {
+    const textarea = document.getElementById('chat-textarea');
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = textarea.value;
+      const before = text.substring(0, start);
+      const after = text.substring(end, text.length);
+      const newText = before + char + after;
+      textarea.value = newText;
+
+      // Trigger input event to update translation previews / auto-translate
+      const inputEvent = new Event('input', { bubbles: true });
+      textarea.dispatchEvent(inputEvent);
+
+      // Focus back and position cursor after inserted character
+      textarea.focus();
+      textarea.setSelectionRange(start + char.length, start + char.length);
+    }
+  }
+
   // ================== CORE UTILITY HELPERS ==================
 
   // Modal Open/Close helpers
