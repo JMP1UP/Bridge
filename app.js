@@ -3164,7 +3164,14 @@ class App {
   // Renders safeguarding control table
   renderTeacherSafeguarding() {
     const tbody = document.getElementById('safeguarding-alerts-tbody');
-    const flags = window.db.getFlags();
+    const teacher = this.getLoggedTeacher();
+    const mySchoolId = teacher?.schoolId;
+    
+    const allFlags = window.db.getFlags();
+    const flags = allFlags.filter(flag => {
+      const { schoolId1, schoolId2 } = window.db.getSchoolsForFlag(flag);
+      return schoolId1 === mySchoolId || schoolId2 === mySchoolId;
+    });
 
     tbody.innerHTML = '';
     if (flags.length === 0) {
@@ -3172,10 +3179,15 @@ class App {
       return;
     }
 
-    // Sort: Pending flags first, then by date descending
+    // Sort: Pending flags relative to my school first, then by date descending
     const sortedFlags = [...flags].sort((a, b) => {
-      if (a.status === 'Pending' && b.status !== 'Pending') return -1;
-      if (a.status !== 'Pending' && b.status === 'Pending') return 1;
+      const aResolutions = window.db.getFlagResolutions(a);
+      const bResolutions = window.db.getFlagResolutions(b);
+      const aMyPending = (aResolutions[mySchoolId]?.status !== 'Resolved');
+      const bMyPending = (bResolutions[mySchoolId]?.status !== 'Resolved');
+      
+      if (aMyPending && !bMyPending) return -1;
+      if (!aMyPending && bMyPending) return 1;
       return new Date(b.flaggedAt) - new Date(a.flaggedAt);
     });
 
@@ -3184,9 +3196,38 @@ class App {
       const sender = msg ? window.db.getStudent(msg.senderId) : null;
       const match = msg ? window.db.getMatches().find(m => m.id === msg.matchId) : null;
       
-      let statusBadge = '';
-      if (flag.status === 'Pending') statusBadge = '<span class="badge badge-danger">Unresolved</span>';
-      else statusBadge = '<span class="badge badge-success">Resolved</span>';
+      // Get resolutions
+      const resolutions = window.db.getFlagResolutions(flag);
+      const myResolution = resolutions[mySchoolId] || { status: 'Pending' };
+      
+      // Identify other school
+      const { schoolId1, schoolId2 } = window.db.getSchoolsForFlag(flag);
+      const otherSchoolId = schoolId1 === mySchoolId ? schoolId2 : schoolId1;
+      const otherSchool = otherSchoolId ? window.db.getSchool(otherSchoolId) : null;
+      const otherResolution = otherSchoolId ? resolutions[otherSchoolId] : null;
+
+      let statusBadgeHtml = '';
+      if (myResolution.status === 'Resolved') {
+        statusBadgeHtml = `<div style="margin-bottom: 0.35rem;"><span class="badge badge-success">Resolved (You)</span></div>`;
+      } else {
+        statusBadgeHtml = `<div style="margin-bottom: 0.35rem;"><span class="badge badge-danger">Unresolved (You)</span></div>`;
+      }
+
+      if (otherSchool) {
+        const flagImg = this.getSchoolFlag(otherSchool.country);
+        if (otherResolution && otherResolution.status === 'Resolved') {
+          statusBadgeHtml += `
+            <div style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.25;">
+              ${flagImg} ${otherSchool.name}: <span class="badge badge-success" style="font-size: 0.65rem; padding: 0.05rem 0.2rem;">Resolved</span><br>
+              <span style="font-size: 0.7rem; color: var(--text-muted); font-style: italic;">"${otherResolution.resolutionNotes || 'No comment'}"</span>
+            </div>`;
+        } else {
+          statusBadgeHtml += `
+            <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.25;">
+              ${flagImg} ${otherSchool.name}: <span class="badge badge-danger" style="font-size: 0.65rem; padding: 0.05rem 0.2rem;">Unresolved</span>
+            </div>`;
+        }
+      }
 
       const row = document.createElement('tr');
       row.innerHTML = `
@@ -3201,12 +3242,12 @@ class App {
             "${msg ? msg.text : 'N/A'}"
           </div>
         </td>
-        <td>${statusBadge}</td>
+        <td>${statusBadgeHtml}</td>
         <td>
-          ${flag.status === 'Pending' 
+          ${myResolution.status !== 'Resolved'
             ? `<button class="btn btn-danger btn-small" onclick="app.openResolveFlagModal('${flag.id}')">Review & Take Action</button>`
             : `<div style="display: flex; flex-direction: column; gap: 0.35rem;">
-                 <span style="font-size: 0.75rem; color: var(--text-muted);">Resolved by:<br>${flag.reviewedBy}<br>Action: ${flag.actionTaken}</span>
+                 <span style="font-size: 0.75rem; color: var(--text-muted);">Resolved by:<br>${myResolution.reviewedBy}<br>Action: ${myResolution.actionTaken}</span>
                  <button class="btn btn-secondary btn-small" style="font-size: 0.7rem; padding: 0.2rem 0.4rem;" onclick="app.openResolveFlagModal('${flag.id}')">View Details</button>
                </div>`}
         </td>
@@ -3248,31 +3289,79 @@ class App {
       }).join('');
     }
 
+    const teacher = this.getLoggedTeacher();
+    const mySchoolId = teacher?.schoolId;
+    const resolutions = window.db.getFlagResolutions(flag);
+    const myResolution = resolutions[mySchoolId] || { status: 'Pending' };
+
+    const { schoolId1, schoolId2 } = window.db.getSchoolsForFlag(flag);
+    const otherSchoolId = schoolId1 === mySchoolId ? schoolId2 : schoolId1;
+    const otherSchool = otherSchoolId ? window.db.getSchool(otherSchoolId) : null;
+    const otherResolution = otherSchoolId ? resolutions[otherSchoolId] : null;
+
+    let partnerSchoolStatusMarkup = '';
+    if (otherSchool) {
+      const otherFlagImg = this.getSchoolFlag(otherSchool.country);
+      if (otherResolution && otherResolution.status === 'Resolved') {
+        partnerSchoolStatusMarkup = `
+          <div class="panel" style="padding: 0.75rem; background: rgba(255,255,255,0.02); border-color: var(--panel-border); margin-bottom: 0.75rem;">
+            <h5 style="font-size: 0.8rem; font-weight: 700; color: var(--success); margin: 0 0 0.25rem 0; display: flex; align-items: center; gap: 0.3rem;">
+              ${otherFlagImg} Partner School (${otherSchool.name}) Resolution:
+            </h5>
+            <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0 0 0.25rem 0;">
+              Status: <strong>Resolved</strong> by <strong>${otherResolution.reviewedBy}</strong> on <strong>${new Date(otherResolution.reviewedAt).toLocaleString()}</strong>
+            </p>
+            <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0 0 0.25rem 0;">
+              Action Taken: <span class="badge badge-success" style="font-size: 0.65rem; padding: 0.05rem 0.2rem;">${otherResolution.actionTaken}</span>
+            </p>
+            <p style="font-size: 0.75rem; color: var(--text-primary); background: rgba(0,0,0,0.15); padding: 0.4rem; border-radius: 4px; margin: 0.25rem 0 0 0; font-style: italic;">
+              Comment: "${otherResolution.resolutionNotes || 'No comment'}"
+            </p>
+          </div>
+        `;
+      } else {
+        partnerSchoolStatusMarkup = `
+          <div class="panel" style="padding: 0.75rem; background: rgba(255,255,255,0.01); border-color: var(--panel-border); margin-bottom: 0.75rem;">
+            <h5 style="font-size: 0.8rem; font-weight: 700; color: var(--warning); margin: 0 0 0.25rem 0; display: flex; align-items: center; gap: 0.3rem;">
+              ${otherFlagImg} Partner School (${otherSchool.name}) Resolution:
+            </h5>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">
+              Status: <strong>Pending review / Unresolved by partner school</strong>
+            </p>
+          </div>
+        `;
+      }
+    }
+
     let actionsMarkup = '';
-    if (flag.status === 'Resolved') {
+    if (myResolution.status === 'Resolved') {
       actionsMarkup = `
-        <div class="panel" style="padding: 1.25rem; border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.02); margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
-          <h4 style="font-size: 0.9rem; color: var(--success); font-weight: bold; margin: 0; display: flex; align-items: center; gap: 0.35rem;">✔ Safeguarding Violation Resolved</h4>
-          <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
-            Resolved by <strong>${flag.reviewedBy}</strong> on <strong>${new Date(flag.reviewedAt).toLocaleString()}</strong>.
+        <div class="panel" style="padding: 1rem; border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.02); margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem;">
+          <h4 style="font-size: 0.85rem; color: var(--success); font-weight: bold; margin: 0; display: flex; align-items: center; gap: 0.35rem;">✔ Safeguarding Violation Resolved by Your School</h4>
+          <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">
+            Resolved by <strong>${myResolution.reviewedBy}</strong> on <strong>${new Date(myResolution.reviewedAt).toLocaleString()}</strong>.
           </p>
-          <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
-            Action Taken: <span class="badge badge-success" style="font-size: 0.7rem; padding: 0.15rem 0.45rem;">${flag.actionTaken}</span>
+          <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">
+            Action Taken: <span class="badge badge-success" style="font-size: 0.65rem; padding: 0.05rem 0.25rem;">${myResolution.actionTaken}</span>
           </p>
-          ${flag.resolutionNotes ? `<p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0; padding-top: 0.35rem; border-top: 1px solid var(--panel-border);"><strong>Resolution Notes:</strong> ${flag.resolutionNotes}</p>` : ''}
+          <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">
+            Notes: <span style="font-style: italic; color: var(--text-primary);">"${myResolution.resolutionNotes || ''}"</span>
+          </p>
         </div>
-        <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
-          <button class="btn btn-secondary" onclick="app.closeModal('resolve-flag-modal')">Close</button>
+        ${partnerSchoolStatusMarkup}
+        <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem;">
+          <button class="btn btn-secondary btn-small" onclick="app.closeModal('resolve-flag-modal')">Close</button>
         </div>
       `;
     } else {
       actionsMarkup = `
+        ${partnerSchoolStatusMarkup}
         <div>
           <div class="form-group" style="margin-bottom: 1.25rem;">
-            <label for="flag-resolution-notes" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; display: block; color: var(--text-primary);">Action Taken / Resolution Notes:</label>
+            <label for="flag-resolution-notes" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; display: block; color: var(--text-primary);">Action Taken / Resolution Notes (Your School):</label>
             <textarea class="form-control" id="flag-resolution-notes" style="height: 75px; font-size: 0.85rem; resize: vertical;" placeholder="Describe the action taken (e.g. discussed with student, monitored future messages)..." required></textarea>
           </div>
-          <h4 style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; margin-bottom: 0.75rem;">Review Actions Actionable:</h4>
+          <h4 style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; margin-bottom: 0.75rem;">Select Resolution Action:</h4>
           <div style="display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap;">
             <button class="btn btn-secondary btn-small" onclick="app.closeModal('resolve-flag-modal')">Close</button>
             <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2);" onclick="app.submitFlagResolution('${flag.id}', 'Cancel Link')">Cancel Student Link</button>
@@ -3327,11 +3416,14 @@ class App {
 
   // Teacher submits safeguarding resolution
   executeFlagAction(flagId, action, notes = '') {
-    const reviewer = this.currentRole === 'admin' ? 'System Admin' : 'Teacher Mrs. Smith';
+    const teacher = this.getLoggedTeacher();
+    const reviewer = teacher ? `Teacher ${teacher.name}` : 'System Admin';
+    const schoolId = teacher ? teacher.schoolId : 'school_1';
+    
     const flag = window.db.getFlags().find(f => f.id === flagId);
     
     if (flag) {
-      window.db.resolveFlag(flagId, reviewer, action, notes);
+      window.db.resolveFlagForSchool(flagId, schoolId, reviewer, action, notes);
       
       const msg = window.db.getMessages().find(m => m.id === flag.messageId);
       if (msg) {

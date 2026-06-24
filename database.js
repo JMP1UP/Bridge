@@ -663,29 +663,138 @@ class LocalDB {
     }
   }
 
+  getSchoolsForFlag(flag) {
+    const msg = this.getMessages().find(m => m.id === flag.messageId);
+    if (!msg) return { schoolId1: null, schoolId2: null };
+
+    let schoolId1 = null;
+    let schoolId2 = null;
+
+    if (msg.matchId) {
+      const match = this.getMatches().find(m => m.id === msg.matchId);
+      if (match) {
+        const stud0 = this.getStudent(match.studentIds[0]);
+        const stud1 = this.getStudent(match.studentIds[1]);
+        schoolId1 = stud0?.schoolId;
+        schoolId2 = stud1?.schoolId;
+      }
+    } else if (msg.projectId) {
+      const proj = this.getProjects().find(p => p.id === msg.projectId);
+      if (proj) {
+        schoolId1 = proj.creatorSchoolId;
+        schoolId2 = proj.targetSchoolId;
+      }
+    }
+
+    if (!schoolId1) {
+      const sender = this.getStudent(msg.senderId);
+      schoolId1 = sender?.schoolId;
+    }
+
+    return { schoolId1, schoolId2 };
+  }
+
+  getFlagResolutions(flag) {
+    if (!flag.resolutions) {
+      flag.resolutions = {};
+    }
+    
+    const { schoolId1, schoolId2 } = this.getSchoolsForFlag(flag);
+    
+    // Legacy migration fallback
+    if (flag.status === 'Resolved' && Object.keys(flag.resolutions).length === 0) {
+      let reviewerSchoolId = schoolId1;
+      if (flag.reviewedBy) {
+        const coord = this.getCoordinators().find(c => c.name === flag.reviewedBy || `Teacher ${c.name}` === flag.reviewedBy);
+        if (coord) {
+          reviewerSchoolId = coord.schoolId;
+        }
+      }
+      if (reviewerSchoolId) {
+        flag.resolutions[reviewerSchoolId] = {
+          status: 'Resolved',
+          reviewedBy: flag.reviewedBy,
+          reviewedAt: flag.reviewedAt,
+          actionTaken: flag.actionTaken,
+          resolutionNotes: flag.resolutionNotes || ''
+        };
+      }
+    }
+    
+    if (schoolId1 && !flag.resolutions[schoolId1]) {
+      flag.resolutions[schoolId1] = {
+        status: 'Pending',
+        reviewedBy: null,
+        reviewedAt: null,
+        actionTaken: null,
+        resolutionNotes: ''
+      };
+    }
+    if (schoolId2 && !flag.resolutions[schoolId2] && schoolId2 !== schoolId1) {
+      flag.resolutions[schoolId2] = {
+        status: 'Pending',
+        reviewedBy: null,
+        reviewedAt: null,
+        actionTaken: null,
+        resolutionNotes: ''
+      };
+    }
+    
+    return flag.resolutions;
+  }
+
   resolveFlag(flagId, reviewer, actionTaken, resolutionNotes = '') {
+    let schoolId = 'school_1';
+    const coord = this.getCoordinators().find(c => c.name === reviewer || `Teacher ${c.name}` === reviewer);
+    if (coord) {
+      schoolId = coord.schoolId;
+    }
+    this.resolveFlagForSchool(flagId, schoolId, reviewer, actionTaken, resolutionNotes);
+  }
+
+  resolveFlagForSchool(flagId, schoolId, reviewer, actionTaken, resolutionNotes = '') {
     const flags = this.getFlags();
     const fIdx = flags.findIndex(f => f.id === flagId);
     if (fIdx !== -1) {
-      flags[fIdx].status = 'Resolved';
-      flags[fIdx].reviewedBy = reviewer;
-      flags[fIdx].reviewedAt = new Date().toISOString();
-      flags[fIdx].actionTaken = actionTaken;
-      flags[fIdx].resolutionNotes = resolutionNotes;
+      const flag = flags[fIdx];
+      const resolutions = this.getFlagResolutions(flag);
+      
+      resolutions[schoolId] = {
+        status: 'Resolved',
+        reviewedBy: reviewer,
+        reviewedAt: new Date().toISOString(),
+        actionTaken: actionTaken,
+        resolutionNotes: resolutionNotes
+      };
+      
+      flag.resolutions = resolutions;
+      
+      // Determine overall flag status: if all schools involved resolved it, status is Resolved, else Pending
+      const { schoolId1, schoolId2 } = this.getSchoolsForFlag(flag);
+      const sids = [schoolId1, schoolId2].filter(Boolean);
+      const allResolved = sids.every(sid => resolutions[sid] && resolutions[sid].status === 'Resolved');
+      
+      flag.status = allResolved ? 'Resolved' : 'Pending';
+      
+      // Update top-level legacy fields for backwards compatibility/simplicity
+      flag.reviewedBy = reviewer;
+      flag.reviewedAt = new Date().toISOString();
+      flag.actionTaken = actionTaken;
+      flag.resolutionNotes = resolutionNotes;
+      
       this.saveTable('flags', flags);
-
-      // Unflag message
-      const msgs = this.getMessages();
-      const mIdx = msgs.findIndex(m => m.id === flags[fIdx].messageId);
-      if (mIdx !== -1) {
-        msgs[mIdx].flagged = false;
-        this.saveTable('messages', msgs);
-        // Unpause match if safety action is completed or resolved/resumed
-        if (actionTaken === 'Dismissed' || actionTaken === 'Resumed Conversation' || actionTaken === 'Mark as Resolved') {
-          this.pauseMatch(msgs[mIdx].matchId, false);
+      
+      // Unflag message if all schools resolved it
+      if (allResolved) {
+        const msgs = this.getMessages();
+        const mIdx = msgs.findIndex(m => m.id === flag.messageId);
+        if (mIdx !== -1) {
+          msgs[mIdx].flagged = false;
+          this.saveTable('messages', msgs);
         }
       }
-      this.addLog('Flag Resolved', `Safeguarding flag resolved by ${reviewer}. Action: ${actionTaken}`, reviewer);
+      
+      this.addLog('Flag Resolved', `Safeguarding flag resolved for school ${schoolId} by ${reviewer}. Action: ${actionTaken}`, reviewer);
     }
   }
 
