@@ -1025,7 +1025,8 @@ class App {
     // Render staff notices/messages
     const noticesContainer = document.getElementById('student-staff-notices');
     if (noticesContainer) {
-      const notices = window.db.getStaffStudentMessages().filter(m => m.recipientId === student.id);
+      const allMsgs = window.db.getStaffStudentMessages();
+      const notices = allMsgs.filter(m => m.recipientId === student.id);
       
       // Auto-mark unread messages as Read when displayed (unless they require agreement, which requires click)
       let changed = false;
@@ -1036,7 +1037,7 @@ class App {
         }
       });
       if (changed) {
-        window.db.saveTable('staffStudentMessages', window.db.getStaffStudentMessages());
+        window.db.saveTable('staffStudentMessages', allMsgs);
       }
 
       noticesContainer.innerHTML = '';
