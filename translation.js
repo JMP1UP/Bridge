@@ -270,6 +270,9 @@ const WRITING_PROMPTS = [
 const SIMPLE_DICTIONARY = {
   "hello": "hallo",
   "hallo": "hello",
+  "hi": "hallo",
+  "hi how are you": "hallo wie geht es dir",
+  "hallo wie geht es dir": "hi how are you",
   "football": "Fußball",
   "fußball": "football",
   "school": "Schule",
