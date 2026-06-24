@@ -531,6 +531,17 @@ class App {
             projArtPhotoPreview.style.display = 'block';
             projArtPhotoPlaceholder.style.display = 'none';
             if (projArtPhotoRemoveBtn) projArtPhotoRemoveBtn.style.display = 'block';
+
+            // Auto-switch layout to split if it was text-only
+            const project = window.db.getProject(this.activeProjectId);
+            const activeSlide = project?.slides[this.activeSlideIndex];
+            if (activeSlide && activeSlide.layout === 'text-only') {
+              activeSlide.layout = 'split';
+              this.saveProjectSlideStateSilent('split');
+              this.renderStudentProjects();
+            } else {
+              this.saveProjectSlideStateSilent();
+            }
           };
           reader.readAsDataURL(file);
         } else {
@@ -1274,13 +1285,15 @@ class App {
           badgeStatus = `<span class="badge badge-danger btn-small" style="font-size: 0.6rem; padding: 0.1rem 0.35rem;">Paused</span>`;
         }
 
+        const partnerSchool = partner ? window.db.getSchool(partner.schoolId) : null;
+        const flag = partnerSchool ? this.getSchoolFlag(partnerSchool.country) : '';
         item.innerHTML = `
           <div class="user-avatar" style="width: 32px; height: 32px; font-size: 0.8rem;">
             ${partnerName.split(' ').map(n => n[0]).join('') || '?'}
           </div>
           <div class="chat-item-meta">
-            <div class="chat-item-name">
-              <span>${partnerName}</span>
+            <div class="chat-item-name" style="display: flex; align-items: center; gap: 0.25rem;">
+              <span>${flag} ${partnerName}</span>
               ${badgeStatus}
             </div>
             <div class="chat-item-preview">${lastMsg ? lastMsg.text : 'Start chatting...'}</div>
@@ -1308,8 +1321,9 @@ class App {
       const partnerSchool = window.db.getSchool(partner?.schoolId);
       const partnerName = this.getStudentDisplayName(partner);
 
+      const partnerFlag = partnerSchool ? this.getSchoolFlag(partnerSchool.country) : '';
       document.getElementById('chat-partner-avatar').textContent = partnerName.split(' ').map(n => n[0]).join('') || '?';
-      document.getElementById('chat-partner-name').textContent = partnerName;
+      document.getElementById('chat-partner-name').innerHTML = `<span style="display: inline-flex; align-items: center; gap: 0.35rem;">${partnerFlag} <span>${partnerName}</span></span>`;
       document.getElementById('chat-partner-school').textContent = `${partnerSchool?.name} • ${partnerSchool?.country}`;
 
       // Paused Banner and composing settings
@@ -4827,23 +4841,23 @@ class App {
       item.style.background = 'rgba(255,255,255,0.01)';
       item.style.border = '1px solid var(--panel-border)';
       item.style.borderRadius = '6px';
-      item.style.fontSize = '0.75rem';
+      item.style.fontSize = '0.85rem';
       
       let statusHtml = '';
       if (msg.requireAgreement) {
         if (msg.status === 'Agreed') {
-          statusHtml = `<span class="badge badge-success" style="font-size: 0.6rem; padding: 0.05rem 0.25rem; font-weight: 700; margin-left: auto;">Read & Agreed (at ${new Date(msg.agreedAt).toLocaleString()})</span>`;
+          statusHtml = `<span class="badge badge-success" style="font-size: 0.75rem; padding: 0.1rem 0.3rem; font-weight: 700; margin-left: auto;">Read & Agreed (at ${new Date(msg.agreedAt).toLocaleString()})</span>`;
         } else {
-          statusHtml = `<span class="badge badge-warning" style="font-size: 0.6rem; padding: 0.05rem 0.25rem; font-weight: 700; margin-left: auto;">Awaiting Agreement</span>`;
+          statusHtml = `<span class="badge badge-warning" style="font-size: 0.75rem; padding: 0.1rem 0.3rem; font-weight: 700; margin-left: auto;">Awaiting Agreement</span>`;
         }
       } else {
-        statusHtml = `<span class="badge badge-info" style="font-size: 0.6rem; padding: 0.05rem 0.25rem; font-weight: 700; margin-left: auto;">Sent / Notice</span>`;
+        statusHtml = `<span class="badge badge-info" style="font-size: 0.75rem; padding: 0.1rem 0.3rem; font-weight: 700; margin-left: auto;">Sent / Notice</span>`;
       }
       
       item.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem; border-bottom: 1px dashed var(--panel-border); padding-bottom: 0.15rem;">
           <strong style="color: var(--text-secondary);">Sent by: ${msg.senderName}</strong>
-          <span style="color: var(--text-muted); font-size: 0.65rem;">${new Date(msg.timestamp).toLocaleString()}</span>
+          <span style="color: var(--text-muted); font-size: 0.75rem;">${new Date(msg.timestamp).toLocaleString()}</span>
         </div>
         <p style="margin: 0.15rem 0; color: var(--text-primary); text-align: justify; line-height: 1.3;">${msg.text}</p>
         <div style="display: flex; align-items: center; margin-top: 0.15rem;">
@@ -5303,7 +5317,7 @@ class App {
         badgeClass = 'badge-warning';
       }
 
-      const badgeStatus = `<span class="badge ${badgeClass}" style="font-size: 0.6rem; padding: 0.1rem 0.35rem;">${statusText}</span>`;
+      const badgeStatus = `<span class="badge ${badgeClass}" style="font-size: 0.75rem; padding: 0.15rem 0.4rem;">${statusText}</span>`;
 
       item.innerHTML = `
         <div class="user-avatar" style="width: 32px; height: 32px; font-size: 0.8rem; background: var(--accent); display: flex; align-items: center; justify-content: center;">
@@ -5482,7 +5496,7 @@ class App {
             btn.className = `slide-thumb ${this.activeSlideIndex === idx ? 'active' : ''}`;
             btn.innerHTML = `
               <span>Slide ${idx + 1}</span>
-              <span style="font-size: 0.65rem; opacity: 0.8; font-weight: 500;">(${slide.layout === 'split' ? '📷' : '📝'})</span>
+              <span style="font-size: 0.75rem; opacity: 0.8; font-weight: 500;">(${slide.layout === 'split' ? '📷' : '📝'})</span>
             `;
             btn.addEventListener('click', () => {
               this.switchProjectSlide(idx);
@@ -5494,7 +5508,13 @@ class App {
           const addBtn = document.createElement('button');
           addBtn.type = 'button';
           addBtn.className = 'slide-thumb slide-thumb-add';
-          addBtn.textContent = '➕ Add Card';
+          addBtn.style.display = 'inline-flex';
+          addBtn.style.alignItems = 'center';
+          addBtn.style.gap = '0.25rem';
+          addBtn.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>Add Card</span>
+          `;
           addBtn.addEventListener('click', () => {
             this.addProjectSlide();
           });
@@ -5644,7 +5664,7 @@ class App {
             const senderSchool = sender ? window.db.getSchool(sender.schoolId) : null;
             const flag = senderSchool ? this.getSchoolFlag(senderSchool.country) : '';
             const displayName = sender ? this.getStudentDisplayName(sender) : msg.senderName;
-            senderHeader = `<div class="message-sender" style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 0.2rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.25rem; vertical-align: middle;">${flag} ${displayName}</div>`;
+            senderHeader = `<div class="message-sender" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.25rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.3rem; vertical-align: middle;">${flag} ${displayName}</div>`;
           }
 
           row.innerHTML = `
@@ -6330,11 +6350,17 @@ class App {
       chatHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.75rem; padding: 0.5rem 0;">No messages yet.</div>`;
     } else {
       chatMsgs.forEach(msg => {
+        const sender = window.db.getStudent(msg.senderId);
+        const school = sender ? window.db.getSchool(sender.schoolId) : null;
+        const flag = school ? this.getSchoolFlag(school.country) : '';
         chatHTML += `
-          <div style="font-size: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.02); padding: 0.25rem 0; line-height: 1.4;">
-            <strong style="color: var(--text-primary);">${msg.senderName}:</strong> 
-            <span style="color: var(--text-secondary);">${msg.text}</span>
-            <span style="float: right; color: var(--text-muted); font-size: 0.65rem;">
+          <div style="font-size: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.02); padding: 0.25rem 0; line-height: 1.4; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 0.25rem; flex-wrap: wrap;">
+              ${flag}
+              <strong style="color: var(--text-primary);">${msg.senderName}:</strong> 
+              <span style="color: var(--text-secondary);">${msg.text}</span>
+            </div>
+            <span style="color: var(--text-muted); font-size: 0.7rem; flex-shrink: 0;">
               ${new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
           </div>
@@ -6347,7 +6373,7 @@ class App {
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
           <div>
             <h4 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">${project.title}</h4>
-            <span class="badge ${badgeClass}" style="margin-top: 0.35rem; font-size: 0.7rem; padding: 0.15rem 0.5rem;">${project.status}</span>
+            <span class="badge ${badgeClass}" style="margin-top: 0.35rem; font-size: 0.75rem; padding: 0.15rem 0.5rem;">${project.status}</span>
           </div>
         </div>
 
@@ -6364,9 +6390,9 @@ class App {
           </div>
           
           <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 280px; margin-top: 0.5rem;">
-            <button class="btn btn-secondary btn-small" onclick="app.prevReviewSlide('${project.id}')" style="padding: 0.25rem 0.65rem; font-weight: bold; border-radius: 6px;">◀️ Prev</button>
-            <span id="proj-review-viewer-progress" style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary);">Card 1 of 1</span>
-            <button class="btn btn-primary btn-small" onclick="app.nextReviewSlide('${project.id}')" style="padding: 0.25rem 0.65rem; font-weight: bold; border-radius: 6px;">Next ▶️</button>
+            <button class="btn btn-secondary btn-small" onclick="app.prevReviewSlide('${project.id}')" style="padding: 0.25rem 0.65rem; font-weight: bold; border-radius: 6px; display: inline-flex; align-items: center; gap: 0.25rem;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg><span>Prev</span></button>
+            <span id="proj-review-viewer-progress" style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary);">Card 1 of 1</span>
+            <button class="btn btn-primary btn-small" onclick="app.nextReviewSlide('${project.id}')" style="padding: 0.25rem 0.65rem; font-weight: bold; border-radius: 6px; display: inline-flex; align-items: center; gap: 0.25rem;"><span>Next</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
           </div>
         </div>
 
