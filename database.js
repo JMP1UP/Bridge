@@ -661,7 +661,7 @@ class LocalDB {
     }
   }
 
-  resolveFlag(flagId, reviewer, actionTaken) {
+  resolveFlag(flagId, reviewer, actionTaken, resolutionNotes = '') {
     const flags = this.getFlags();
     const fIdx = flags.findIndex(f => f.id === flagId);
     if (fIdx !== -1) {
@@ -669,6 +669,7 @@ class LocalDB {
       flags[fIdx].reviewedBy = reviewer;
       flags[fIdx].reviewedAt = new Date().toISOString();
       flags[fIdx].actionTaken = actionTaken;
+      flags[fIdx].resolutionNotes = resolutionNotes;
       this.saveTable('flags', flags);
 
       // Unflag message

@@ -2654,9 +2654,13 @@ class App {
       m.active && m.studentIds.some(id => myStudents.some(ms => ms.id === id))
     );
 
+    const selectAllCheckbox = document.getElementById('select-all-active-matches');
+    if (selectAllCheckbox) selectAllCheckbox.checked = false;
+    this.updateBulkActiveMatchesState();
+
     tbody.innerHTML = '';
     if (activeMatches.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No active matches connected yet.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No active matches connected yet.</td></tr>`;
       return;
     }
 
@@ -2673,6 +2677,7 @@ class App {
 
       const row = document.createElement('tr');
       row.innerHTML = `
+        <td style="padding: 0.5rem;"><input type="checkbox" class="match-select-checkbox" value="${match.id}" onclick="app.updateBulkActiveMatchesState()"></td>
         <td style="font-weight: 600;">
           ${myStudent ? myStudent.name : 'Unknown'}<br>
           <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: normal;">${myStudent?.gender} • ${myStudent?.age} y/o</span>
@@ -2703,6 +2708,55 @@ class App {
     if (confirm('Are you sure you want to disband this penpal match? This will unlink the students and reset them to unmatched.')) {
       window.db.deleteMatch(matchId);
       alert('Match disbanded successfully.');
+      this.refreshUI();
+    }
+  }
+
+  toggleSelectAllActiveMatches(masterCheckbox) {
+    const checkboxes = document.querySelectorAll('.match-select-checkbox');
+    checkboxes.forEach(cb => cb.checked = masterCheckbox.checked);
+    this.updateBulkActiveMatchesState();
+  }
+
+  updateBulkActiveMatchesState() {
+    const selected = document.querySelectorAll('.match-select-checkbox:checked');
+    const btn = document.getElementById('bulk-disband-selected-btn');
+    if (btn) {
+      btn.disabled = selected.length === 0;
+    }
+  }
+
+  disbandSelectedMatches() {
+    const selected = document.querySelectorAll('.match-select-checkbox:checked');
+    if (selected.length === 0) return;
+    if (confirm(`Are you sure you want to disband the ${selected.length} selected matches? This will unlink the student pairs.`)) {
+      selected.forEach(cb => {
+        window.db.deleteMatch(cb.value);
+      });
+      alert('Selected matches disbanded successfully.');
+      this.refreshUI();
+    }
+  }
+
+  disbandAllMatches() {
+    const teacher = this.getLoggedTeacher();
+    const ownSchoolId = teacher ? teacher.schoolId : 'school_1';
+    const students = window.db.getStudents();
+    const myStudents = students.filter(s => s.schoolId === ownSchoolId);
+    const activeMatches = window.db.getMatches().filter(m => 
+      m.active && m.studentIds.some(id => myStudents.some(ms => ms.id === id))
+    );
+
+    if (activeMatches.length === 0) {
+      alert('No active matches to disband.');
+      return;
+    }
+
+    if (confirm(`⚠️ END OF YEAR WARNING: Are you sure you want to disband ALL ${activeMatches.length} active matches for your school? This will unlink all student pairs and reset them for the new school year.`)) {
+      activeMatches.forEach(match => {
+        window.db.deleteMatch(match.id);
+      });
+      alert('All active matches disbanded successfully.');
       this.refreshUI();
     }
   }
@@ -2952,16 +3006,52 @@ class App {
     this.renderSchoolConnections();
   }
 
-  // Disconnects an established link
+  // Disconnects an established link gracefully
   removeSchoolConnection(connectionId) {
-    if (confirm('Are you sure you want to disconnect from this school? This will NOT disband existing active student matches, but you will no longer be able to propose new matches.')) {
+    const conn = window.db.getSchoolConnections().find(c => c.id === connectionId);
+    if (!conn) return;
+
+    const teacher = this.getLoggedTeacher();
+    const ownSchoolId = teacher ? teacher.schoolId : 'school_1';
+    const partnerSchoolId = conn.fromSchoolId === ownSchoolId ? conn.toSchoolId : conn.fromSchoolId;
+    const partnerSchool = window.db.getSchool(partnerSchoolId);
+    const partnerName = partnerSchool ? partnerSchool.name : 'this school';
+
+    // Count active matches with this school
+    const matches = window.db.getMatches().filter(m => m.active && 
+      m.studentIds.some(id => {
+        const stud = window.db.getStudent(id);
+        return stud && stud.schoolId === ownSchoolId;
+      }) &&
+      m.studentIds.some(id => {
+        const stud = window.db.getStudent(id);
+        return stud && stud.schoolId === partnerSchoolId;
+      })
+    );
+
+    let msg = `Are you sure you want to disconnect from ${partnerName}? You will no longer be able to propose new match suggestions.`;
+    if (matches.length > 0) {
+      msg += `\n\nThere are currently ${matches.length} active penpal matches between your schools.`;
+    }
+
+    if (confirm(msg)) {
+      let disbandMatches = false;
+      if (matches.length > 0) {
+        disbandMatches = confirm(`Do you also want to immediately DISBAND the ${matches.length} active student matches with ${partnerName}?\n\n- Click OK to disconnect and end all matches.\n- Click Cancel to disconnect but keep existing matches active.`);
+      }
+
+      if (disbandMatches) {
+        matches.forEach(m => {
+          window.db.deleteMatch(m.id);
+        });
+      }
+
       window.db.deleteSchoolConnection(connectionId);
       
-      const teacher = this.getLoggedTeacher();
       const name = teacher ? teacher.name : 'Teacher';
-      window.db.addLog('School Disconnected', `Removed school connection.`, name);
+      window.db.addLog('School Disconnected', `Removed school connection with ${partnerName}. Disbanded matches: ${disbandMatches ? 'Yes' : 'No'}`, name);
 
-      alert('Disconnected successfully.');
+      alert(`Successfully disconnected from ${partnerName}.${disbandMatches ? ' All student matches were disbanded.' : ''}`);
       this.refreshUI();
       this.renderSchoolConnections();
     }
@@ -3074,14 +3164,15 @@ class App {
     let actionsMarkup = '';
     if (flag.status === 'Resolved') {
       actionsMarkup = `
-        <div class="panel" style="padding: 1rem; border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.02); margin-top: 0.5rem;">
-          <h4 style="font-size: 0.9rem; color: var(--success); font-weight: bold; margin-bottom: 0.5rem;">✔ Safeguarding Violation Resolved</h4>
+        <div class="panel" style="padding: 1.25rem; border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.02); margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
+          <h4 style="font-size: 0.9rem; color: var(--success); font-weight: bold; margin: 0; display: flex; align-items: center; gap: 0.35rem;">✔ Safeguarding Violation Resolved</h4>
           <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
             Resolved by <strong>${flag.reviewedBy}</strong> on <strong>${new Date(flag.reviewedAt).toLocaleString()}</strong>.
           </p>
-          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.35rem;">
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
             Action Taken: <span class="badge badge-success" style="font-size: 0.7rem; padding: 0.15rem 0.45rem;">${flag.actionTaken}</span>
           </p>
+          ${flag.resolutionNotes ? `<p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0; padding-top: 0.35rem; border-top: 1px solid var(--panel-border);"><strong>Resolution Notes:</strong> ${flag.resolutionNotes}</p>` : ''}
         </div>
         <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
           <button class="btn btn-secondary" onclick="app.closeModal('resolve-flag-modal')">Close</button>
@@ -3090,12 +3181,17 @@ class App {
     } else {
       actionsMarkup = `
         <div>
-          <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem;">Review Actions Actionable:</h4>
-          <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-            <button class="btn btn-secondary" onclick="app.closeModal('resolve-flag-modal')">Close</button>
-            <button class="btn btn-secondary btn-danger" onclick="app.executeFlagAction('${flag.id}', 'Archived Conversation')">Archive Chat</button>
-            <button class="btn btn-primary" onclick="app.executeFlagAction('${flag.id}', 'Resumed Conversation')">Resume Chat</button>
-            <button class="btn btn-secondary" style="border-color: var(--success); color: var(--success);" onclick="app.executeFlagAction('${flag.id}', 'Dismissed')">Dismiss / Safe</button>
+          <div class="form-group" style="margin-bottom: 1.25rem;">
+            <label for="flag-resolution-notes" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; display: block; color: var(--text-primary);">Action Taken / Resolution Notes:</label>
+            <textarea class="form-control" id="flag-resolution-notes" style="height: 75px; font-size: 0.85rem; resize: vertical;" placeholder="Describe the action taken (e.g. discussed with student, monitored future messages)..." required></textarea>
+          </div>
+          <h4 style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; margin-bottom: 0.75rem;">Review Actions Actionable:</h4>
+          <div style="display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap;">
+            <button class="btn btn-secondary btn-small" onclick="app.closeModal('resolve-flag-modal')">Close</button>
+            <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2);" onclick="app.submitFlagResolution('${flag.id}', 'Cancel Link')">Cancel Student Link</button>
+            <button class="btn btn-secondary btn-small" style="color: var(--warning); border-color: rgba(245, 158, 11, 0.2);" onclick="app.submitFlagResolution('${flag.id}', 'Suspend Chat')">Suspend Chat</button>
+            <button class="btn btn-primary btn-small" onclick="app.submitFlagResolution('${flag.id}', 'Resume Chat')">Resume Chat</button>
+            <button class="btn btn-secondary btn-small" style="border-color: var(--success); color: var(--success);" onclick="app.submitFlagResolution('${flag.id}', 'Dismissed')">Dismiss / Safe</button>
           </div>
         </div>
       `;
@@ -3131,18 +3227,33 @@ class App {
     this.openModal('resolve-flag-modal');
   }
 
+  // Teacher submits safeguarding resolution with validation
+  submitFlagResolution(flagId, action) {
+    const notesInput = document.getElementById('flag-resolution-notes');
+    const notes = notesInput ? notesInput.value.trim() : '';
+    if (notes.length < 5) {
+      alert('Please enter the action taken / resolution notes (minimum 5 characters) before resolving this flag.');
+      return;
+    }
+    this.executeFlagAction(flagId, action, notes);
+  }
+
   // Teacher submits safeguarding resolution
-  executeFlagAction(flagId, action) {
+  executeFlagAction(flagId, action, notes = '') {
     const reviewer = this.currentRole === 'admin' ? 'System Admin' : 'Teacher Mrs. Smith';
     const flag = window.db.getFlags().find(f => f.id === flagId);
     
     if (flag) {
-      window.db.resolveFlag(flagId, reviewer, action);
+      window.db.resolveFlag(flagId, reviewer, action, notes);
       
       const msg = window.db.getMessages().find(m => m.id === flag.messageId);
       if (msg) {
-        if (action === 'Archived Conversation') {
+        if (action === 'Cancel Link') {
           window.db.deleteMatch(msg.matchId);
+        } else if (action === 'Suspend Chat') {
+          window.db.pauseMatch(msg.matchId, true);
+        } else if (action === 'Resume Chat' || action === 'Dismissed') {
+          window.db.pauseMatch(msg.matchId, false);
         }
       }
 
