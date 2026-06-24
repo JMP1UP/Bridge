@@ -3634,12 +3634,12 @@ class App {
 
       if (schoolId === 'school_1') {
         const opt = document.createElement('option');
-        opt.value = 'assets/leicester_logo.jpg';
+        opt.value = '/assets/leicester_logo.jpg';
         opt.textContent = 'Leicester High School Logo (Crest)';
         logoSelect.appendChild(opt);
       } else if (schoolId === 'school_2') {
         const opt = document.createElement('option');
-        opt.value = 'assets/goethe_logo.png';
+        opt.value = '/assets/goethe_logo.png';
         opt.textContent = 'Goethe-Gymnasium Logo';
         logoSelect.appendChild(opt);
       }
@@ -3659,12 +3659,12 @@ class App {
 
       if (schoolId === 'school_1') {
         const opt = document.createElement('option');
-        opt.value = 'assets/leicester_campus.jpg';
+        opt.value = '/assets/leicester_campus.jpg';
         opt.textContent = 'Leicester High School Campus';
         photoSelect.appendChild(opt);
       } else if (schoolId === 'school_2') {
         const opt = document.createElement('option');
-        opt.value = 'assets/goethe_campus.png';
+        opt.value = '/assets/goethe_campus.png';
         opt.textContent = 'Goethe-Gymnasium Campus';
         photoSelect.appendChild(opt);
       }
@@ -3674,6 +3674,7 @@ class App {
       photoPreview.src = school.photoUrl || '';
       photoPreview.style.display = school.photoUrl ? 'block' : 'none';
     }
+    this.populateTeacherStaffDirectory();
   }
 
   // Save teacher configuration preferences
@@ -3709,6 +3710,224 @@ class App {
 
     alert('School profile updated successfully! Matches and exchange partner students will see the updated spotlight.');
     this.refreshUI();
+  }
+
+  // Populate School Staff Directory Panel
+  populateTeacherStaffDirectory() {
+    const container = document.getElementById('school-staff-directory-panel');
+    if (!container) return;
+
+    const teacher = this.getLoggedTeacher();
+    if (!teacher) return;
+    const schoolId = teacher.schoolId;
+
+    const coordinators = window.db.getCoordinators().filter(c => c.schoolId === schoolId);
+
+    let rowsHtml = '';
+    coordinators.forEach(coord => {
+      const isSelf = coord.id === teacher.id;
+      const roleBadge = coord.isSchoolAdmin 
+        ? `<span class="badge badge-success text-xs font-bold" style="padding: 0.15rem 0.4rem; border-radius: 4px;">Admin</span>`
+        : `<span class="badge badge-neutral text-xs" style="padding: 0.15rem 0.4rem; border-radius: 4px; border: 1px solid var(--panel-border); background: rgba(255,255,255,0.02);">Staff</span>`;
+
+      let actionsHtml = '';
+      if (teacher.isSchoolAdmin) {
+        if (!isSelf) {
+          actionsHtml = `
+            <button class="btn btn-secondary btn-small" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;" onclick="app.toggleStaffAdminInsideSettings('${coord.id}')">
+              ${coord.isSchoolAdmin ? 'Demote' : 'Promote'}
+            </button>
+            <button class="btn btn-secondary btn-small" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; color: var(--danger); border-color: rgba(239,68,68,0.2);" onclick="app.deleteStaffInsideSettings('${coord.id}')">
+              Remove
+            </button>
+          `;
+        } else {
+          actionsHtml = `<span style="font-size: 0.75rem; color: var(--text-muted); font-style: italic;">No actions</span>`;
+        }
+      } else {
+        actionsHtml = `<span style="font-size: 0.75rem; color: var(--text-muted);">Read-Only</span>`;
+      }
+
+      rowsHtml += `
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+          <td style="padding: 0.75rem 0.5rem; font-size: 0.85rem; font-weight: 600;">
+            ${coord.name} ${isSelf ? '<span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">(You)</span>' : ''}
+          </td>
+          <td style="padding: 0.75rem 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">${coord.email}</td>
+          <td style="padding: 0.75rem 0.5rem;">${roleBadge}</td>
+          <td style="padding: 0.75rem 0.5rem; text-align: right;">
+            <div style="display: inline-flex; gap: 0.5rem; justify-content: flex-end;">
+              ${actionsHtml}
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+
+    let addFormHtml = '';
+    if (teacher.isSchoolAdmin) {
+      addFormHtml = `
+        <form id="add-staff-settings-form" style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; padding: 1.25rem; background: rgba(255,255,255,0.01); border: 1px solid var(--panel-border); border-radius: 8px;" onsubmit="app.addStaffInsideSettings(event)">
+          <h4 style="font-size: 0.9rem; font-weight: 700; margin: 0;">➕ Add New Coordinator</h4>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group" style="margin: 0;">
+              <label style="font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Full Name:</label>
+              <input 
+                type="text" 
+                id="new-staff-name-input" 
+                class="form-control" 
+                style="font-size: 0.8rem; padding: 0.4rem 0.75rem;" 
+                placeholder="e.g. Dr. John Watson" 
+                required
+              >
+            </div>
+            <div class="form-group" style="margin: 0;">
+              <label style="font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Email Address:</label>
+              <input 
+                type="email" 
+                id="new-staff-email-input" 
+                class="form-control" 
+                style="font-size: 0.8rem; padding: 0.4rem 0.75rem;" 
+                placeholder="e.g. watson@leicesterhigh.edu" 
+                required
+              >
+            </div>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <input 
+                type="checkbox" 
+                id="new-staff-admin-input" 
+                style="width: 16px; height: 16px; cursor: pointer;"
+              >
+              <label for="new-staff-admin-input" style="font-size: 0.8rem; font-weight: 600; cursor: pointer;">
+                Grant Administrator Rights
+              </label>
+            </div>
+            <button type="submit" class="btn btn-primary btn-small" style="padding: 0.4rem 1rem;">
+              Register Staff Member
+            </button>
+          </div>
+        </form>
+      `;
+    } else {
+      addFormHtml = `
+        <div style="font-size: 0.8rem; color: var(--text-muted); font-style: italic; text-align: center; padding: 1rem; background: rgba(255,255,255,0.01); border: 1px dashed var(--panel-border); border-radius: 8px;">
+          🔒 Only school administrators can invite or manage other staff members.
+        </div>
+      `;
+    }
+
+    container.innerHTML = `
+      <div class="panel-header" style="border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
+        <h2 class="panel-title" style="font-size: 1.1rem; font-weight: 700;">👥 School Staff Directory</h2>
+      </div>
+      <span style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem; display: block;">
+        Invite and manage other coordinators for your school.
+      </span>
+
+      <div style="overflow-x: auto; margin-bottom: 1.5rem;">
+        <table style="width: 100%; text-align: left; border-collapse: collapse; min-width: 500px;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--panel-border);">
+              <th style="padding: 0.75rem 0.5rem; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Name</th>
+              <th style="padding: 0.75rem 0.5rem; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Email</th>
+              <th style="padding: 0.75rem 0.5rem; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Role</th>
+              <th style="padding: 0.75rem 0.5rem; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+      </div>
+
+      ${addFormHtml}
+    `;
+  }
+
+  toggleStaffAdminInsideSettings(staffId) {
+    const teacher = this.getLoggedTeacher();
+    if (staffId === teacher?.id) {
+      alert("You cannot change your own admin rights.");
+      return;
+    }
+    const currentCoords = window.db.getCoordinators();
+    const idx = currentCoords.findIndex(c => c.id === staffId);
+    if (idx !== -1) {
+      currentCoords[idx].isSchoolAdmin = !currentCoords[idx].isSchoolAdmin;
+      window.db.saveTable('coordinators', currentCoords);
+      window.db.addLog(
+        'Coordinator Admin Toggled',
+        `Toggled Admin rights for staff ${currentCoords[idx].name} to ${currentCoords[idx].isSchoolAdmin ? 'Granted' : 'Revoked'}.`,
+        `Teacher ${teacher.name}`
+      );
+      this.populateTeacherStaffDirectory();
+      alert(`Admin status updated for ${currentCoords[idx].name}.`);
+    }
+  }
+
+  deleteStaffInsideSettings(staffId) {
+    const teacher = this.getLoggedTeacher();
+    if (staffId === teacher?.id) {
+      alert("You cannot remove yourself from the school staff roster.");
+      return;
+    }
+    const currentCoords = window.db.getCoordinators();
+    const staff = currentCoords.find(c => c.id === staffId);
+    if (!staff) return;
+
+    if (confirm(`Are you sure you want to remove coordinator "${staff.name}" (${staff.email})? They will no longer have access to this school's portal.`)) {
+      const filtered = currentCoords.filter(c => c.id !== staffId);
+      window.db.saveTable('coordinators', filtered);
+      window.db.addLog(
+        'Coordinator Removed',
+        `Removed staff member ${staff.name} (${staff.email}) from school staff roster.`,
+        `Teacher ${teacher.name}`
+      );
+      this.populateTeacherStaffDirectory();
+      alert(`Staff member "${staff.name}" has been removed.`);
+    }
+  }
+
+  addStaffInsideSettings(e) {
+    e.preventDefault();
+    const teacher = this.getLoggedTeacher();
+    if (!teacher) return;
+    const name = document.getElementById('new-staff-name-input').value.trim();
+    const email = document.getElementById('new-staff-email-input').value.trim();
+    const isSchoolAdmin = document.getElementById('new-staff-admin-input').checked;
+
+    if (!name || !email) {
+      alert("Please provide both name and email.");
+      return;
+    }
+
+    const currentCoords = window.db.getCoordinators();
+    if (currentCoords.some(c => c.email.toLowerCase() === email.toLowerCase())) {
+      alert("A coordinator with this email is already registered.");
+      return;
+    }
+
+    const newStaff = {
+      id: 'coord_' + Date.now(),
+      name,
+      email,
+      schoolId: teacher.schoolId,
+      isSchoolAdmin,
+      bio: ''
+    };
+
+    currentCoords.push(newStaff);
+    window.db.saveTable('coordinators', currentCoords);
+    window.db.addLog(
+      'Coordinator Added',
+      `Added staff member ${newStaff.name} (${newStaff.email}) as ${newStaff.isSchoolAdmin ? 'Admin' : 'Staff'}.`,
+      `Teacher ${teacher.name}`
+    );
+
+    this.populateTeacherStaffDirectory();
+    alert(`Staff member ${name} added successfully!`);
   }
 
 
