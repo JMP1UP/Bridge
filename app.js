@@ -112,6 +112,13 @@ class App {
     }
   }
 
+  getLogonDisplay(level) {
+    if (level === 'High') return 'Today';
+    if (level === 'Medium') return '2 days ago';
+    if (level === 'Low') return '8 days ago';
+    return 'Never';
+  }
+
   getSchoolFlag(country, size = 'small') {
     if (!country) return '🏫';
     const c = country.toLowerCase();
@@ -1780,10 +1787,10 @@ class App {
           <br><span style="font-size: 0.75rem; font-weight: normal; color: var(--text-secondary);">${stud.email}</span>
         </td>
         <td>${stud.age} • ${stud.gender}</td>
-        <td>${stud.yearGroup}<br><span style="font-size: 0.75rem; color: var(--text-muted);">${school ? school.name : 'Unknown'}</span></td>
+        <td>${stud.yearGroup}</td>
         <td>${statusBadge}</td>
         <td>
-          <span style="font-size: 0.8rem;">Engagement: <strong>${stud.activityLevel}</strong></span>
+          <span style="font-size: 0.85rem;">${this.getLogonDisplay(stud.activityLevel)}</span>
         </td>
         <td>${activeBadge}</td>
         <td>
@@ -4140,7 +4147,7 @@ class App {
             ${student.email} • Age ${student.age} • ${student.gender} • ${student.yearGroup}
           </div>
           <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem;">
-            Engagement: <strong>${student.activityLevel}</strong> | Status: <strong>${student.invitationStatus}</strong>
+            Last Logon: <strong>${this.getLogonDisplay(student.activityLevel)}</strong> | Status: <strong>${student.invitationStatus}</strong>
           </div>
         </div>
       </div>
