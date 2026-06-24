@@ -195,66 +195,71 @@
       <!-- Student Dashboard Tab -->
       <section class="tab-view-panel" id="view-stud-dashboard">
         <div class="student-dashboard-grid">
-          <!-- School Branding Banner -->
-          <div class="panel school-banner-panel" id="student-school-banner" style="padding: 0; overflow: hidden; position: relative; height: 240px; display: flex; align-items: flex-end; border-radius: 20px; border-color: var(--panel-border);">
-            <!-- School Campus Image (As background) -->
-            <div id="student-school-photo" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; filter: brightness(0.65);"></div>
-            
-            <!-- Gradient Overlay -->
-            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to top, rgba(15, 16, 22, 0.9) 0%, rgba(15, 16, 22, 0.15) 100%);"></div>
+          <!-- Left Column -->
+          <div class="student-dashboard-col">
+            <!-- School Branding Banner -->
+            <div class="panel school-banner-panel" id="student-school-banner" style="padding: 0; overflow: hidden; position: relative; height: 240px; display: flex; align-items: flex-end; border-radius: 20px; border-color: var(--panel-border);">
+              <!-- School Campus Image (As background) -->
+              <div id="student-school-photo" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; filter: brightness(0.65);"></div>
+              
+              <!-- Gradient Overlay -->
+              <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to top, rgba(15, 16, 22, 0.9) 0%, rgba(15, 16, 22, 0.15) 100%);"></div>
 
-            <!-- School Logo & Name -->
-            <div style="position: relative; display: flex; align-items: center; gap: 1.25rem; padding: 1.5rem; width: 100%; box-sizing: border-box; z-index: 2;">
-              <img id="student-school-logo" src="" alt="School Logo" style="width: 60px; height: 60px; border-radius: 12px; border: 2px solid var(--panel-border); box-shadow: 0 4px 15px rgba(0,0,0,0.5); object-fit: cover; background: var(--bg-color);">
-              <div>
-                <h2 id="student-school-name" style="font-size: 1.45rem; font-weight: 800; color: white; margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.6);">Leicester High School</h2>
-                <p id="student-school-location" style="font-size: 0.85rem; color: var(--secondary); margin: 0.15rem 0 0 0; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">Leicester, United Kingdom</p>
+              <!-- School Logo & Name -->
+              <div style="position: relative; display: flex; align-items: center; gap: 1.25rem; padding: 1.5rem; width: 100%; box-sizing: border-box; z-index: 2;">
+                <img id="student-school-logo" src="" alt="School Logo" style="width: 60px; height: 60px; border-radius: 12px; border: 2px solid var(--panel-border); box-shadow: 0 4px 15px rgba(0,0,0,0.5); object-fit: cover; background: var(--bg-color);">
+                <div>
+                  <h2 id="student-school-name" style="font-size: 1.45rem; font-weight: 800; color: white; margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.6);">Leicester High School</h2>
+                  <p id="student-school-location" style="font-size: 0.85rem; color: var(--secondary); margin: 0.15rem 0 0 0; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">Leicester, United Kingdom</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- News Feed Card (Left Column) -->
+            <div class="panel news-card" id="student-news-feed-panel">
+              <div class="panel-header">
+                <h2 class="panel-title">📰 <span data-localize="news_feed">School News</span></h2>
+              </div>
+              <div id="student-news-feed" style="display: flex; flex-direction: column; gap: 1rem;">
+                <!-- News listings -->
               </div>
             </div>
           </div>
 
-          <!-- News Feed Card (Left Column) -->
-          <div class="panel news-card" id="student-news-feed-panel">
-            <div class="panel-header">
-              <h2 class="panel-title">📰 <span data-localize="news_feed">School News</span></h2>
+          <!-- Right Column -->
+          <div class="student-dashboard-col">
+            <!-- My Pen Pal Card (Right Column) -->
+            <div class="panel student-welcome-card" id="student-welcome-card-panel">
+              <div class="panel-header">
+                <h2 class="panel-title">👥 <span data-localize="my_pen_pal">My Pen Pal</span></h2>
+                <span class="badge badge-info" id="student-match-badge">Matching Status</span>
+              </div>
+              <div id="student-welcome-details">
+                <!-- Filled by JS -->
+              </div>
             </div>
-            <div id="student-news-feed" style="display: flex; flex-direction: column; gap: 1rem;">
-              <!-- News listings -->
+
+            <!-- Direct Messages from Staff Card (Right Column) -->
+            <div class="panel news-card" id="student-staff-notices-panel">
+              <div class="panel-header" style="border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
+                <h2 class="panel-title" style="color: var(--secondary); font-size: 1.05rem;">📩 Messages from School Staff</h2>
+              </div>
+              <div id="student-staff-notices" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 220px; overflow-y: auto; padding-right: 0.25rem;">
+                <!-- Populated dynamically by JS -->
+              </div>
+            </div>
+
+            <!-- Cultural Discoveries Dashboard Widget (Right Column) -->
+            <div class="panel news-card" id="student-discoveries-panel">
+              <div class="panel-header" style="border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem; margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
+                <h2 class="panel-title" style="color: var(--secondary); font-size: 1.05rem;">✨ <span data-localize="shared_publications_label">Discoveries</span></h2>
+                <button class="btn btn-secondary btn-small" style="padding: 0.2rem 0.6rem; font-size: 0.75rem;" onclick="app.switchTab('stud-discoveries');">View All</button>
+              </div>
+              <div id="student-dashboard-recent-discoveries-list" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 320px; overflow-y: auto; padding-right: 0.25rem;">
+                <!-- Dynamic discoveries list goes here -->
+              </div>
             </div>
           </div>
-
-          <!-- My Pen Pal Card (Right Column) -->
-          <div class="panel student-welcome-card" id="student-welcome-card-panel">
-            <div class="panel-header">
-              <h2 class="panel-title">👥 <span data-localize="my_pen_pal">My Pen Pal</span></h2>
-              <span class="badge badge-info" id="student-match-badge">Matching Status</span>
-            </div>
-            <div id="student-welcome-details">
-              <!-- Filled by JS -->
-            </div>
-          </div>
-
-          <!-- Direct Messages from Staff Card (Right Column) -->
-          <div class="panel news-card" id="student-staff-notices-panel">
-            <div class="panel-header" style="border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
-              <h2 class="panel-title" style="color: var(--secondary); font-size: 1.05rem;">📩 Messages from School Staff</h2>
-            </div>
-            <div id="student-staff-notices" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 220px; overflow-y: auto; padding-right: 0.25rem;">
-              <!-- Populated dynamically by JS -->
-            </div>
-          </div>
-
-          <!-- Cultural Discoveries Dashboard Widget (Right Column) -->
-          <div class="panel news-card" id="student-discoveries-panel">
-            <div class="panel-header" style="border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem; margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
-              <h2 class="panel-title" style="color: var(--secondary); font-size: 1.05rem;">✨ <span data-localize="shared_publications_label">Discoveries</span></h2>
-              <button class="btn btn-secondary btn-small" style="padding: 0.2rem 0.6rem; font-size: 0.75rem;" onclick="app.switchTab('stud-discoveries');">View All</button>
-            </div>
-            <div id="student-dashboard-recent-discoveries-list" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 320px; overflow-y: auto; padding-right: 0.25rem;">
-              <!-- Dynamic discoveries list goes here -->
-            </div>
-          </div>
-
         </div>
       </section>
 
