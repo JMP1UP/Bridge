@@ -1455,18 +1455,28 @@ tr:hover td {
 }
 
 .student-dashboard-grid .school-banner-panel {
-  grid-column: 1;
+  grid-column: 1 / span 2;
   grid-row: 1;
 }
 
-.student-dashboard-grid .student-welcome-card {
-  grid-column: 2;
-  grid-row: 1 / span 2;
+.student-dashboard-grid #student-news-feed-panel {
+  grid-column: 1;
+  grid-row: 2 / span 3;
 }
 
-.student-dashboard-grid .news-card {
-  grid-column: 1;
+.student-dashboard-grid #student-welcome-card-panel {
+  grid-column: 2;
   grid-row: 2;
+}
+
+.student-dashboard-grid #student-staff-notices-panel {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.student-dashboard-grid #student-discoveries-panel {
+  grid-column: 2;
+  grid-row: 4;
 }
 
 @media (max-width: 992px) {
@@ -1474,8 +1484,10 @@ tr:hover td {
     grid-template-columns: 1fr;
   }
   .student-dashboard-grid .school-banner-panel,
-  .student-dashboard-grid .student-welcome-card,
-  .student-dashboard-grid .news-card {
+  .student-dashboard-grid #student-news-feed-panel,
+  .student-dashboard-grid #student-welcome-card-panel,
+  .student-dashboard-grid #student-staff-notices-panel,
+  .student-dashboard-grid #student-discoveries-panel {
     grid-column: 1 !important;
     grid-row: auto !important;
   }
@@ -1650,18 +1662,28 @@ tr:hover td {
 }
 
 .student-dashboard-grid .school-banner-panel {
-  grid-column: 1;
+  grid-column: 1 / span 2;
   grid-row: 1;
 }
 
-.student-dashboard-grid .student-welcome-card {
-  grid-column: 2;
-  grid-row: 1 / span 2;
+.student-dashboard-grid #student-news-feed-panel {
+  grid-column: 1;
+  grid-row: 2 / span 3;
 }
 
-.student-dashboard-grid .news-card {
-  grid-column: 1;
+.student-dashboard-grid #student-welcome-card-panel {
+  grid-column: 2;
   grid-row: 2;
+}
+
+.student-dashboard-grid #student-staff-notices-panel {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.student-dashboard-grid #student-discoveries-panel {
+  grid-column: 2;
+  grid-row: 4;
 }
 
 @media (max-width: 992px) {
@@ -1669,8 +1691,10 @@ tr:hover td {
     grid-template-columns: 1fr;
   }
   .student-dashboard-grid .school-banner-panel,
-  .student-dashboard-grid .student-welcome-card,
-  .student-dashboard-grid .news-card {
+  .student-dashboard-grid #student-news-feed-panel,
+  .student-dashboard-grid #student-welcome-card-panel,
+  .student-dashboard-grid #student-staff-notices-panel,
+  .student-dashboard-grid #student-discoveries-panel {
     grid-column: 1 !important;
     grid-row: auto !important;
   }

@@ -824,27 +824,19 @@ class App {
       }
 
       welcomeContainer.innerHTML = `
-        <div style="display: flex; gap: 1.5rem; align-items: center; margin-top: 1rem;">
-          <div class="user-avatar" style="width: 60px; height: 60px; font-size: 1.5rem; cursor: pointer;" onclick="app.openStudentDetailModal('${partner?.id}')" title="Click to view partner profile">
-            ${partner?.name.split(' ').map(n => n[0]).join('') || '?'}
+        <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.5rem;">
+          <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <div class="user-avatar" style="width: 36px; height: 36px; font-size: 0.9rem; font-weight: 700; cursor: pointer;" onclick="app.openStudentDetailModal('${partner?.id}')" title="Click to view partner profile">
+              ${partner?.name.split(' ').map(n => n[0]).join('') || '?'}
+            </div>
+            <div style="min-width: 0; flex-grow: 1;">
+              <h4 style="font-size: 0.9rem; font-weight: 700; margin: 0; color: var(--text-color); cursor: pointer;" onclick="app.openStudentDetailModal('${partner?.id}')">${partner?.name}</h4>
+              <div style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                ${this.getSchoolFlag(school?.country)} <span class="clickable-school-link" onclick="app.openSchoolDetail('${school?.id}')" style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${school ? school.name : 'Unknown School'}</span>
+              </div>
+            </div>
           </div>
-          <div>
-            <h3>${titleText}</h3>
-            <p style="color: var(--text-secondary); font-size: 0.9rem;">${this.getSchoolFlag(school?.country)} ${schoolLabel}: <span class="clickable-school-link" onclick="app.openSchoolDetail('${school?.id}')">${school?.name}</span> (${school?.city}, ${school?.country})</p>
-            <p style="color: var(--text-secondary); font-size: 0.9rem;">${ageLabel}: ${partner?.age} • ${yGroupLabel}: ${partner?.yearGroup}</p>
-            <button class="btn btn-primary btn-small" style="margin-top: 0.5rem;" onclick="app.switchTab('stud-chat')">${sendMsgBtnText}</button>
-          </div>
-        </div>
-
-        <!-- Recent Cultural Discoveries section -->
-        <div style="margin-top: 1.75rem; border-top: 1px solid var(--panel-border); padding-top: 1.5rem;">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
-            <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.05em; margin: 0; text-transform: uppercase;">✨ ${translations.shared_publications_label || "Cultural Discoveries"}</h4>
-            <button class="btn btn-secondary btn-small" style="padding: 0.2rem 0.6rem; font-size: 0.75rem;" onclick="app.switchTab('stud-discoveries');">${this.interfaceLang === 'de' ? 'Alle lesen' : 'Read All'}</button>
-          </div>
-          <div id="student-dashboard-recent-discoveries-list" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 320px; overflow-y: auto; padding-right: 0.25rem;">
-            <!-- Dynamic discoveries list goes here -->
-          </div>
+          <button class="btn btn-primary btn-small w-full" style="justify-content: center; display: flex; margin-top: 0.25rem;" onclick="app.switchTab('stud-chat')">${sendMsgBtnText}</button>
         </div>
       `;
     } else {
@@ -856,23 +848,9 @@ class App {
       const writeArtBtnText = translations.write_article_btn || "Write a Culture Article";
 
       welcomeContainer.innerHTML = `
-        <div style="margin-top: 1rem;">
-          <h3>${noMatchTitle}</h3>
-          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.75rem;">${noMatchDesc}</p>
-          <div style="display: flex; gap: 0.5rem;">
-            <button class="btn btn-secondary btn-small" onclick="app.switchTab('stud-culture')">${writeArtBtnText}</button>
-          </div>
-        </div>
-
-        <!-- Recent Cultural Discoveries section -->
-        <div style="margin-top: 1.75rem; border-top: 1px solid var(--panel-border); padding-top: 1.5rem;">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
-            <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.05em; margin: 0; text-transform: uppercase;">✨ ${translations.shared_publications_label || "Cultural Discoveries"}</h4>
-            <button class="btn btn-secondary btn-small" style="padding: 0.2rem 0.6rem; font-size: 0.75rem;" onclick="app.switchTab('stud-discoveries');">${this.interfaceLang === 'de' ? 'Alle lesen' : 'Read All'}</button>
-          </div>
-          <div id="student-dashboard-recent-discoveries-list" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 320px; overflow-y: auto; padding-right: 0.25rem;">
-            <!-- Dynamic discoveries list goes here -->
-          </div>
+        <div style="margin-top: 0.5rem;">
+          <h4 style="font-size: 0.9rem; font-weight: 700; color: var(--text-color); margin: 0;">${noMatchTitle}</h4>
+          <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.25rem; line-height: 1.35;">${noMatchDesc}</p>
         </div>
       `;
     }
