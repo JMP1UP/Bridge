@@ -5451,9 +5451,44 @@ class App {
                 ${displayName} ${isMe ? '(You)' : ''}
               </span>
             </div>
-            <span style="font-size: 0.75rem; color: var(--text-muted);">${school ? school.name : 'Unknown School'}</span>
+            <span style="font-size: 0.75rem; color: var(--text-muted); cursor: pointer; text-decoration: underline;" onclick="app.openSchoolDetail('${school?.id}')">${school ? school.name : 'Unknown School'}</span>
           `;
           briefParticipantsList.appendChild(row);
+        });
+      }
+
+      // Brief Panel Participating Schools List
+      const briefSchoolsList = document.getElementById('proj-brief-schools-list');
+      if (briefSchoolsList) {
+        briefSchoolsList.innerHTML = '';
+        const schoolIds = Array.from(new Set([activeProject.creatorSchoolId, activeProject.targetSchoolId]));
+        schoolIds.forEach(schoolId => {
+          const school = window.db.getSchool(schoolId);
+          if (!school) return;
+          const flag = this.getSchoolFlag(school.country);
+
+          const row = document.createElement('div');
+          row.style.display = 'flex';
+          row.style.alignItems = 'center';
+          row.style.justifyContent = 'space-between';
+          row.style.padding = '0.55rem 0.85rem';
+          row.style.borderRadius = '8px';
+          row.style.border = '1px solid var(--panel-border)';
+          row.style.background = 'rgba(255,255,255,0.02)';
+          row.style.fontSize = '0.85rem';
+          row.style.cursor = 'pointer';
+          row.style.transition = 'all 0.2s';
+          row.className = 'school-hover-row';
+          row.setAttribute('onclick', `app.openSchoolDetail('${school.id}')`);
+
+          row.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              ${flag}
+              <span style="font-weight: 600; color: var(--text-primary);">${school.name}</span>
+            </div>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">${school.city}, ${school.country} ℹ️</span>
+          `;
+          briefSchoolsList.appendChild(row);
         });
       }
 
