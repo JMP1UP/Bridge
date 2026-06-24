@@ -5447,7 +5447,7 @@ class App {
           row.innerHTML = `
             <div style="display: flex; align-items: center; gap: 0.5rem;">
               ${flag}
-              <span style="${isMe ? 'font-weight: bold; color: var(--primary);' : 'font-weight: 600; color: var(--text-primary);'}">
+              <span style="${isMe ? 'font-weight: bold; color: var(--primary);' : 'font-weight: 600; color: var(--text-primary);'} cursor: pointer; text-decoration: underline;" onclick="app.openStudentDetailModal('${sid}')">
                 ${displayName} ${isMe ? '(You)' : ''}
               </span>
             </div>
@@ -5768,7 +5768,7 @@ class App {
             const senderSchool = sender ? window.db.getSchool(sender.schoolId) : null;
             const flag = senderSchool ? this.getSchoolFlag(senderSchool.country) : '';
             const displayName = sender ? this.getStudentDisplayName(sender) : msg.senderName;
-            senderHeader = `<div class="message-sender" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.25rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.3rem; vertical-align: middle;">${flag} ${displayName}</div>`;
+            senderHeader = `<div class="message-sender" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.25rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.3rem; vertical-align: middle;"><span style="cursor: pointer; text-decoration: underline;" onclick="app.openStudentDetailModal('${msg.senderId}')">${flag} ${displayName}</span></div>`;
           }
 
           row.innerHTML = `
@@ -5993,6 +5993,7 @@ class App {
     const fileInput = document.getElementById('proj-art-photo-input');
     if (fileInput) fileInput.value = '';
     this.renderStudentProjects();
+    this.switchProjectSubtab('article');
   }
 
   addProjectSlide() {

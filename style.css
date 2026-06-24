@@ -1148,8 +1148,8 @@ tr:hover td {
   flex: 1;
   border: none;
   background: transparent;
-  padding: 0.95rem 1.25rem;
-  font-size: 0.95rem;
+  padding: 1.15rem 1.5rem;
+  font-size: 1rem;
   font-weight: 700;
   border-radius: 10px;
   cursor: pointer;
