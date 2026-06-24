@@ -510,6 +510,7 @@ class App {
     const projArtPhotoInput = document.getElementById('proj-art-photo-input');
     const projArtPhotoPreview = document.getElementById('proj-article-photo-preview');
     const projArtPhotoPlaceholder = document.getElementById('proj-article-photo-placeholder');
+    const projArtPhotoRemoveBtn = document.getElementById('proj-art-photo-remove-btn');
     if (projArtPhotoInput) {
       projArtPhotoInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
@@ -520,6 +521,7 @@ class App {
             this.currentProjArticlePhotoDataUrl = '';
             projArtPhotoPreview.style.display = 'none';
             projArtPhotoPlaceholder.style.display = 'block';
+            if (projArtPhotoRemoveBtn) projArtPhotoRemoveBtn.style.display = 'none';
             return;
           }
           const reader = new FileReader();
@@ -528,13 +530,28 @@ class App {
             projArtPhotoPreview.src = event.target.result;
             projArtPhotoPreview.style.display = 'block';
             projArtPhotoPlaceholder.style.display = 'none';
+            if (projArtPhotoRemoveBtn) projArtPhotoRemoveBtn.style.display = 'block';
           };
           reader.readAsDataURL(file);
         } else {
           this.currentProjArticlePhotoDataUrl = '';
           projArtPhotoPreview.style.display = 'none';
           projArtPhotoPlaceholder.style.display = 'block';
+          if (projArtPhotoRemoveBtn) projArtPhotoRemoveBtn.style.display = 'none';
         }
+      });
+    }
+
+    if (projArtPhotoRemoveBtn) {
+      projArtPhotoRemoveBtn.addEventListener('click', () => {
+        this.currentProjArticlePhotoDataUrl = '';
+        if (projArtPhotoInput) projArtPhotoInput.value = '';
+        if (projArtPhotoPreview) {
+          projArtPhotoPreview.src = '';
+          projArtPhotoPreview.style.display = 'none';
+        }
+        if (projArtPhotoPlaceholder) projArtPhotoPlaceholder.style.display = 'block';
+        projArtPhotoRemoveBtn.style.display = 'none';
       });
     }
 
@@ -5532,15 +5549,21 @@ class App {
         // Render photo preview
         const previewEl = document.getElementById('proj-article-photo-preview');
         const placeholderEl = document.getElementById('proj-article-photo-placeholder');
+        const removeBtnEl = document.getElementById('proj-art-photo-remove-btn');
         if (previewEl && placeholderEl && activeSlide) {
+          const isAuthor = activeSlide.author === student.name;
+          const isEditable = isAuthor || activeSlide.editableByOthers !== false;
+          this.currentProjArticlePhotoDataUrl = activeSlide.photoUrl || '';
           if (activeSlide.photoUrl) {
             previewEl.src = activeSlide.photoUrl;
             previewEl.style.display = 'block';
             placeholderEl.style.display = 'none';
+            if (removeBtnEl) removeBtnEl.style.display = isEditable ? 'block' : 'none';
           } else {
             previewEl.src = '';
             previewEl.style.display = 'none';
             placeholderEl.style.display = 'block';
+            if (removeBtnEl) removeBtnEl.style.display = 'none';
           }
         }
       }
@@ -5690,17 +5713,28 @@ class App {
     const progressEl = document.getElementById('proj-preview-viewer-progress');
 
     if (viewerCard && slide) {
-      const author = slide.author || 'Author';
+      const authorName = slide.author || 'Student';
+      const authorStudent = window.db.getStudents().find(st => st.name.trim().toLowerCase() === authorName.trim().toLowerCase());
+      let country = authorStudent ? window.db.getSchool(authorStudent.schoolId)?.country : undefined;
+      
+      if (!country) {
+        const lowerAuthor = authorName.toLowerCase();
+        if (lowerAuthor.includes('harriet') || lowerAuthor.includes('emily') || lowerAuthor.includes('jessica')) country = 'United Kingdom';
+        else if (lowerAuthor.includes('lukas') || lowerAuthor.includes('hanna') || lowerAuthor.includes('jonas')) country = 'Germany';
+      }
+      
+      const flagHtml = country ? this.getSchoolFlag(country) : '';
+
       if (slide.layout === 'split') {
         viewerCard.innerHTML = `
           <div style="display: grid; grid-template-columns: 1fr 1fr; height: 100%; width: 100%;">
-            <div style="background: rgba(0,0,0,0.25); border-right: 1px solid var(--panel-border); height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+            <div style="background: rgba(0,0,0,0.1); border-right: 1px solid var(--panel-border); height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden;">
               ${slide.photoUrl ? `<img src="${slide.photoUrl}" style="width: 100%; height: 100%; object-fit: cover;">` : `<span style="font-size: 0.8rem; color: var(--text-muted);">No image uploaded</span>`}
             </div>
             <div style="padding: 1.5rem; display: flex; flex-direction: column; overflow-y: auto; justify-content: center;">
               <h4 class="viewer-card-title">${slide.title || 'Untitled Slide'}</h4>
               <p style="font-size: 0.85rem; line-height: 1.6; color: var(--text-secondary); margin: 0; white-space: pre-wrap;">${slide.content || 'No content written yet.'}</p>
-              <span style="font-size: 0.7rem; color: var(--text-muted); margin-top: 1rem; font-style: italic;">By ${author}</span>
+              <span style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 1rem; font-style: italic; display: flex; align-items: center; gap: 0.25rem;">By ${flagHtml} ${authorName}</span>
             </div>
           </div>
         `;
@@ -5709,7 +5743,7 @@ class App {
           <div style="padding: 2rem 2.5rem; display: flex; flex-direction: column; overflow-y: auto; justify-content: center; height: 100%; width: 100%;">
             <h4 class="viewer-card-title" style="font-size: 1.3rem; text-align: center; margin-bottom: 1rem;">${slide.title || 'Untitled Slide'}</h4>
             <p style="font-size: 0.9rem; line-height: 1.7; color: var(--text-secondary); margin: 0; white-space: pre-wrap; text-align: center; max-width: 480px; margin-left: auto; margin-right: auto;">${slide.content || 'No content written yet.'}</p>
-            <span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 1.5rem; font-style: italic; text-align: center;">By ${author}</span>
+            <span style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 1.5rem; font-style: italic; text-align: center; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">By ${flagHtml} ${authorName}</span>
           </div>
         `;
       }
