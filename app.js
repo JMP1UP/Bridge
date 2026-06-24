@@ -5413,25 +5413,49 @@ class App {
         // Render current slide view
         const viewerCard = document.getElementById('proj-viewer-card');
         if (viewerCard && activeSlide) {
+          const authorName = activeSlide.author || 'Student';
+          const authorStudent = window.db.getStudents().find(st => st.name.trim().toLowerCase() === authorName.trim().toLowerCase());
+          let country = authorStudent ? window.db.getSchool(authorStudent.schoolId)?.country : undefined;
+          if (!country) {
+            const lowerAuthor = authorName.toLowerCase();
+            if (
+              lowerAuthor.includes('harriet') || 
+              lowerAuthor.includes('emily') || 
+              lowerAuthor.includes('jessica') || 
+              lowerAuthor.includes('chloe') || 
+              lowerAuthor.includes('tabitha') || 
+              lowerAuthor.includes('sophia')
+            ) country = 'United Kingdom';
+            else if (
+              lowerAuthor.includes('lukas') || 
+              lowerAuthor.includes('hanna') || 
+              lowerAuthor.includes('jonas') || 
+              lowerAuthor.includes('mia') || 
+              lowerAuthor.includes('sophie') || 
+              lowerAuthor.includes('leon')
+            ) country = 'Germany';
+          }
+          const flagHtml = country ? this.getSchoolFlag(country) : '';
+
           if (activeSlide.layout === 'split') {
             viewerCard.innerHTML = `
               <div style="display: grid; grid-template-columns: 1fr 1fr; height: 100%; width: 100%;">
-                <div style="background: rgba(0,0,0,0.25); border-right: 1px solid var(--panel-border); height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-                  ${activeSlide.photoUrl ? `<img src="${activeSlide.photoUrl}" style="width: 100%; height: 100%; object-fit: cover;">` : `<span style="font-size: 0.8rem; color: var(--text-muted);">No image uploaded</span>`}
+                <div style="background: rgba(0,0,0,0.1); border-right: 1px solid var(--panel-border); height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                  ${activeSlide.photoUrl ? `<img src="${activeSlide.photoUrl}" style="width: 100%; height: 100%; object-fit: cover;">` : `<span style="font-size: 0.85rem; color: var(--text-muted);">No image uploaded</span>`}
                 </div>
                 <div style="padding: 1.5rem; display: flex; flex-direction: column; overflow-y: auto; justify-content: center;">
-                  <h4 class="viewer-card-title">${activeSlide.title || 'Untitled Slide'}</h4>
-                  <p style="font-size: 0.85rem; line-height: 1.6; color: var(--text-secondary); margin: 0; white-space: pre-wrap;">${activeSlide.content || 'No content written yet.'}</p>
-                  ${activeSlide.author ? `<span style="font-size: 0.7rem; color: var(--text-muted); margin-top: 1rem; font-style: italic;">By ${activeSlide.author}</span>` : ''}
+                  <h4 class="viewer-card-title" style="font-size: 1.15rem;">${activeSlide.title || 'Untitled Slide'}</h4>
+                  <p style="font-size: 0.95rem; line-height: 1.6; color: var(--text-secondary); margin: 0; white-space: pre-wrap;">${activeSlide.content || 'No content written yet.'}</p>
+                  ${activeSlide.author ? `<span style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 1rem; font-style: italic; display: flex; align-items: center; gap: 0.25rem;">By ${flagHtml} ${activeSlide.author}</span>` : ''}
                 </div>
               </div>
             `;
           } else {
             viewerCard.innerHTML = `
               <div style="padding: 2rem 2.5rem; display: flex; flex-direction: column; overflow-y: auto; justify-content: center; height: 100%; width: 100%;">
-                <h4 class="viewer-card-title" style="font-size: 1.3rem; text-align: center; margin-bottom: 1rem;">${activeSlide.title || 'Untitled Slide'}</h4>
-                <p style="font-size: 0.9rem; line-height: 1.7; color: var(--text-secondary); margin: 0; white-space: pre-wrap; text-align: center; max-width: 480px; margin-left: auto; margin-right: auto;">${activeSlide.content || 'No content written yet.'}</p>
-                ${activeSlide.author ? `<span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 1.5rem; font-style: italic; text-align: center;">By ${activeSlide.author}</span>` : ''}
+                <h4 class="viewer-card-title" style="font-size: 1.45rem; text-align: center; margin-bottom: 1rem;">${activeSlide.title || 'Untitled Slide'}</h4>
+                <p style="font-size: 1.05rem; line-height: 1.7; color: var(--text-secondary); margin: 0; white-space: pre-wrap; text-align: center; max-width: 480px; margin-left: auto; margin-right: auto;">${activeSlide.content || 'No content written yet.'}</p>
+                ${activeSlide.author ? `<span style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 1.5rem; font-style: italic; text-align: center; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">By ${flagHtml} ${activeSlide.author}</span>` : ''}
               </div>
             `;
           }
@@ -5494,7 +5518,30 @@ class App {
           const editableLabel = document.getElementById('proj-slide-editable-label');
           const editableToggle = document.getElementById('proj-slide-editable-toggle');
           if (authorDisplay) {
-            authorDisplay.textContent = `Author: ${activeSlide.author || 'Unknown'}`;
+            const authorName = activeSlide.author || 'Student';
+            const authorStudent = window.db.getStudents().find(st => st.name.trim().toLowerCase() === authorName.trim().toLowerCase());
+            let country = authorStudent ? window.db.getSchool(authorStudent.schoolId)?.country : undefined;
+            if (!country) {
+              const lowerAuthor = authorName.toLowerCase();
+              if (
+                lowerAuthor.includes('harriet') || 
+                lowerAuthor.includes('emily') || 
+                lowerAuthor.includes('jessica') || 
+                lowerAuthor.includes('chloe') || 
+                lowerAuthor.includes('tabitha') || 
+                lowerAuthor.includes('sophia')
+              ) country = 'United Kingdom';
+              else if (
+                lowerAuthor.includes('lukas') || 
+                lowerAuthor.includes('hanna') || 
+                lowerAuthor.includes('jonas') || 
+                lowerAuthor.includes('mia') || 
+                lowerAuthor.includes('sophie') || 
+                lowerAuthor.includes('leon')
+              ) country = 'Germany';
+            }
+            const flagHtml = country ? this.getSchoolFlag(country) : '';
+            authorDisplay.innerHTML = `<span style="display: flex; align-items: center; gap: 0.25rem;">Author: ${flagHtml} <strong>${authorName}</strong></span>`;
           }
 
           const isAuthor = activeSlide.author === student.name;
@@ -5680,18 +5727,12 @@ class App {
   // Open and initialize project deck preview modal
   previewProjectDeck() {
     if (!this.activeProjectId) return;
+
+    // Save current slide state silently before previewing
+    this.saveProjectSlideStateSilent();
+
     const project = window.db.getProject(this.activeProjectId);
     if (!project || !project.slides || project.slides.length === 0) return;
-
-    // Temporarily capture any unsaved edits on the current active slide in the editor
-    const titleInput = document.getElementById('proj-art-title');
-    const contentInput = document.getElementById('proj-art-content');
-    if (titleInput && contentInput && project.slides[this.activeSlideIndex]) {
-      const activeSlide = project.slides[this.activeSlideIndex];
-      activeSlide.title = titleInput.value.trim() || 'Untitled Slide';
-      activeSlide.content = contentInput.value.trim() || '';
-      activeSlide.photoUrl = this.currentProjArticlePhotoDataUrl || activeSlide.photoUrl || '';
-    }
 
     this.previewSlideIndex = 0;
     this.renderPreviewProjectSlide();
@@ -5729,21 +5770,21 @@ class App {
         viewerCard.innerHTML = `
           <div style="display: grid; grid-template-columns: 1fr 1fr; height: 100%; width: 100%;">
             <div style="background: rgba(0,0,0,0.1); border-right: 1px solid var(--panel-border); height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-              ${slide.photoUrl ? `<img src="${slide.photoUrl}" style="width: 100%; height: 100%; object-fit: cover;">` : `<span style="font-size: 0.8rem; color: var(--text-muted);">No image uploaded</span>`}
+              ${slide.photoUrl ? `<img src="${slide.photoUrl}" style="width: 100%; height: 100%; object-fit: cover;">` : `<span style="font-size: 0.85rem; color: var(--text-muted);">No image uploaded</span>`}
             </div>
             <div style="padding: 1.5rem; display: flex; flex-direction: column; overflow-y: auto; justify-content: center;">
-              <h4 class="viewer-card-title">${slide.title || 'Untitled Slide'}</h4>
-              <p style="font-size: 0.85rem; line-height: 1.6; color: var(--text-secondary); margin: 0; white-space: pre-wrap;">${slide.content || 'No content written yet.'}</p>
-              <span style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 1rem; font-style: italic; display: flex; align-items: center; gap: 0.25rem;">By ${flagHtml} ${authorName}</span>
+              <h4 class="viewer-card-title" style="font-size: 1.15rem;">${slide.title || 'Untitled Slide'}</h4>
+              <p style="font-size: 0.95rem; line-height: 1.6; color: var(--text-secondary); margin: 0; white-space: pre-wrap;">${slide.content || 'No content written yet.'}</p>
+              <span style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 1rem; font-style: italic; display: flex; align-items: center; gap: 0.25rem;">By ${flagHtml} ${authorName}</span>
             </div>
           </div>
         `;
       } else {
         viewerCard.innerHTML = `
           <div style="padding: 2rem 2.5rem; display: flex; flex-direction: column; overflow-y: auto; justify-content: center; height: 100%; width: 100%;">
-            <h4 class="viewer-card-title" style="font-size: 1.3rem; text-align: center; margin-bottom: 1rem;">${slide.title || 'Untitled Slide'}</h4>
-            <p style="font-size: 0.9rem; line-height: 1.7; color: var(--text-secondary); margin: 0; white-space: pre-wrap; text-align: center; max-width: 480px; margin-left: auto; margin-right: auto;">${slide.content || 'No content written yet.'}</p>
-            <span style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 1.5rem; font-style: italic; text-align: center; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">By ${flagHtml} ${authorName}</span>
+            <h4 class="viewer-card-title" style="font-size: 1.45rem; text-align: center; margin-bottom: 1rem;">${slide.title || 'Untitled Slide'}</h4>
+            <p style="font-size: 1.05rem; line-height: 1.7; color: var(--text-secondary); margin: 0; white-space: pre-wrap; text-align: center; max-width: 480px; margin-left: auto; margin-right: auto;">${slide.content || 'No content written yet.'}</p>
+            <span style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 1.5rem; font-style: italic; text-align: center; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">By ${flagHtml} ${authorName}</span>
           </div>
         `;
       }
@@ -6392,25 +6433,49 @@ class App {
     const slide = project.slides[this.reviewSlideIndex];
     if (!slide) return;
 
+    const authorName = slide.author || 'Student';
+    const authorStudent = window.db.getStudents().find(st => st.name.trim().toLowerCase() === authorName.trim().toLowerCase());
+    let country = authorStudent ? window.db.getSchool(authorStudent.schoolId)?.country : undefined;
+    if (!country) {
+      const lowerAuthor = authorName.toLowerCase();
+      if (
+        lowerAuthor.includes('harriet') || 
+        lowerAuthor.includes('emily') || 
+        lowerAuthor.includes('jessica') || 
+        lowerAuthor.includes('chloe') || 
+        lowerAuthor.includes('tabitha') || 
+        lowerAuthor.includes('sophia')
+      ) country = 'United Kingdom';
+      else if (
+        lowerAuthor.includes('lukas') || 
+        lowerAuthor.includes('hanna') || 
+        lowerAuthor.includes('jonas') || 
+        lowerAuthor.includes('mia') || 
+        lowerAuthor.includes('sophie') || 
+        lowerAuthor.includes('leon')
+      ) country = 'Germany';
+    }
+    const flagHtml = country ? this.getSchoolFlag(country) : '';
+
     if (slide.layout === 'split') {
       card.innerHTML = `
         <div style="display: grid; grid-template-columns: 1fr 1fr; height: 100%; width: 100%;">
-          <div style="background: rgba(0,0,0,0.25); border-right: 1px solid var(--panel-border); height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-            ${slide.photoUrl ? `<img src="${slide.photoUrl}" style="width:100%; height:100%; object-fit:cover;">` : `<span style="font-size:0.75rem; color:var(--text-muted);">No image uploaded</span>`}
+          <div style="background: rgba(0,0,0,0.1); border-right: 1px solid var(--panel-border); height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+            ${slide.photoUrl ? `<img src="${slide.photoUrl}" style="width:100%; height:100%; object-fit:cover;">` : `<span style="font-size:0.85rem; color:var(--text-muted);">No image uploaded</span>`}
           </div>
-          <div style="padding: 1.25rem; display: flex; flex-direction: column; overflow-y: auto; justify-content: center;">
-            <h5 style="margin:0 0 0.5rem 0; font-family:var(--font-title); font-weight:800; color:white; font-size:0.95rem;">${slide.title || 'Untitled Slide'}</h5>
-            <p style="font-size: 0.8rem; line-height: 1.5; color: var(--text-secondary); margin: 0; white-space: pre-wrap;">${slide.content || 'No content.'}</p>
-            ${slide.author ? `<span style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.75rem; font-style: italic;">By ${slide.author}</span>` : ''}
+          <div style="padding: 1.5rem; display: flex; flex-direction: column; overflow-y: auto; justify-content: center;">
+            <h5 style="margin:0 0 0.5rem 0; font-family:var(--font-title); font-weight:800; color:var(--text-primary); font-size:1.1rem;">${slide.title || 'Untitled Slide'}</h5>
+            <p style="font-size: 0.9rem; line-height: 1.6; color: var(--text-secondary); margin: 0; white-space: pre-wrap;">${slide.content || 'No content.'}</p>
+            ${slide.author ? `<span style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 1rem; font-style: italic; display: flex; align-items: center; gap: 0.25rem;">By ${flagHtml} ${slide.author}</span>` : ''}
           </div>
         </div>
       `;
     } else {
       card.innerHTML = `
-        <div style="padding: 1.5rem 2rem; display: flex; flex-direction: column; overflow-y: auto; justify-content: center; height: 100%; width: 100%;">
-          <h5 style="margin:0 0 0.75rem 0; font-family:var(--font-title); font-weight:800; color:white; font-size:1.1rem; text-align:center;">${slide.title || 'Untitled Slide'}</h5>
-          <p style="font-size: 0.85rem; line-height: 1.6; color: var(--text-secondary); margin: 0; white-space: pre-wrap; text-align: center; max-width: 420px; margin-left: auto; margin-right: auto;">${slide.content || 'No content.'}</p>
-          ${slide.author ? `<span style="font-size: 0.65rem; color: var(--text-muted); margin-top: 1rem; font-style: italic; text-align: center;">By ${slide.author}</span>` : ''}
+        <div style="padding: 2rem 2.5rem; display: flex; flex-direction: column; overflow-y: auto; justify-content: center; height: 100%; width: 100%;">
+          <h5 style="margin:0 0 0.75rem 0; font-family:var(--font-title); font-weight:800; color:var(--text-primary); font-size:1.25rem; text-align:center;">${slide.title || 'Untitled Slide'}</h5>
+          <p style="font-size: 0.95rem; line-height: 1.7; color: var(--text-secondary); margin: 0; white-space: pre-wrap; text-align: center; max-width: 420px; margin-left: auto; margin-right: auto;">${slide.content || 'No content.'}</p>
+          ${slide.author ? `<span style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 1.5rem; font-style: italic; text-align: center; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">By ${flagHtml} ${slide.author}</span>` : ''}
         </div>
       `;
     }
