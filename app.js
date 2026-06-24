@@ -1021,6 +1021,92 @@ class App {
         });
       }
     }
+
+    // Render staff notices/messages
+    const noticesContainer = document.getElementById('student-staff-notices');
+    if (noticesContainer) {
+      const notices = window.db.getStaffStudentMessages().filter(m => m.recipientId === student.id);
+      
+      // Auto-mark unread messages as Read when displayed (unless they require agreement, which requires click)
+      let changed = false;
+      notices.forEach(notice => {
+        if (notice.status === 'Unread' && !notice.requireAgreement) {
+          notice.status = 'Read';
+          changed = true;
+        }
+      });
+      if (changed) {
+        window.db.saveTable('staffStudentMessages', window.db.getStaffStudentMessages());
+      }
+
+      noticesContainer.innerHTML = '';
+      if (notices.length === 0) {
+        noticesContainer.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1.5rem; border: 1px dashed var(--panel-border); border-radius: 8px;">No staff messages received.</p>`;
+      } else {
+        const sortedNotices = [...notices].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        sortedNotices.forEach(notice => {
+          const item = document.createElement('div');
+          item.style.padding = '0.75rem';
+          item.style.borderRadius = '8px';
+          item.style.display = 'flex';
+          item.style.flexDirection = 'column';
+          item.style.gap = '0.35rem';
+          item.style.fontSize = '0.85rem';
+          
+          let borderStyle = '1px solid var(--panel-border)';
+          let bgStyle = 'rgba(255,255,255,0.01)';
+          let statusBadgeHtml = '';
+
+          if (notice.requireAgreement) {
+            if (notice.status === 'Agreed') {
+              statusBadgeHtml = `<span class="badge badge-success" style="font-size: 0.65rem; font-weight: 700; margin-left: auto;">Read & Agreed</span>`;
+            } else {
+              borderStyle = '1px solid var(--warning)';
+              bgStyle = 'rgba(245, 158, 11, 0.03)';
+              statusBadgeHtml = `
+                <span class="badge badge-warning" style="font-size: 0.65rem; font-weight: 700; margin-left: auto;">Action Required</span>
+                <button class="btn btn-primary btn-small" style="margin-top: 0.4rem; padding: 0.2rem 0.5rem; font-size: 0.75rem; font-weight: 600; width: fit-content;" onclick="app.agreeToStaffMessage('${notice.id}')">I Read & Agree</button>
+              `;
+            }
+          } else {
+            statusBadgeHtml = `<span class="badge badge-info" style="font-size: 0.65rem; font-weight: 700; margin-left: auto;">Notice</span>`;
+          }
+
+          item.style.border = borderStyle;
+          item.style.background = bgStyle;
+
+          item.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; border-bottom: 1px dashed var(--panel-border); padding-bottom: 0.25rem;">
+              <strong style="color: var(--secondary); font-size: 0.8rem;">From: Teacher ${notice.senderName}</strong>
+              <span style="font-size: 0.7rem; color: var(--text-muted);">${new Date(notice.timestamp).toLocaleString()}</span>
+            </div>
+            <p style="margin: 0.25rem 0; line-height: 1.4; color: var(--text-secondary); text-align: justify;">${notice.text}</p>
+            <div style="display: flex; align-items: center; margin-top: 0.15rem; width: 100%;">
+              ${statusBadgeHtml}
+            </div>
+          `;
+          noticesContainer.appendChild(item);
+        });
+      }
+    }
+  }
+
+  // Student agrees to a direct message from staff
+  agreeToStaffMessage(messageId) {
+    const list = window.db.getStaffStudentMessages();
+    const idx = list.findIndex(m => m.id === messageId);
+    if (idx !== -1) {
+      list[idx].status = 'Agreed';
+      list[idx].agreedAt = new Date().toISOString();
+      window.db.saveTable('staffStudentMessages', list);
+      
+      const student = window.db.getStudent(list[idx].recipientId);
+      const studentName = student ? student.name : 'Student';
+      window.db.addLog('Staff Notice Agreed', `Student ${studentName} agreed to notice: "${list[idx].text.substring(0, 30)}..."`, studentName);
+      
+      alert('Thank you! Your confirmation has been registered and your teacher has been notified.');
+      this.refreshUI();
+    }
   }
 
   // Populate student account configuration
@@ -4289,12 +4375,132 @@ class App {
         </div>
       </div>
 
+      <!-- Staff Notices & Messages Section -->
+      <div style="margin-top: 0.75rem; border-top: 1px dashed var(--panel-border); padding-top: 0.75rem;">
+        <h5 style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem;">Direct Notices & Messages to Student</h5>
+        
+        <!-- List of past notices sent to this student -->
+        <div id="staff-student-messages-list-${studentId}" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 180px; overflow-y: auto; margin-bottom: 0.75rem; padding-right: 0.25rem;">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Compose new notice -->
+        <div class="panel" style="padding: 0.75rem; background: rgba(255,255,255,0.01); border-color: var(--panel-border);">
+          <h6 style="font-size: 0.8rem; font-weight: 700; margin: 0 0 0.4rem 0; color: var(--text-primary);">Send Direct Message / Notice:</h6>
+          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <textarea id="new-staff-student-msg-text" class="form-control" style="height: 60px; font-size: 0.8rem; resize: vertical;" placeholder="Type message or guidance for student here..." required></textarea>
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+              <label style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; color: var(--text-secondary);">
+                <input type="checkbox" id="new-staff-student-msg-agree" style="width: 15px; height: 15px; cursor: pointer;">
+                Require 'Read & Agree' confirmation
+              </label>
+              <button class="btn btn-primary btn-small" onclick="app.sendStaffStudentMessage('${studentId}')" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; font-weight: 600; border-radius: 4px;">Send Message</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div style="display: flex; justify-content: flex-end; margin-top: 1rem; border-top: 1px solid var(--panel-border); padding-top: 0.75rem;">
         <button class="btn btn-secondary" onclick="app.closeModal('student-profile-modal')">Close Profile</button>
       </div>
     `;
 
     this.openModal('student-profile-modal');
+    this.renderStaffStudentMessagesList(studentId);
+  }
+
+  renderStaffStudentMessagesList(studentId) {
+    const listContainer = document.getElementById(`staff-student-messages-list-${studentId}`);
+    if (!listContainer) return;
+    
+    const messages = window.db.getStaffStudentMessages().filter(m => m.recipientId === studentId);
+    listContainer.innerHTML = '';
+    
+    if (messages.length === 0) {
+      listContainer.innerHTML = `<div style="font-size: 0.8rem; color: var(--text-muted); font-style: italic; padding: 0.25rem 0;">No previous direct messages sent.</div>`;
+      return;
+    }
+    
+    // Sort by timestamp descending
+    const sorted = [...messages].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    sorted.forEach(msg => {
+      const item = document.createElement('div');
+      item.style.padding = '0.5rem';
+      item.style.background = 'rgba(255,255,255,0.01)';
+      item.style.border = '1px solid var(--panel-border)';
+      item.style.borderRadius = '6px';
+      item.style.fontSize = '0.75rem';
+      
+      let statusHtml = '';
+      if (msg.requireAgreement) {
+        if (msg.status === 'Agreed') {
+          statusHtml = `<span class="badge badge-success" style="font-size: 0.6rem; padding: 0.05rem 0.25rem; font-weight: 700; margin-left: auto;">Read & Agreed (at ${new Date(msg.agreedAt).toLocaleString()})</span>`;
+        } else {
+          statusHtml = `<span class="badge badge-warning" style="font-size: 0.6rem; padding: 0.05rem 0.25rem; font-weight: 700; margin-left: auto;">Awaiting Agreement</span>`;
+        }
+      } else {
+        statusHtml = `<span class="badge badge-info" style="font-size: 0.6rem; padding: 0.05rem 0.25rem; font-weight: 700; margin-left: auto;">Sent / Notice</span>`;
+      }
+      
+      item.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem; border-bottom: 1px dashed var(--panel-border); padding-bottom: 0.15rem;">
+          <strong style="color: var(--text-secondary);">Sent by: ${msg.senderName}</strong>
+          <span style="color: var(--text-muted); font-size: 0.65rem;">${new Date(msg.timestamp).toLocaleString()}</span>
+        </div>
+        <p style="margin: 0.15rem 0; color: var(--text-primary); text-align: justify; line-height: 1.3;">${msg.text}</p>
+        <div style="display: flex; align-items: center; margin-top: 0.15rem;">
+          ${statusHtml}
+        </div>
+      `;
+      listContainer.appendChild(item);
+    });
+  }
+
+  sendStaffStudentMessage(studentId) {
+    const textInput = document.getElementById('new-staff-student-msg-text');
+    const text = textInput ? textInput.value.trim() : '';
+    if (!text) {
+      alert('Please type a message before sending.');
+      return;
+    }
+    
+    const agreeCheckbox = document.getElementById('new-staff-student-msg-agree');
+    const requireAgreement = agreeCheckbox ? agreeCheckbox.checked : false;
+    
+    const teacher = this.getLoggedTeacher();
+    const senderId = teacher ? teacher.id : 'coord_1';
+    const senderName = teacher ? teacher.name : 'Teacher';
+    
+    const newMsg = {
+      id: 'ssm_' + Date.now(),
+      senderId,
+      senderName,
+      recipientId: studentId,
+      text,
+      timestamp: new Date().toISOString(),
+      requireAgreement,
+      status: 'Unread',
+      agreedAt: null
+    };
+    
+    const list = window.db.getStaffStudentMessages();
+    list.push(newMsg);
+    window.db.saveTable('staffStudentMessages', list);
+    
+    // Add audit log
+    const student = window.db.getStudent(studentId);
+    const studentName = student ? student.name : 'Student';
+    window.db.addLog('Staff Notice Sent', `Teacher ${senderName} sent notice to student ${studentName}. Require Agreement: ${requireAgreement}`, senderName);
+    
+    // Reset inputs
+    if (textInput) textInput.value = '';
+    if (agreeCheckbox) agreeCheckbox.checked = false;
+    
+    alert('Message sent to student successfully.');
+    
+    // Re-render list and refresh UI
+    this.renderStaffStudentMessagesList(studentId);
+    this.refreshUI();
   }
 
   loadArticleFromProfile(articleId) {

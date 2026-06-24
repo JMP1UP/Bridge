@@ -175,7 +175,8 @@ const defaultDatabase = {
   ],
   schoolConnections: [
     { id: 'conn_1', fromSchoolId: 'school_1', toSchoolId: 'school_2', status: 'Connected', connectedAt: '2026-05-10T10:00:00Z', requestMessage: 'Seeded connection', requestorBio: 'System Seed' }
-  ]
+  ],
+  staffStudentMessages: []
 };
 
 class LocalDB {
@@ -249,6 +250,7 @@ class LocalDB {
   getProject(id) { return this.getProjects().find(p => p.id === id); }
   getProjectMessages() { return this.getTable('projectMessages'); }
   getSchoolConnections() { return this.getTable('schoolConnections'); }
+  getStaffStudentMessages() { return this.getTable('staffStudentMessages'); }
   addSchoolConnection(conn) {
     const list = this.getSchoolConnections();
     const newConn = {
