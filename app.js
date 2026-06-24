@@ -313,20 +313,83 @@ class App {
     // Teacher settings action
     document.getElementById('save-teacher-settings-btn').addEventListener('click', () => this.saveTeacherSettings());
 
-    // School profile change & submit listeners
-    const logoSelect = document.getElementById('school-logo-select');
+    // School logo custom upload handlers
+    const logoUploadBtn = document.getElementById('school-logo-upload-btn');
+    const logoUploadInput = document.getElementById('school-logo-upload');
     const logoPreview = document.getElementById('school-logo-preview');
-    logoSelect.addEventListener('change', (e) => {
-      logoPreview.src = e.target.value;
-      logoPreview.style.display = e.target.value ? 'block' : 'none';
-    });
+    const logoPlaceholder = document.getElementById('school-logo-placeholder');
+    const logoRemoveBtn = document.getElementById('school-logo-remove-btn');
 
-    const photoSelect = document.getElementById('school-photo-select');
+    if (logoUploadBtn && logoUploadInput) {
+      logoUploadBtn.addEventListener('click', () => logoUploadInput.click());
+      logoUploadInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          if (file.size > 1.5 * 1024 * 1024) {
+            alert('Image file is too large. Please select an image smaller than 1.5MB.');
+            logoUploadInput.value = '';
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            logoPreview.src = event.target.result;
+            logoPreview.style.display = 'block';
+            if (logoPlaceholder) logoPlaceholder.style.display = 'none';
+            if (logoRemoveBtn) logoRemoveBtn.style.display = 'inline-block';
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+
+    if (logoRemoveBtn) {
+      logoRemoveBtn.addEventListener('click', () => {
+        logoPreview.src = '';
+        logoPreview.style.display = 'none';
+        if (logoPlaceholder) logoPlaceholder.style.display = 'block';
+        logoRemoveBtn.style.display = 'none';
+        if (logoUploadInput) logoUploadInput.value = '';
+      });
+    }
+
+    // School photo custom upload handlers
+    const photoUploadBtn = document.getElementById('school-photo-upload-btn');
+    const photoUploadInput = document.getElementById('school-photo-upload');
     const photoPreview = document.getElementById('school-photo-preview');
-    photoSelect.addEventListener('change', (e) => {
-      photoPreview.src = e.target.value;
-      photoPreview.style.display = e.target.value ? 'block' : 'none';
-    });
+    const photoPlaceholder = document.getElementById('school-photo-placeholder');
+    const photoRemoveBtn = document.getElementById('school-photo-remove-btn');
+
+    if (photoUploadBtn && photoUploadInput) {
+      photoUploadBtn.addEventListener('click', () => photoUploadInput.click());
+      photoUploadInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          if (file.size > 1.5 * 1024 * 1024) {
+            alert('Image file is too large. Please select an image smaller than 1.5MB.');
+            photoUploadInput.value = '';
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            photoPreview.src = event.target.result;
+            photoPreview.style.display = 'block';
+            if (photoPlaceholder) photoPlaceholder.style.display = 'none';
+            if (photoRemoveBtn) photoRemoveBtn.style.display = 'inline-block';
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+
+    if (photoRemoveBtn) {
+      photoRemoveBtn.addEventListener('click', () => {
+        photoPreview.src = '';
+        photoPreview.style.display = 'none';
+        if (photoPlaceholder) photoPlaceholder.style.display = 'block';
+        photoRemoveBtn.style.display = 'none';
+        if (photoUploadInput) photoUploadInput.value = '';
+      });
+    }
 
     const profileForm = document.getElementById('school-profile-form');
     profileForm.addEventListener('submit', (e) => this.handleSchoolProfileSubmit(e));
@@ -3624,55 +3687,37 @@ class App {
     if (school) {
       document.getElementById('school-desc-input').value = school.description || '';
       
-      const logoSelect = document.getElementById('school-logo-select');
-      logoSelect.innerHTML = '';
-      
-      const logoNoneOpt = document.createElement('option');
-      logoNoneOpt.value = '';
-      logoNoneOpt.textContent = '[None]';
-      logoSelect.appendChild(logoNoneOpt);
-
-      if (schoolId === 'school_1') {
-        const opt = document.createElement('option');
-        opt.value = '/assets/leicester_logo.jpg';
-        opt.textContent = 'Leicester High School Logo (Crest)';
-        logoSelect.appendChild(opt);
-      } else if (schoolId === 'school_2') {
-        const opt = document.createElement('option');
-        opt.value = '/assets/goethe_logo.png';
-        opt.textContent = 'Goethe-Gymnasium Logo';
-        logoSelect.appendChild(opt);
-      }
-      logoSelect.value = school.logoUrl || '';
-
+      // Logo Preview
       const logoPreview = document.getElementById('school-logo-preview');
-      logoPreview.src = school.logoUrl || '';
-      logoPreview.style.display = school.logoUrl ? 'block' : 'none';
-
-      const photoSelect = document.getElementById('school-photo-select');
-      photoSelect.innerHTML = '';
-
-      const photoNoneOpt = document.createElement('option');
-      photoNoneOpt.value = '';
-      photoNoneOpt.textContent = '[None]';
-      photoSelect.appendChild(photoNoneOpt);
-
-      if (schoolId === 'school_1') {
-        const opt = document.createElement('option');
-        opt.value = '/assets/leicester_campus.jpg';
-        opt.textContent = 'Leicester High School Campus';
-        photoSelect.appendChild(opt);
-      } else if (schoolId === 'school_2') {
-        const opt = document.createElement('option');
-        opt.value = '/assets/goethe_campus.png';
-        opt.textContent = 'Goethe-Gymnasium Campus';
-        photoSelect.appendChild(opt);
+      const logoPlaceholder = document.getElementById('school-logo-placeholder');
+      const logoRemoveBtn = document.getElementById('school-logo-remove-btn');
+      if (school.logoUrl) {
+        logoPreview.src = school.logoUrl;
+        logoPreview.style.display = 'block';
+        if (logoPlaceholder) logoPlaceholder.style.display = 'none';
+        if (logoRemoveBtn) logoRemoveBtn.style.display = 'inline-block';
+      } else {
+        logoPreview.src = '';
+        logoPreview.style.display = 'none';
+        if (logoPlaceholder) logoPlaceholder.style.display = 'block';
+        if (logoRemoveBtn) logoRemoveBtn.style.display = 'none';
       }
-      photoSelect.value = school.photoUrl || '';
 
+      // Campus Photo Preview
       const photoPreview = document.getElementById('school-photo-preview');
-      photoPreview.src = school.photoUrl || '';
-      photoPreview.style.display = school.photoUrl ? 'block' : 'none';
+      const photoPlaceholder = document.getElementById('school-photo-placeholder');
+      const photoRemoveBtn = document.getElementById('school-photo-remove-btn');
+      if (school.photoUrl) {
+        photoPreview.src = school.photoUrl;
+        photoPreview.style.display = 'block';
+        if (photoPlaceholder) photoPlaceholder.style.display = 'none';
+        if (photoRemoveBtn) photoRemoveBtn.style.display = 'inline-block';
+      } else {
+        photoPreview.src = '';
+        photoPreview.style.display = 'none';
+        if (photoPlaceholder) photoPlaceholder.style.display = 'block';
+        if (photoRemoveBtn) photoRemoveBtn.style.display = 'none';
+      }
     }
     this.populateTeacherStaffDirectory();
   }
@@ -3697,8 +3742,27 @@ class App {
   handleSchoolProfileSubmit(e) {
     e.preventDefault();
     const description = document.getElementById('school-desc-input').value.trim();
-    const logoUrl = document.getElementById('school-logo-select').value;
-    const photoUrl = document.getElementById('school-photo-select').value;
+    
+    // Read logo image URL/base64 from preview
+    let logoUrl = '';
+    const logoPreview = document.getElementById('school-logo-preview');
+    if (logoPreview && logoPreview.style.display !== 'none' && logoPreview.src) {
+      logoUrl = logoPreview.src;
+      if (logoUrl.startsWith(window.location.origin)) {
+        logoUrl = logoUrl.substring(window.location.origin.length);
+      }
+    }
+
+    // Read photo image URL/base64 from preview
+    let photoUrl = '';
+    const photoPreview = document.getElementById('school-photo-preview');
+    if (photoPreview && photoPreview.style.display !== 'none' && photoPreview.src) {
+      photoUrl = photoPreview.src;
+      if (photoUrl.startsWith(window.location.origin)) {
+        photoUrl = photoUrl.substring(window.location.origin.length);
+      }
+    }
+
     const bio = document.getElementById('coordinator-bio-input').value.trim();
 
     const teacher = this.getLoggedTeacher();

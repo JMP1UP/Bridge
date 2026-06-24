@@ -1044,23 +1044,35 @@
             </div>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-              <div class="form-group">
-                <label for="school-logo-select">School Logo (Crest)</label>
-                <select class="form-control" id="school-logo-select">
-                  <!-- Populated dynamically by JS -->
-                </select>
-                <div class="logo-preview-container" style="margin-top: 0.75rem; display: flex; align-items: center; justify-content: center; height: 120px; border: 1px dashed var(--panel-border); border-radius: 12px; overflow: hidden; background: rgba(0,0,0,0.15);">
-                  <img id="school-logo-preview" src="" alt="Logo Preview" style="max-height: 100px; max-width: 90%; object-fit: contain;">
+              <!-- School Logo upload -->
+              <div class="form-group" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <label style="font-size: 0.85rem; font-weight: 600;">School Logo (Crest):</label>
+                <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: rgba(255,255,255,0.01); border: 1px dashed var(--panel-border); border-radius: 8px; height: 95px;">
+                  <div style="width: 60px; height: 60px; border-radius: 8px; border: 1px solid var(--panel-border); overflow: hidden; background: rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <img id="school-logo-preview" src="" alt="School Logo" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+                    <span id="school-logo-placeholder" style="font-size: 1.5rem;">🏫</span>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 0.35rem; align-items: flex-start;">
+                    <input type="file" id="school-logo-upload" accept="image/*" style="display: none;">
+                    <button type="button" class="btn btn-secondary btn-small" id="school-logo-upload-btn">Upload Custom Logo</button>
+                    <button type="button" id="school-logo-remove-btn" style="display: none; background: none; border: none; color: var(--danger); font-size: 0.75rem; cursor: pointer; padding: 0;">Remove Logo</button>
+                  </div>
                 </div>
               </div>
-              
-              <div class="form-group">
-                <label for="school-photo-select">Campus Photograph</label>
-                <select class="form-control" id="school-photo-select">
-                  <!-- Populated dynamically by JS -->
-                </select>
-                <div class="photo-preview-container" style="margin-top: 0.75rem; display: flex; align-items: center; justify-content: center; height: 120px; border: 1px dashed var(--panel-border); border-radius: 12px; overflow: hidden; background: rgba(0,0,0,0.15);">
-                  <img id="school-photo-preview" src="" alt="Campus Preview" style="height: 100%; width: 100%; object-fit: cover;">
+
+              <!-- School Campus Photo upload -->
+              <div class="form-group" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <label style="font-size: 0.85rem; font-weight: 600;">School Campus Photo:</label>
+                <div style="display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem; background: rgba(255,255,255,0.01); border: 1px dashed var(--panel-border); border-radius: 8px;">
+                  <div style="width: 100%; height: 120px; border-radius: 8px; border: 1px solid var(--panel-border); overflow: hidden; background: rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center;">
+                    <img id="school-photo-preview" src="" alt="Campus Photo" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+                    <span id="school-photo-placeholder" style="font-size: 0.8rem; color: var(--text-muted);">No campus photo uploaded</span>
+                  </div>
+                  <div style="display: flex; gap: 1rem; align-items: center;">
+                    <input type="file" id="school-photo-upload" accept="image/*" style="display: none;">
+                    <button type="button" class="btn btn-secondary btn-small" id="school-photo-upload-btn">Upload Custom Campus Photo</button>
+                    <button type="button" id="school-photo-remove-btn" style="display: none; background: none; border: none; color: var(--danger); font-size: 0.75rem; cursor: pointer; padding: 0;">Remove Photo</button>
+                  </div>
                 </div>
               </div>
             </div>
