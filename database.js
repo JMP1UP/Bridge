@@ -819,6 +819,11 @@ class LocalDB {
     this.addLog('News Posted', `Teacher news announcement: "${newsItem.title}".`, newsItem.postedBy);
   }
 
+  deleteNews(id) {
+    const list = this.getNews().filter(n => n.id !== id);
+    this.saveTable('news', list);
+  }
+
   addLog(action, details, user) {
     const list = this.getAuditLogs();
     const log = {

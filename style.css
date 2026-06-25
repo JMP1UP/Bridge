@@ -156,6 +156,8 @@ body {
   transition: all 0.2s ease;
   cursor: pointer;
   white-space: nowrap;
+  overflow: hidden;
+  min-width: 0;
 }
 
 .nav-link svg {
@@ -164,6 +166,14 @@ body {
   stroke: currentColor;
   stroke-width: 2;
   fill: none;
+  flex-shrink: 0;
+}
+
+.nav-link span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .nav-link:hover, .nav-link.active {
@@ -352,6 +362,16 @@ body {
 .badge-success { background: rgba(16, 185, 129, 0.15); color: #34d399; }
 .badge-warning { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
 .badge-danger { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+.badge-purple { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
+
+/* Mini carousel styling */
+.mini-carousel-container .carousel-hover-controls {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.mini-carousel-container:hover .carousel-hover-controls {
+  opacity: 1;
+}
 
 /* Grid Dashboard grids */
 .grid-stats {

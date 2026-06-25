@@ -91,6 +91,9 @@ class App {
     this.selectedProjectBroadcastIds = [];
     this.broadcastTarget = 'selected';
     this.activeModeratedProjectId = null;
+    this.safeguardFilter = 'open';
+    this.adminSafeguardFilter = 'open';
+    this.projectCardSlideIndices = {};
     
     // Bind listeners
     window.addEventListener('DOMContentLoaded', () => this.init());
@@ -676,6 +679,22 @@ class App {
       roleEl.textContent = 'Awaiting School Connect';
       avatarEl.textContent = 'UT';
     }
+
+    // Make the avatar card clickable to open their own profile modal if student
+    const badgeEl = document.querySelector('.user-profile-badge');
+    if (badgeEl) {
+      if (this.currentRole === 'student') {
+        badgeEl.style.cursor = 'pointer';
+        badgeEl.title = 'View My Profile';
+        badgeEl.onclick = () => {
+          this.openTeacherStudentProfileModal(this.currentStudentId);
+        };
+      } else {
+        badgeEl.style.cursor = '';
+        badgeEl.title = '';
+        badgeEl.onclick = null;
+      }
+    }
   }
 
   // Dynamic Navigation sidebars
@@ -727,11 +746,14 @@ class App {
       targetLink.classList.add('active');
     }
 
-    // Set page header title
     const titleEl = document.getElementById('view-title');
     const subtitleEl = document.getElementById('view-subtitle');
 
-    const localizedTitle = window.translator.UI_TRANSLATIONS[this.interfaceLang][tabId.replace('-', '_')];
+    let translationKey = tabId.replace('-', '_');
+    if (tabId === 'teach-roster') translationKey = 'teach_students';
+    if (tabId === 'teach-messages') translationKey = 'staff_messages';
+
+    const localizedTitle = window.translator.UI_TRANSLATIONS[this.interfaceLang][translationKey];
     titleEl.textContent = localizedTitle || tabId.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
     if (this.currentRole === 'student') {
@@ -772,7 +794,11 @@ class App {
     document.querySelectorAll('[data-localize]').forEach(el => {
       const key = el.getAttribute('data-localize');
       if (window.translator.UI_TRANSLATIONS[lang] && window.translator.UI_TRANSLATIONS[lang][key]) {
-        el.textContent = window.translator.UI_TRANSLATIONS[lang][key];
+        if (el.tagName === 'A' && el.querySelector('span')) {
+          el.querySelector('span').textContent = window.translator.UI_TRANSLATIONS[lang][key];
+        } else {
+          el.textContent = window.translator.UI_TRANSLATIONS[lang][key];
+        }
       }
     });
 
@@ -1512,44 +1538,57 @@ class App {
     const linkedSchoolIds = [student.schoolId, ...connections.map(c => c.fromSchoolId === student.schoolId ? c.toSchoolId : c.fromSchoolId)];
 
     // Get approved articles from linked schools
-    const articles = window.db.getArticles().filter(a => a.status === 'Approved' && linkedSchoolIds.includes(a.schoolId));
+    const approvedArticles = window.db.getArticles().filter(a => a.status === 'Approved' && linkedSchoolIds.includes(a.schoolId));
+    
+    // Get published projects from linked schools
+    const publishedProjects = window.db.getProjects().filter(p => p.status === 'Published' && (linkedSchoolIds.includes(p.creatorSchoolId) || linkedSchoolIds.includes(p.targetSchoolId)));
 
-    // Sort: most likes first, then date descending
-    const sortedArticles = [...articles].sort((a, b) => {
-      const likesDiff = (b.likes || 0) - (a.likes || 0);
-      if (likesDiff !== 0) return likesDiff;
-      return new Date(b.submittedAt) - new Date(a.submittedAt);
-    });
+    // Combine articles and projects
+    const combinedDiscoveries = [
+      ...approvedArticles.map(art => ({
+        ...art,
+        feedType: 'article',
+        date: art.submittedAt
+      })),
+      ...publishedProjects.map(proj => ({
+        ...proj,
+        feedType: 'project',
+        date: proj.createdAt || proj.timestamp || new Date().toISOString()
+      }))
+    ].sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    let articlesHtml = '';
-    if (sortedArticles.length === 0) {
-      articlesHtml = `
+    if (combinedDiscoveries.length === 0) {
+      container.innerHTML = `
         <div style="text-align: center; color: var(--text-muted); padding: 3rem; font-size: 0.9rem;">
           <span style="font-size: 2.5rem; display: block; margin-bottom: 0.75rem;">📖</span>
-          No cultural articles published from your linked schools yet.
+          No cultural articles or group projects published from your linked schools yet.
         </div>
       `;
-    } else {
-      articlesHtml = `
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem;">
-          ${sortedArticles.map(art => {
+      return;
+    }
+
+    container.innerHTML = `
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.5rem;">
+        ${combinedDiscoveries.map(item => {
+          if (item.feedType === 'article') {
+            const art = item;
             const author = window.db.getStudent(art.authorId);
             const school = window.db.getSchool(art.schoolId);
             const authorName = this.getStudentDisplayName(author);
             const schoolFlag = this.getSchoolFlag(school?.country);
             const dateStr = new Date(art.submittedAt).toLocaleDateString();
-
             const photoHtml = art.photoUrl
               ? `<img src="${art.photoUrl}" alt="${art.title} photo" style="width: 100%; height: 110px; object-fit: cover; border-top-left-radius: 12px; border-top-right-radius: 12px;">`
               : `<div style="width: 100%; height: 110px; background: rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--text-muted); border-top-left-radius: 12px; border-top-right-radius: 12px;">📷</div>`;
 
-            const paddingStyle = 'padding: 0.85rem;';
-
             return `
-              <div class="panel article-board-card" style="display: flex; flex-direction: column; background: rgba(255,255,255,0.015); border: 1px solid var(--panel-border); border-radius: 12px; overflow: hidden; height: 100%;">
+              <div class="panel article-board-card" style="display: flex; flex-direction: column; background: rgba(255,255,255,0.015); border: 1px solid var(--panel-border); border-radius: 12px; overflow: hidden; height: 100%; cursor: pointer;" onclick="app.openStudentArticleDetail('${art.id}')">
                 ${photoHtml}
-                <div style="${paddingStyle} display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between; gap: 0.6rem;">
+                <div style="padding: 0.85rem; display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between; gap: 0.6rem;">
                   <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                      <span class="badge badge-success" style="font-size: 0.65rem; padding: 0.15rem 0.4rem; background: rgba(16, 185, 129, 0.15); border: 1px solid var(--success); color: var(--success); border-radius: 4px; font-weight: 700;">🟢 Article</span>
+                    </div>
                     <h4 style="font-weight: 700; font-size: 0.95rem; margin: 0 0 0.25rem 0; color: var(--text-primary); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${art.title}">${art.title}</h4>
                     <div style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.5rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                       ${schoolFlag} <span style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="${school?.name || 'Unknown School'}">${school?.name || 'Unknown School'}</span> • <span title="${authorName}">${authorName}</span>
@@ -1559,7 +1598,7 @@ class App {
                     </p>
                   </div>
                   
-                  <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--panel-border); padding-top: 0.5rem; margin-top: 0.4rem;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--panel-border); padding-top: 0.5rem; margin-top: 0.4rem;" onclick="event.stopPropagation()">
                     <span style="font-size: 0.65rem; color: var(--text-muted);">${dateStr}</span>
                     <div style="display: flex; gap: 0.4rem; align-items: center;">
                       <button class="btn btn-secondary btn-small" onclick="app.likeArticleFromBoard('${art.id}')" style="display: flex; align-items: center; gap: 0.2rem; padding: 0.2rem 0.4rem; font-size: 0.7rem; border-radius: 6px; font-weight: 600;">
@@ -1571,12 +1610,114 @@ class App {
                 </div>
               </div>
             `;
-          }).join('')}
-        </div>
-      `;
-    }
+          } else {
+            const proj = item;
+            const slides = proj.slides || [];
+            const slideIndex = this.projectCardSlideIndices[proj.id] || 0;
+            const currentSlide = slides[slideIndex];
+            
+            const creatorSchool = window.db.getSchool(proj.creatorSchoolId);
+            const targetSchool = window.db.getSchool(proj.targetSchoolId);
+            
+            const creatorFlag = creatorSchool ? this.getSchoolFlag(creatorSchool.country) : '';
+            const targetFlag = targetSchool ? this.getSchoolFlag(targetSchool.country) : '';
 
-    container.innerHTML = articlesHtml;
+            let miniCarouselHtml = '';
+            if (currentSlide) {
+              const slideAuthorStudent = window.db.getStudents().find(st => st.name.trim().toLowerCase() === (currentSlide.author || '').trim().toLowerCase());
+              const slideAuthorCountry = slideAuthorStudent ? window.db.getSchool(slideAuthorStudent.schoolId)?.country : undefined;
+              const slideFlag = slideAuthorCountry ? this.getSchoolFlag(slideAuthorCountry) : '';
+
+              miniCarouselHtml = `
+                <div class="mini-carousel-container" style="position: relative; width: 100%; height: 130px; background: #0b0f19; border-radius: 10px; overflow: hidden; border: 1px solid var(--panel-border); margin-bottom: 0.6rem; display: flex; flex-direction: column; justify-content: space-between; padding: 0.65rem;" onclick="event.stopPropagation()">
+                  ${currentSlide.photoUrl ? `
+                    <div style="position: absolute; inset: 0; width: 100%; height: 100%;">
+                      <img src="${currentSlide.photoUrl}" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.25;" />
+                    </div>
+                  ` : ''}
+                  
+                  <div style="position: relative; z-index: 2; display: flex; flex-direction: column; justify-content: space-between; height: 100%; width: 100%;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+                      <h5 style="font-size: 0.72rem; font-weight: 700; color: #fff; margin: 0; max-width: 70%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        ${currentSlide.title || 'Untitled Card'}
+                      </h5>
+                      <span style="font-size: 0.58rem; color: var(--text-secondary); font-weight: 600; background: rgba(0,0,0,0.5); padding: 0.05rem 0.25rem; border-radius: 3px;">
+                        ${slideIndex + 1}/${slides.length}
+                      </span>
+                    </div>
+
+                    <div style="flex-grow: 1; display: flex; flex-direction: column; justify-content: center; margin: 0.15rem 0;">
+                      <p style="font-size: 0.68rem; color: #cbd5e1; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.35; font-style: italic;">
+                        "${currentSlide.content || 'No content entered.'}"
+                      </p>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; font-size: 0.62rem; color: var(--text-muted);">
+                      <span style="display: flex; align-items: center; gap: 0.25rem;">
+                        👤 ${currentSlide.author || 'Student'}
+                      </span>
+                      ${slideFlag}
+                    </div>
+                  </div>
+
+                  <!-- Navigation controls on hover -->
+                  ${slides.length > 1 ? `
+                    <div class="carousel-hover-controls" style="position: absolute; inset-x: 0.35rem; top: 50%; transform: translateY(-50%); display: flex; justify-content: space-between; z-index: 10; pointer-events: none;">
+                      <button onclick="app.prevCardSlide('${proj.id}', event)" ${slideIndex === 0 ? 'disabled' : ''} style="pointer-events: auto; width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--panel-border); background: rgba(0,0,0,0.85); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; cursor: ${slideIndex === 0 ? 'not-allowed' : 'pointer'}; opacity: ${slideIndex === 0 ? '0.2' : '1'};">&lt;</button>
+                      <button onclick="app.nextCardSlide('${proj.id}', event)" ${slideIndex === slides.length - 1 ? 'disabled' : ''} style="pointer-events: auto; width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--panel-border); background: rgba(0,0,0,0.85); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; cursor: ${slideIndex === slides.length - 1 ? 'not-allowed' : 'pointer'}; opacity: ${slideIndex === slides.length - 1 ? '0.2' : '1'};">&gt;</button>
+                    </div>
+                  ` : ''}
+                </div>
+              `;
+            } else {
+              miniCarouselHtml = `
+                <div style="width: 100%; height: 130px; background: rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: var(--text-muted); border-radius: 10px; border: 1px dashed var(--panel-border); margin-bottom: 0.6rem; font-style: italic;">
+                  No slides available
+                </div>
+              `;
+            }
+
+            return `
+              <div class="panel project-board-card" style="display: flex; flex-direction: column; background: rgba(255,255,255,0.015); border: 1px solid var(--panel-border); border-radius: 12px; overflow: hidden; height: 100%; cursor: pointer;" onclick="app.openReadOnlyProjectPreview('${proj.id}')">
+                <div style="padding: 0.85rem; display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between; gap: 0.5rem;">
+                  <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                      <span class="badge badge-purple" style="font-size: 0.65rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 700;">🟣 Group Project</span>
+                      <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">${slides.length} ${slides.length === 1 ? 'Card' : 'Cards'}</span>
+                    </div>
+
+                    ${miniCarouselHtml}
+
+                    <h4 style="font-weight: 700; font-size: 0.95rem; margin: 0 0 0.25rem 0; color: var(--text-primary); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${proj.title}">${proj.title}</h4>
+                    <p style="font-size: 0.78rem; line-height: 1.45; color: var(--text-secondary); margin: 0; text-align: justify; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                      ${proj.brief}
+                    </p>
+                  </div>
+                  
+                  <!-- Cooperating Schools Section -->
+                  <div style="display: flex; flex-direction: column; gap: 0.25rem; border-top: 1px dashed var(--panel-border); padding-top: 0.5rem; margin-top: 0.35rem;" onclick="event.stopPropagation()">
+                    <div style="font-size: 0.58rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.1rem;">Cooperating Schools</div>
+                    <div style="display: flex; flex-direction: column; gap: 0.15rem;">
+                      ${creatorSchool ? `
+                        <div style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.7rem; color: var(--text-secondary);">
+                          ${creatorFlag} <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">${creatorSchool.name}</span>
+                        </div>
+                      ` : ''}
+                      ${targetSchool ? `
+                        <div style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.7rem; color: var(--text-secondary);">
+                          ${targetFlag} <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">${targetSchool.name}</span>
+                        </div>
+                      ` : ''}
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            `;
+          }
+        }).join('')}
+      </div>
+    `;
   }
 
   likeArticleFromBoard(articleId) {
@@ -1949,6 +2090,7 @@ class App {
     }
     
     this.renderTeacherSchoolSpotlight();
+    this.renderTeacherAnnouncements();
   }
 
   // Render own school details and linked partner school connections on staff dashboard
@@ -3184,7 +3326,7 @@ class App {
                   </div>
                 </div>
                 <div style="background: rgba(0,0,0,0.1); border-radius: 6px; padding: 0.5rem; font-size: 0.75rem;">
-                  <div style="font-weight: 600; color: var(--secondary); margin-bottom: 0.15rem;">From: ${sender.name} (${sender.email})</div>
+                  <div style="font-weight: 600; color: var(--secondary); margin-bottom: 0.15rem;">From: ${sender.name} (<a href="mailto:${sender.email}" style="color: var(--secondary); text-decoration: underline;">${sender.email}</a>)</div>
                   <div style="font-style: italic; color: var(--text-secondary); line-height: 1.4;">"${c.requestMessage || 'No request message note.'}"</div>
                 </div>
               </div>
@@ -3271,7 +3413,7 @@ class App {
               <div style="display: flex; flex-direction: column; gap: 0.1rem; line-height: 1.2;">
                 <span style="font-size: 0.65rem; color: var(--text-muted);">School Coordinator</span>
                 <strong style="font-size: 0.75rem; color: var(--text-primary);">${partnerCoordinator.name}</strong>
-                ${partnerCoordinator.email ? `<span style="font-size: 0.65rem; color: var(--text-muted);">✉️ ${partnerCoordinator.email}</span>` : ''}
+                ${partnerCoordinator.email ? `<span style="font-size: 0.65rem; color: var(--text-muted);">✉️ <a href="mailto:${partnerCoordinator.email}" style="color: var(--secondary); text-decoration: underline;">${partnerCoordinator.email}</a></span>` : ''}
               </div>
             </div>
           `;
@@ -3463,6 +3605,11 @@ class App {
   }
 
   // Renders safeguarding control table
+  setSafeguardFilter(filter) {
+    this.safeguardFilter = filter;
+    this.renderTeacherSafeguarding();
+  }
+
   renderTeacherSafeguarding() {
     const tbody = document.getElementById('safeguarding-alerts-tbody');
     const teacher = this.getLoggedTeacher();
@@ -3474,14 +3621,52 @@ class App {
       return schoolId1 === mySchoolId || schoolId2 === mySchoolId;
     });
 
+    const openFlags = flags.filter(flag => {
+      const resolutions = window.db.getFlagResolutions(flag);
+      return (resolutions[mySchoolId]?.status !== 'Resolved');
+    });
+    const resolvedFlags = flags.filter(flag => {
+      const resolutions = window.db.getFlagResolutions(flag);
+      return (resolutions[mySchoolId]?.status === 'Resolved');
+    });
+
+    // Update counts in sub-tabs UI
+    const countOpenEl = document.getElementById('safeguard-count-open');
+    const countResolvedEl = document.getElementById('safeguard-count-resolved');
+    if (countOpenEl) countOpenEl.textContent = openFlags.length;
+    if (countResolvedEl) countResolvedEl.textContent = resolvedFlags.length;
+
+    // Update sub-tabs UI active state
+    const btnOpen = document.getElementById('safeguard-tab-open');
+    const btnResolved = document.getElementById('safeguard-tab-resolved');
+    if (btnOpen && btnResolved) {
+      if (this.safeguardFilter === 'open') {
+        btnOpen.style.background = 'rgba(239, 68, 68, 0.15)';
+        btnOpen.style.borderColor = 'var(--danger)';
+        btnOpen.style.color = 'var(--danger)';
+        btnResolved.style.background = 'transparent';
+        btnResolved.style.borderColor = 'var(--panel-border)';
+        btnResolved.style.color = 'var(--text-secondary)';
+      } else {
+        btnOpen.style.background = 'transparent';
+        btnOpen.style.borderColor = 'var(--panel-border)';
+        btnOpen.style.color = 'var(--text-secondary)';
+        btnResolved.style.background = 'rgba(16, 185, 129, 0.15)';
+        btnResolved.style.borderColor = 'var(--success)';
+        btnResolved.style.color = 'var(--success)';
+      }
+    }
+
+    const displayFlags = this.safeguardFilter === 'open' ? openFlags : resolvedFlags;
+
     tbody.innerHTML = '';
-    if (flags.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No safeguarding alerts logged.</td></tr>`;
+    if (displayFlags.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No ${this.safeguardFilter === 'open' ? 'open' : 'resolved'} safeguarding alerts logged.</td></tr>`;
       return;
     }
 
-    // Sort: Pending flags relative to my school first, then by date descending
-    const sortedFlags = [...flags].sort((a, b) => {
+    // Sort: Date descending
+    const sortedFlags = [...displayFlags].sort((a, b) => {
       const aResolutions = window.db.getFlagResolutions(a);
       const bResolutions = window.db.getFlagResolutions(b);
       const aMyPending = (aResolutions[mySchoolId]?.status !== 'Resolved');
@@ -4394,7 +4579,7 @@ class App {
           <td style="padding: 0.75rem 0.5rem; font-size: 0.85rem; font-weight: 600;">
             ${coord.name} ${isSelf ? '<span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">(You)</span>' : ''}
           </td>
-          <td style="padding: 0.75rem 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">${coord.email}</td>
+          <td style="padding: 0.75rem 0.5rem; font-size: 0.85rem; color: var(--text-secondary);"><a href="mailto:${coord.email}" style="color: var(--secondary); text-decoration: underline;">${coord.email}</a></td>
           <td style="padding: 0.75rem 0.5rem;">${roleBadge}</td>
           <td style="padding: 0.75rem 0.5rem; text-align: right;">
             <div style="display: inline-flex; gap: 0.5rem; justify-content: flex-end;">
@@ -4814,7 +4999,7 @@ class App {
         <td style="font-weight: 600;">${req.name}<br><span style="font-size: 0.75rem; font-weight: normal; color: var(--text-muted);">${req.code}</span></td>
         <td>${req.city}, ${req.country}</td>
         <td><span class="badge badge-info">${req.language.toUpperCase()}</span></td>
-        <td><strong>${req.coordinatorName}</strong><br><span style="font-size: 0.75rem; color: var(--text-muted);">${req.coordinatorEmail}</span></td>
+        <td><strong>${req.coordinatorName}</strong><br><span style="font-size: 0.75rem; color: var(--text-muted);"><a href="mailto:${req.coordinatorEmail}" style="color: var(--secondary); text-decoration: underline;">${req.coordinatorEmail}</a></span></td>
         <td>${statusBadge}</td>
         <td>${actionsMarkup}</td>
       `;
@@ -4837,19 +5022,56 @@ class App {
     this.refreshUI();
   }
 
+  setAdminSafeguardFilter(filter) {
+    this.adminSafeguardFilter = filter;
+    this.renderAdminSafeguarding();
+  }
+
   // Renders global safeguarding alerts in the admin dashboard
   renderAdminSafeguarding() {
     const tbody = document.getElementById('admin-safeguarding-tbody');
     const flags = window.db.getFlags();
 
+    const openFlags = flags.filter(flag => flag.status === 'Pending');
+    const resolvedFlags = flags.filter(flag => flag.status !== 'Pending');
+
+    // Update counts in admin sub-tabs UI
+    const countOpenEl = document.getElementById('admin-safeguard-count-open');
+    const countResolvedEl = document.getElementById('admin-safeguard-count-resolved');
+    if (countOpenEl) countOpenEl.textContent = openFlags.length;
+    if (countResolvedEl) countResolvedEl.textContent = resolvedFlags.length;
+
+    // Update admin sub-tabs UI active state
+    const btnOpen = document.getElementById('admin-safeguard-tab-open');
+    const btnResolved = document.getElementById('admin-safeguard-tab-resolved');
+    if (btnOpen && btnResolved) {
+      if (this.adminSafeguardFilter === 'open') {
+        btnOpen.style.background = 'rgba(239, 68, 68, 0.15)';
+        btnOpen.style.borderColor = 'var(--danger)';
+        btnOpen.style.color = 'var(--danger)';
+        btnResolved.style.background = 'transparent';
+        btnResolved.style.borderColor = 'var(--panel-border)';
+        btnResolved.style.color = 'var(--text-secondary)';
+      } else {
+        btnOpen.style.background = 'transparent';
+        btnOpen.style.borderColor = 'var(--panel-border)';
+        btnOpen.style.color = 'var(--text-secondary)';
+        btnResolved.style.background = 'rgba(16, 185, 129, 0.15)';
+        btnResolved.style.borderColor = 'var(--success)';
+        btnResolved.style.color = 'var(--success)';
+      }
+    }
+
+    const displayFlags = this.adminSafeguardFilter === 'open' ? openFlags : resolvedFlags;
+
     tbody.innerHTML = '';
-    if (flags.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No safeguarding alerts logged.</td></tr>`;
+    if (displayFlags.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No ${this.adminSafeguardFilter === 'open' ? 'open' : 'resolved'} safeguarding alerts logged.</td></tr>`;
       return;
     }
 
     // Sort: Pending flags first, then by date descending
-    const sortedFlags = [...flags].sort((a, b) => {
+    const sortedFlags = [...displayFlags].sort((a, b) => {
       if (a.status === 'Pending' && b.status !== 'Pending') return -1;
       if (a.status !== 'Pending' && b.status === 'Pending') return 1;
       return new Date(b.flaggedAt) - new Date(a.flaggedAt);
@@ -4943,7 +5165,7 @@ class App {
                 return `
                   <tr style="border-bottom: 1px solid var(--panel-border);">
                     <td style="padding: 0.5rem; font-weight: 600;">${c.name}</td>
-                    <td style="padding: 0.5rem; color: var(--text-secondary);">${c.email}</td>
+                    <td style="padding: 0.5rem; color: var(--text-secondary);"><a href="mailto:${c.email}" style="color: var(--secondary); text-decoration: underline;">${c.email}</a></td>
                     <td style="padding: 0.5rem;">${adminBadge}</td>
                     <td style="padding: 0.5rem;">
                       ${actionsHtml}
@@ -5050,7 +5272,7 @@ class App {
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 0.1rem; text-align: left;">
                       <strong style="font-size: 0.8rem; color: var(--text-primary);">${coord.name}</strong>
-                      <span style="font-size: 0.7rem; color: var(--text-secondary);">${coord.email}</span>
+                      <span style="font-size: 0.7rem; color: var(--text-secondary);"><a href="mailto:${coord.email}" style="color: var(--secondary); text-decoration: underline;">${coord.email}</a></span>
                       ${bioMarkup}
                     </div>
                   </div>
@@ -5234,13 +5456,61 @@ class App {
     if (!student) return;
     const school = window.db.getSchool(student.schoolId);
 
+    const isStaff = this.currentRole === 'teacher' || this.currentRole === 'admin';
     const modalContent = document.querySelector('#student-profile-modal .modal-content');
     if (modalContent) {
-      modalContent.style.maxWidth = '700px';
+      modalContent.style.maxWidth = isStaff ? '700px' : '400px';
     }
 
     const container = document.getElementById('student-profile-content');
     if (!container) return;
+
+    const biogText = student.personalBiog || student.pendingBiog || 'No biography details provided.';
+
+    if (!isStaff) {
+      container.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 1.25rem; text-align: center; align-items: center; padding: 0.5rem 0;">
+          <div class="user-avatar" style="width: 64px; height: 64px; font-size: 1.5rem; margin: 0 auto; background: linear-gradient(135deg, var(--secondary) 0%, var(--accent) 100%); display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #fff;">
+            ${student.name.split(' ').map(n => n[0]).join('')}
+          </div>
+          <div>
+            <h4 style="font-weight: 700; font-size: 1.2rem; margin: 0; color: var(--text-primary);">${student.name}</h4>
+            <div style="font-size: 0.85rem; color: var(--secondary); margin-top: 0.25rem; font-weight: 600;">
+              ${school ? school.name : ''}
+            </div>
+          </div>
+          
+          <div style="display: flex; gap: 1rem; width: 100%; justify-content: space-around; padding: 0.75rem; border: 1px solid var(--panel-border); border-radius: 8px; background: rgba(255,255,255,0.01); font-size: 0.85rem; box-sizing: border-box;">
+            <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
+              <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 500;">Age</span>
+              <span style="font-weight: bold; color: var(--text-primary); margin-top: 0.15rem;">${student.age}</span>
+            </div>
+            <div style="border-right: 1px solid var(--panel-border);"></div>
+            <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
+              <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 500;">Gender</span>
+              <span style="font-weight: bold; color: var(--text-primary); margin-top: 0.15rem;">${student.gender}</span>
+            </div>
+            <div style="border-right: 1px solid var(--panel-border);"></div>
+            <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
+              <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 500;">Year</span>
+              <span style="font-weight: bold; color: var(--text-primary); margin-top: 0.15rem;">${student.yearGroup}</span>
+            </div>
+          </div>
+          
+          <div style="width: 100%; text-align: left;">
+            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: bold; text-transform: uppercase; display: block; margin-bottom: 0.25rem;">Biography</span>
+            <p style="font-size: 0.85rem; line-height: 1.4; color: var(--text-secondary); margin: 0; padding: 0.75rem; border: 1px solid var(--panel-border); border-radius: 8px; background: var(--bg-color); font-style: italic;">
+              "${biogText}"
+            </p>
+          </div>
+        </div>
+        <div style="display: flex; justify-content: flex-end; margin-top: 1rem; border-top: 1px solid var(--panel-border); padding-top: 0.75rem; width: 100%;">
+          <button class="btn btn-secondary" onclick="app.closeModal('student-profile-modal')">Close Profile</button>
+        </div>
+      `;
+      this.openModal('student-profile-modal');
+      return;
+    }
 
     // 1. Get matched students info
     const matches = window.db.getMatches().filter(m => m.active && m.studentIds.includes(studentId));
@@ -5333,9 +5603,6 @@ class App {
         </div>
       `;
     }
-
-    const biogText = student.personalBiog || student.pendingBiog || 'No biography details provided.';
-
     container.innerHTML = `
       <div style="display: flex; gap: 1rem; align-items: center; border-bottom: 1px solid var(--panel-border); padding-bottom: 0.75rem;">
         <div class="user-avatar" style="width: 54px; height: 54px; font-size: 1.4rem; background: linear-gradient(135deg, var(--secondary) 0%, var(--accent) 100%);">
@@ -5360,6 +5627,7 @@ class App {
         </p>
       </div>
 
+      ${isStaff ? `
       <!-- Matched Pen Pals Section -->
       <div style="margin-top: 0.5rem;">
         <h5 style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem;">Matched Pen Pals (${matches.length})</h5>
@@ -5402,6 +5670,7 @@ class App {
           </div>
         </div>
       </div>
+      ` : ''}
 
       <div style="display: flex; justify-content: flex-end; margin-top: 1rem; border-top: 1px solid var(--panel-border); padding-top: 0.75rem;">
         <button class="btn btn-secondary" onclick="app.closeModal('student-profile-modal')">Close Profile</button>
@@ -5409,7 +5678,9 @@ class App {
     `;
 
     this.openModal('student-profile-modal');
-    this.renderStaffStudentMessagesList(studentId);
+    if (isStaff) {
+      this.renderStaffStudentMessagesList(studentId);
+    }
   }
 
   renderStaffStudentMessagesList(studentId) {
@@ -7835,6 +8106,246 @@ class App {
     
     // Refresh modal
     this.openResolveFlagModal(flagId, 'content');
+  }
+
+  // ================== NEW BREAK STUDENT LINKS MODAL METHODS ==================
+
+  openBreakStudentLinksModal() {
+    const teacher = this.getLoggedTeacher();
+    const ownSchoolId = teacher ? teacher.schoolId : 'school_1';
+    
+    const students = window.db.getStudents();
+    const myStudents = students.filter(s => s.schoolId === ownSchoolId);
+    const matchedMyStudents = myStudents.filter(s => s.matchStatus === 'matched');
+    
+    const listContainer = document.getElementById('break-links-student-list');
+    if (!listContainer) return;
+    listContainer.innerHTML = '';
+    
+    const selectAllCheckbox = document.getElementById('break-links-select-all');
+    if (selectAllCheckbox) selectAllCheckbox.checked = false;
+    
+    if (matchedMyStudents.length === 0) {
+      listContainer.innerHTML = `
+        <div style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.85rem; font-style: italic;">
+          No currently matched students in your school.
+        </div>
+      `;
+      const submitBtn = document.getElementById('break-links-submit-btn');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.5';
+        submitBtn.style.cursor = 'not-allowed';
+        submitBtn.textContent = 'Break Selected Links (0)';
+      }
+      this.openModal('break-student-links-modal');
+      return;
+    }
+    
+    const matches = window.db.getMatches();
+    
+    matchedMyStudents.forEach(stud => {
+      const studentMatches = matches.filter(m => m.active && m.studentIds.includes(stud.id));
+      const partnerNamesList = studentMatches.map(m => {
+        const partnerId = m.studentIds.find(id => id !== stud.id);
+        const partner = window.db.getStudent(partnerId);
+        if (!partner) return '';
+        const partnerSchool = window.db.getSchool(partner.schoolId);
+        const flag = this.getSchoolFlag(partnerSchool?.country);
+        return `${flag} ${partner.name}`;
+      }).filter(n => n !== '');
+      
+      const div = document.createElement('div');
+      div.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border); border-radius: 6px;';
+      div.innerHTML = `
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.85rem; color: var(--text-primary);">
+          <input type="checkbox" class="break-link-checkbox" value="${stud.id}" onclick="app.updateBreakLinksSubmitBtn()">
+          <strong>${stud.name}</strong> (${stud.yearGroup})
+        </label>
+        <span style="font-size: 0.75rem; color: var(--text-secondary);">
+          Matched with: ${partnerNamesList.join(', ')}
+        </span>
+      `;
+      listContainer.appendChild(div);
+    });
+    
+    this.updateBreakLinksSubmitBtn();
+    this.openModal('break-student-links-modal');
+  }
+
+  updateBreakLinksSubmitBtn() {
+    const checkboxes = document.querySelectorAll('.break-link-checkbox');
+    const checked = document.querySelectorAll('.break-link-checkbox:checked');
+    const submitBtn = document.getElementById('break-links-submit-btn');
+    const selectAllCheckbox = document.getElementById('break-links-select-all');
+    
+    if (selectAllCheckbox && checkboxes.length > 0) {
+      selectAllCheckbox.checked = checked.length === checkboxes.length;
+    }
+    
+    if (submitBtn) {
+      submitBtn.disabled = checked.length === 0;
+      submitBtn.style.opacity = checked.length === 0 ? '0.5' : '1';
+      submitBtn.style.cursor = checked.length === 0 ? 'not-allowed' : 'pointer';
+      submitBtn.textContent = `Break Selected Links (${checked.length})`;
+    }
+  }
+
+  toggleSelectAllBreakLinks(selectAllCb) {
+    const checkboxes = document.querySelectorAll('.break-link-checkbox');
+    checkboxes.forEach(cb => {
+      cb.checked = selectAllCb.checked;
+    });
+    this.updateBreakLinksSubmitBtn();
+  }
+
+  submitBreakSelectedLinks() {
+    const checked = document.querySelectorAll('.break-link-checkbox:checked');
+    if (checked.length === 0) return;
+    
+    if (confirm(`Are you sure you want to end active pen pal links for the ${checked.length} selected student(s)? This will unlink them and reset them to Unmatched status.`)) {
+      const teacher = this.getLoggedTeacher();
+      const teacherName = teacher ? teacher.name : 'Teacher';
+      const selectedIds = Array.from(checked).map(cb => cb.value);
+      
+      let count = 0;
+      selectedIds.forEach(studentId => {
+        const match = window.db.getMatches().find(m => m.active && m.studentIds.includes(studentId));
+        if (match) {
+          window.db.deleteMatch(match.id);
+          count++;
+        }
+      });
+      
+      if (count > 0) {
+        window.db.addLog('Selective Links Terminated', `Ended match links for ${count} student(s) at end of school year.`, `Teacher ${teacherName}`);
+        alert(`Successfully ended ${count} student link(s).`);
+        this.closeModal('break-student-links-modal');
+        this.refreshUI();
+      }
+    }
+  }
+
+  // ================== SCHOOL ANNOUNCEMENTS METHODS ==================
+
+  openAnnouncementModal() {
+    const titleInput = document.getElementById('announcement-title');
+    const contentInput = document.getElementById('announcement-content');
+    if (titleInput) titleInput.value = '';
+    if (contentInput) contentInput.value = '';
+    this.openModal('post-announcement-modal');
+  }
+
+  submitPostAnnouncement(e) {
+    e.preventDefault();
+    const title = document.getElementById('announcement-title').value.trim();
+    const content = document.getElementById('announcement-content').value.trim();
+    const teacher = this.getLoggedTeacher();
+    const ownSchoolId = teacher ? teacher.schoolId : 'school_1';
+
+    if (!title || !content) {
+      alert('Please enter both title and content.');
+      return;
+    }
+
+    const postedBy = `Teacher ${teacher ? teacher.name : 'Unknown'}`;
+    window.db.addNews({
+      title,
+      content,
+      postedBy,
+      schoolId: ownSchoolId,
+      timestamp: new Date().toISOString()
+    });
+
+    window.db.addLog('Announcement Posted', `Posted school announcement: "${title}".`, postedBy);
+    alert('Announcement posted successfully.');
+    this.closeModal('post-announcement-modal');
+    this.refreshUI();
+  }
+
+  deleteAnnouncement(id) {
+    if (confirm('Are you sure you want to delete this announcement?')) {
+      const teacher = this.getLoggedTeacher();
+      const teacherName = teacher ? teacher.name : 'Teacher';
+      window.db.deleteNews(id);
+      window.db.addLog('Announcement Deleted', `Deleted school announcement ID: ${id}.`, `Teacher ${teacherName}`);
+      alert('Announcement deleted successfully.');
+      this.refreshUI();
+    }
+  }
+
+  renderTeacherAnnouncements() {
+    const teacher = this.getLoggedTeacher();
+    const ownSchoolId = teacher ? teacher.schoolId : 'school_1';
+    const container = document.getElementById('teacher-announcements-list');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    const myAnnouncements = window.db.getNews().filter(n => n.schoolId === ownSchoolId);
+    
+    if (myAnnouncements.length === 0) {
+      container.innerHTML = `
+        <p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; padding: 2rem; margin: 0;">
+          No announcements posted for your school yet.
+        </p>
+      `;
+      return;
+    }
+    
+    myAnnouncements
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .forEach(ann => {
+        const div = document.createElement('div');
+        div.style.cssText = 'display: flex; justify-content: space-between; align-items: flex-start; padding: 0.75rem 1rem; background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border); border-radius: 8px;';
+        div.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 0.25rem; flex: 1; margin-right: 1rem;">
+            <h4 style="font-size: 0.95rem; font-weight: 700; margin: 0; color: var(--text-primary);">${ann.title}</h4>
+            <span style="font-size: 0.7rem; color: var(--text-muted);">
+              Posted by ${ann.postedBy} on ${new Date(ann.timestamp).toLocaleString()}
+            </span>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0.25rem 0 0 0; white-space: pre-wrap; line-height: 1.4;">
+              ${ann.content}
+            </p>
+          </div>
+          <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: rgba(239,68,68,0.2); padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="app.deleteAnnouncement('${ann.id}')">Delete</button>
+        `;
+        container.appendChild(div);
+      });
+  }
+
+  // ================== CAROUSEL SLIDE CONTROL METHODS ==================
+
+  prevCardSlide(projectId, event) {
+    if (event) event.stopPropagation();
+    const slides = window.db.getProject(projectId)?.slides || [];
+    let idx = this.projectCardSlideIndices[projectId] || 0;
+    if (idx > 0) {
+      this.projectCardSlideIndices[projectId] = idx - 1;
+      const student = window.db.getStudent(this.currentStudentId);
+      if (student) this.renderDiscoveriesBoard(student);
+    }
+  }
+
+  nextCardSlide(projectId, event) {
+    if (event) event.stopPropagation();
+    const slides = window.db.getProject(projectId)?.slides || [];
+    let idx = this.projectCardSlideIndices[projectId] || 0;
+    if (idx < slides.length - 1) {
+      this.projectCardSlideIndices[projectId] = idx + 1;
+      const student = window.db.getStudent(this.currentStudentId);
+      if (student) this.renderDiscoveriesBoard(student);
+    }
+  }
+
+  openReadOnlyProjectPreview(projectId) {
+    const project = window.db.getProject(projectId);
+    if (!project || !project.slides || project.slides.length === 0) return;
+
+    this.activeProjectId = projectId;
+    this.previewSlideIndex = 0;
+    this.renderPreviewProjectSlide();
+    this.openModal('project-deck-preview-modal');
   }
 }
 
