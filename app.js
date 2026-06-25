@@ -3116,10 +3116,10 @@ class App {
             
             return `
               <div class="panel" style="padding: 1rem; background: rgba(255,255,255,0.02); display: flex; justify-content: space-between; align-items: center; border-radius: 12px; border: 1px solid var(--panel-border);">
-                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;" onclick="app.openSchoolDetail('${school?.id}')">
                   <div style="font-size: 1.5rem; width: 40px; height: 40px; background: rgba(0,0,0,0.15); border-radius: 8px; display: flex; align-items: center; justify-content: center;">🏫</div>
                   <div>
-                    <h4 style="font-weight: 700; font-size: 0.95rem; margin: 0; display: flex; align-items: center; gap: 0.4rem;">
+                    <h4 style="font-weight: 700; font-size: 0.95rem; margin: 0; display: flex; align-items: center; gap: 0.4rem; text-decoration: underline;">
                       ${flag} ${school?.name}
                     </h4>
                     <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0.15rem 0 0 0;">${school?.city}, ${school?.country} • Lang: ${school?.language.toUpperCase()}</p>
