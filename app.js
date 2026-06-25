@@ -2097,7 +2097,11 @@ class App {
         </td>
         <td>${activeBadge}</td>
         <td>
-          <button class="btn btn-secondary btn-small" onclick="app.simulateInviteResend('${stud.id}')" title="Resend Invite Code">Resend invite</button>
+          ${stud.invitationStatus === 'Invited' 
+            ? `<button class="btn btn-secondary btn-small" onclick="app.simulateInviteResend('${stud.id}')" title="Resend Invite Code">Resend invite</button>` 
+            : stud.invitationStatus === 'Active' 
+              ? `<button class="btn btn-secondary btn-small" onclick="app.simulateResetPassword('${stud.id}')" title="Reset Student Password">Reset PW</button>` 
+              : ''}
           <button class="btn btn-danger btn-small" onclick="app.removeStudentAccount('${stud.id}')">Archive</button>
         </td>
       `;
@@ -2230,6 +2234,15 @@ class App {
       window.db.addLog('Invitation Resent', `Resent sign-up email invitation to ${stud.name}.`, 'Teacher');
       this.refreshUI();
       alert(`Invitation link successfully resent to ${stud.email}`);
+    }
+  }
+
+  // Simulate password reset action
+  simulateResetPassword(studentId) {
+    const stud = window.db.getStudent(studentId);
+    if (stud) {
+      window.db.addLog('Password Reset Initiated', `Resent password reset invitation link to student ${stud.name}.`, 'Teacher');
+      alert(`Password reset invitation link successfully resent to ${stud.email}`);
     }
   }
 
@@ -4132,6 +4145,10 @@ class App {
     const teacher = this.getLoggedTeacher();
     const schoolId = teacher ? teacher.schoolId : 'school_1';
     if (teacher) {
+      const nameInput = document.getElementById('coordinator-name-input');
+      if (nameInput) {
+        nameInput.value = teacher.name || '';
+      }
       document.getElementById('coordinator-bio-input').value = teacher.bio || '';
       
       // Coordinator Photo Preview
@@ -4244,13 +4261,20 @@ class App {
       }
     }
 
+    const nameInput = document.getElementById('coordinator-name-input');
+    const name = nameInput ? nameInput.value.trim() : '';
+    if (!name) {
+      alert("Please provide your name.");
+      return;
+    }
+
     const bio = document.getElementById('coordinator-bio-input').value.trim();
 
     const teacher = this.getLoggedTeacher();
     const schoolId = teacher ? teacher.schoolId : 'school_1';
     window.db.updateSchool(schoolId, { description, logoUrl, photoUrl });
     if (teacher) {
-      window.db.updateCoordinator(teacher.id, { bio, photoUrl: coordPhotoUrl });
+      window.db.updateCoordinator(teacher.id, { name, bio, photoUrl: coordPhotoUrl });
     }
 
     alert('School profile updated successfully! Matches and exchange partner students will see the updated spotlight.');
