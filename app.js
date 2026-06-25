@@ -395,6 +395,45 @@ class App {
       });
     }
 
+    // Coordinator profile photo custom upload handlers
+    const coordUploadBtn = document.getElementById('coordinator-photo-upload-btn');
+    const coordUploadInput = document.getElementById('coordinator-photo-upload');
+    const coordPreview = document.getElementById('coordinator-photo-preview');
+    const coordPlaceholder = document.getElementById('coordinator-photo-placeholder');
+    const coordRemoveBtn = document.getElementById('coordinator-photo-remove-btn');
+
+    if (coordUploadBtn && coordUploadInput) {
+      coordUploadBtn.addEventListener('click', () => coordUploadInput.click());
+      coordUploadInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          if (file.size > 1.5 * 1024 * 1024) {
+            alert('Image file is too large. Please select an image smaller than 1.5MB.');
+            coordUploadInput.value = '';
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            coordPreview.src = event.target.result;
+            coordPreview.style.display = 'block';
+            if (coordPlaceholder) coordPlaceholder.style.display = 'none';
+            if (coordRemoveBtn) coordRemoveBtn.style.display = 'inline-block';
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+
+    if (coordRemoveBtn) {
+      coordRemoveBtn.addEventListener('click', () => {
+        coordPreview.src = '';
+        coordPreview.style.display = 'none';
+        if (coordPlaceholder) coordPlaceholder.style.display = 'block';
+        coordRemoveBtn.style.display = 'none';
+        if (coordUploadInput) coordUploadInput.value = '';
+      });
+    }
+
     const profileForm = document.getElementById('school-profile-form');
     profileForm.addEventListener('submit', (e) => this.handleSchoolProfileSubmit(e));
 
@@ -1175,6 +1214,41 @@ class App {
             </div>
           `;
           noticesContainer.appendChild(item);
+        });
+      }
+    }
+
+    // Render partner schools card
+    const partnerSchoolsContainer = document.getElementById('student-dashboard-partner-schools-list');
+    if (partnerSchoolsContainer) {
+      const partnerSchools = window.db.getSchools().filter(s => s.id !== student.schoolId);
+      partnerSchoolsContainer.innerHTML = '';
+      if (partnerSchools.length === 0) {
+        partnerSchoolsContainer.innerHTML = '<p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1rem;">No partner schools connected yet.</p>';
+      } else {
+        partnerSchools.forEach(sch => {
+          const item = document.createElement('div');
+          item.style.padding = '0.65rem';
+          item.style.background = 'rgba(255,255,255,0.015)';
+          item.style.border = '1px solid var(--panel-border)';
+          item.style.borderRadius = '8px';
+          item.style.display = 'flex';
+          item.style.justifyContent = 'space-between';
+          item.style.alignItems = 'center';
+          item.style.cursor = 'pointer';
+          item.style.transition = 'all 0.2s';
+          item.addEventListener('mouseenter', () => item.style.background = 'rgba(255,255,255,0.04)');
+          item.addEventListener('mouseleave', () => item.style.background = 'rgba(255,255,255,0.015)');
+          item.addEventListener('click', () => this.openSchoolDetail(sch.id));
+
+          item.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              ${this.getSchoolFlag(sch.country)}
+              <strong style="font-size: 0.75rem; color: var(--text-primary); text-decoration: underline;">${sch.name}</strong>
+            </div>
+            <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600;">${sch.city}</span>
+          `;
+          partnerSchoolsContainer.appendChild(item);
         });
       }
     }
@@ -4058,6 +4132,24 @@ class App {
     const schoolId = teacher ? teacher.schoolId : 'school_1';
     if (teacher) {
       document.getElementById('coordinator-bio-input').value = teacher.bio || '';
+      
+      // Coordinator Photo Preview
+      const coordPreview = document.getElementById('coordinator-photo-preview');
+      const coordPlaceholder = document.getElementById('coordinator-photo-placeholder');
+      const coordRemoveBtn = document.getElementById('coordinator-photo-remove-btn');
+      if (coordPreview) {
+        if (teacher.photoUrl) {
+          coordPreview.src = teacher.photoUrl;
+          coordPreview.style.display = 'block';
+          if (coordPlaceholder) coordPlaceholder.style.display = 'none';
+          if (coordRemoveBtn) coordRemoveBtn.style.display = 'inline-block';
+        } else {
+          coordPreview.src = '';
+          coordPreview.style.display = 'none';
+          if (coordPlaceholder) coordPlaceholder.style.display = 'block';
+          if (coordRemoveBtn) coordRemoveBtn.style.display = 'none';
+        }
+      }
     }
     const school = window.db.getSchool(schoolId);
     if (school) {
@@ -4142,13 +4234,22 @@ class App {
       }
     }
 
+    let coordPhotoUrl = '';
+    const coordPreview = document.getElementById('coordinator-photo-preview');
+    if (coordPreview && coordPreview.style.display !== 'none' && coordPreview.src) {
+      coordPhotoUrl = coordPreview.src;
+      if (coordPhotoUrl.startsWith(window.location.origin)) {
+        coordPhotoUrl = coordPhotoUrl.substring(window.location.origin.length);
+      }
+    }
+
     const bio = document.getElementById('coordinator-bio-input').value.trim();
 
     const teacher = this.getLoggedTeacher();
     const schoolId = teacher ? teacher.schoolId : 'school_1';
     window.db.updateSchool(schoolId, { description, logoUrl, photoUrl });
     if (teacher) {
-      window.db.updateCoordinator(teacher.id, { bio });
+      window.db.updateCoordinator(teacher.id, { bio, photoUrl: coordPhotoUrl });
     }
 
     alert('School profile updated successfully! Matches and exchange partner students will see the updated spotlight.');
@@ -4800,7 +4901,39 @@ class App {
 
     let coordinatorsSection = '';
     let rosterSection = '';
-    if (this.currentRole !== 'student') {
+    if (this.currentRole === 'student') {
+      if (schoolCoords.length > 0) {
+        coordinatorsSection = `
+          <div style="margin-top: 0.5rem; border-top: 1px dashed var(--panel-border); padding-top: 0.75rem;">
+            <h5 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">School Coordinator(s)</h5>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+              ${schoolCoords.map(coord => {
+                const photoMarkup = coord.photoUrl 
+                  ? `<img src="${coord.photoUrl}" alt="${coord.name}" style="width: 100%; height: 100%; object-fit: cover;">`
+                  : `<span style="font-size: 1.1rem;">👤</span>`;
+                  
+                const bioMarkup = coord.bio 
+                  ? `<p style="font-size: 0.75rem; color: var(--text-muted); font-style: italic; margin-top: 0.15rem; line-height: 1.35; white-space: pre-wrap;">"${coord.bio}"</p>`
+                  : '';
+                  
+                return `
+                  <div style="display: flex; gap: 0.75rem; padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.01); border: 1px solid var(--panel-border); border-radius: 8px;">
+                    <div style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--panel-border); overflow: hidden; background: rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                      ${photoMarkup}
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.1rem; text-align: left;">
+                      <strong style="font-size: 0.8rem; color: var(--text-primary);">${coord.name}</strong>
+                      <span style="font-size: 0.7rem; color: var(--text-secondary);">${coord.email}</span>
+                      ${bioMarkup}
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      }
+    } else {
       coordinatorsSection = `
         <div style="margin-top: 0.5rem; border-top: 1px dashed var(--panel-border); padding-top: 0.75rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">

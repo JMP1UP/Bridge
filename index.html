@@ -249,6 +249,16 @@
               </div>
             </div>
 
+            <!-- Partner Schools Card (Right Column) -->
+            <div class="panel news-card" id="student-partner-schools-panel">
+              <div class="panel-header" style="border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
+                <h2 class="panel-title" style="color: var(--secondary); font-size: 1.05rem;">🏫 <span data-localize="partner_schools">Partner Schools</span></h2>
+              </div>
+              <div id="student-dashboard-partner-schools-list" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 220px; overflow-y: auto; padding-right: 0.25rem;">
+                <!-- Populated dynamically by JS -->
+              </div>
+            </div>
+
             <!-- Cultural Discoveries Dashboard Widget (Right Column) -->
             <div class="panel news-card" id="student-discoveries-panel">
               <div class="panel-header" style="border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem; margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
@@ -1061,6 +1071,22 @@
             <div class="form-group">
               <label for="coordinator-bio-input">Coordinator Biography & Introduction</label>
               <textarea class="form-control" id="coordinator-bio-input" style="height: 100px; resize: vertical;" placeholder="Introduce yourself to partner school coordinators (e.g. your teaching experience, role)..." required></textarea>
+            </div>
+
+            <!-- Coordinator Profile Picture upload -->
+            <div class="form-group" style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.25rem;">
+              <label style="font-size: 0.85rem; font-weight: 600;">Your Profile Picture:</label>
+              <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: rgba(255,255,255,0.01); border: 1px dashed var(--panel-border); border-radius: 8px;">
+                <div style="width: 60px; height: 60px; border-radius: 50%; border: 1px solid var(--panel-border); overflow: hidden; background: rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  <img id="coordinator-photo-preview" src="" alt="Profile Photo" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+                  <span id="coordinator-photo-placeholder" style="font-size: 1.5rem;">👤</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.35rem; align-items: flex-start;">
+                  <input type="file" id="coordinator-photo-upload" accept="image/*" style="display: none;">
+                  <button type="button" class="btn btn-secondary btn-small" id="coordinator-photo-upload-btn">Upload Profile Picture</button>
+                  <button type="button" id="coordinator-photo-remove-btn" style="display: none; background: none; border: none; color: var(--danger); font-size: 0.75rem; cursor: pointer; padding: 0;">Remove Photo</button>
+                </div>
+              </div>
             </div>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
