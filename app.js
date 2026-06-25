@@ -3418,10 +3418,22 @@ class App {
       if (proj) {
         if (proj.slides) {
           slidesMarkup = proj.slides.map((s, idx) => {
+            let imgMarkup = '';
+            if (s.photoUrl) {
+              imgMarkup = `
+                <div style="width: 100%; height: 80px; background: rgba(0,0,0,0.2); border-radius: 4px; overflow: hidden; margin-top: 0.25rem; border: 1px solid var(--panel-border); display: flex; align-items: center; justify-content: center;">
+                  <img src="${s.photoUrl}" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                </div>
+              `;
+            }
             return `
-              <div style="padding: 0.5rem; background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border); border-radius: 6px; margin-bottom: 0.5rem; font-size: 0.8rem;">
-                <strong>Slide ${idx + 1}: ${s.title || 'Untitled'}</strong> (by ${s.author})
-                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.2rem;">${s.content || '(Empty)'}</div>
+              <div style="padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.01); border: 1px solid var(--panel-border); border-radius: 6px; margin-bottom: 0.4rem; font-size: 0.8rem; display: flex; flex-direction: column; gap: 0.25rem;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: bold;">
+                  <span style="color: var(--text-primary);">Slide ${idx + 1}: ${s.title || 'Untitled'}</span>
+                  <span style="font-weight: normal; color: var(--text-muted); font-size: 0.7rem;">by ${s.author}</span>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary); white-space: pre-wrap; line-height: 1.4;">${s.content || '(Empty content)'}</div>
+                ${imgMarkup}
               </div>
             `;
           }).join('');
