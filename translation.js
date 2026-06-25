@@ -87,7 +87,19 @@ const UI_TRANSLATIONS = {
     level_great_penpals: "Great Pen Pals! 🌟",
     level_super_friends: "Super Friends! 💖",
     auto_translate: "Auto-Translate",
-    accents_keyboard: "Accents & Umlauts"
+    accents_keyboard: "Accents & Umlauts",
+    staff_notices: "Staff Notices",
+    no_staff_notices: "No notifications from staff.",
+    my_penpal: "My Pen Pal",
+    discoveries: "Discoveries",
+    view_all: "View All",
+    notice_badge: "Notice",
+    action_required_badge: "Action Required",
+    agree_btn: "I Agree",
+    agreed_badge: "Read & Agreed",
+    brief_instructions: "Brief & Instructions",
+    from_label: "From",
+    teacher_label: "Teacher"
   },
   de: {
     stud_dashboard: "Schüler-Dashboard",
@@ -176,7 +188,19 @@ const UI_TRANSLATIONS = {
     level_great_penpals: "Super Brieffreunde! 🌟",
     level_super_friends: "Beste Freunde! 💖",
     auto_translate: "Auto-Übersetzung",
-    accents_keyboard: "Umlaute & Akzente"
+    accents_keyboard: "Umlaute & Akzente",
+    staff_notices: "Lehrer-Nachrichten",
+    no_staff_notices: "Keine Mitteilungen von Lehrkräften.",
+    my_penpal: "Mein Brieffreund",
+    discoveries: "Entdeckungen",
+    view_all: "Alle anzeigen",
+    notice_badge: "Mitteilung",
+    action_required_badge: "Aktion erforderlich",
+    agree_btn: "Einverstanden",
+    agreed_badge: "Gelesen & Bestätigt",
+    brief_instructions: "Briefing & Anweisungen",
+    from_label: "Von",
+    teacher_label: "Lehrkraft"
   }
 };
 

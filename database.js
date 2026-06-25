@@ -667,6 +667,12 @@ class LocalDB {
   }
 
   getSchoolsForFlag(flag) {
+    if (flag.projectId && !flag.messageId) {
+      const proj = this.getProjects().find(p => p.id === flag.projectId);
+      if (proj) {
+        return { schoolId1: proj.creatorSchoolId, schoolId2: proj.targetSchoolId };
+      }
+    }
     const msg = this.getMessages().find(m => m.id === flag.messageId);
     if (!msg) return { schoolId1: null, schoolId2: null };
 
@@ -788,7 +794,7 @@ class LocalDB {
       this.saveTable('flags', flags);
       
       // Unflag message if all schools resolved it
-      if (allResolved) {
+      if (allResolved && flag.messageId) {
         const msgs = this.getMessages();
         const mIdx = msgs.findIndex(m => m.id === flag.messageId);
         if (mIdx !== -1) {

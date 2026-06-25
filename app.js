@@ -297,6 +297,7 @@ class App {
     // Report safety concern form listener
     document.getElementById('student-report-btn').addEventListener('click', () => this.openModal('report-concern-modal'));
     document.getElementById('report-concern-form').addEventListener('submit', (e) => this.handleReportConcern(e));
+    document.getElementById('report-project-concern-form').addEventListener('submit', (e) => this.handleReportProjectConcern(e));
 
     // Teacher Student roster actions
     document.getElementById('invite-student-btn').addEventListener('click', () => this.openInviteModal());
@@ -1098,6 +1099,7 @@ class App {
     if (noticesContainer) {
       const allMsgs = window.db.getStaffStudentMessages();
       const notices = allMsgs.filter(m => m.recipientId === student.id);
+      const translations = window.translator.UI_TRANSLATIONS[this.interfaceLang] || window.translator.UI_TRANSLATIONS['en'];
       
       // Auto-mark unread messages as Read when displayed (unless they require agreement, which requires click)
       let changed = false;
@@ -1113,7 +1115,7 @@ class App {
 
       noticesContainer.innerHTML = '';
       if (notices.length === 0) {
-        noticesContainer.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1.5rem; border: 1px dashed var(--panel-border); border-radius: 8px;">No staff messages received.</p>`;
+        noticesContainer.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1.5rem; border: 1px dashed var(--panel-border); border-radius: 8px;">${translations.no_staff_notices || 'No staff messages received.'}</p>`;
       } else {
         const sortedNotices = [...notices].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         sortedNotices.forEach(notice => {
@@ -1131,17 +1133,17 @@ class App {
 
           if (notice.requireAgreement) {
             if (notice.status === 'Agreed') {
-              statusBadgeHtml = `<span class="badge badge-success" style="font-size: 0.65rem; font-weight: 700; margin-left: auto;">Read & Agreed</span>`;
+              statusBadgeHtml = `<span class="badge badge-success" style="font-size: 0.65rem; font-weight: 700; margin-left: auto;">${translations.agreed_badge || 'Read & Agreed'}</span>`;
             } else {
               borderStyle = '1px solid var(--warning)';
               bgStyle = 'rgba(245, 158, 11, 0.03)';
               statusBadgeHtml = `
-                <span class="badge badge-warning" style="font-size: 0.65rem; font-weight: 700; margin-left: auto;">Action Required</span>
-                <button class="btn btn-primary btn-small" style="margin-top: 0.4rem; padding: 0.2rem 0.5rem; font-size: 0.75rem; font-weight: 600; width: fit-content;" onclick="app.agreeToStaffMessage('${notice.id}')">I Read & Agree</button>
+                <span class="badge badge-warning" style="font-size: 0.65rem; font-weight: 700; margin-left: auto;">${translations.action_required_badge || 'Action Required'}</span>
+                <button class="btn btn-primary btn-small" style="margin-top: 0.4rem; padding: 0.2rem 0.5rem; font-size: 0.75rem; font-weight: 600; width: fit-content;" onclick="app.agreeToStaffMessage('${notice.id}')">${translations.agree_btn || 'I Read & Agree'}</button>
               `;
             }
           } else {
-            statusBadgeHtml = `<span class="badge badge-info" style="font-size: 0.65rem; font-weight: 700; margin-left: auto;">Notice</span>`;
+            statusBadgeHtml = `<span class="badge badge-info" style="font-size: 0.65rem; font-weight: 700; margin-left: auto;">${translations.notice_badge || 'Notice'}</span>`;
           }
 
           item.style.border = borderStyle;
@@ -1149,7 +1151,7 @@ class App {
 
           item.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; border-bottom: 1px dashed var(--panel-border); padding-bottom: 0.25rem;">
-              <strong style="color: var(--secondary); font-size: 0.8rem;">From: Teacher ${notice.senderName}</strong>
+              <strong style="color: var(--secondary); font-size: 0.8rem;">${translations.from_label || 'From'}: ${translations.teacher_label || 'Teacher'} ${notice.senderName}</strong>
               <span style="font-size: 0.7rem; color: var(--text-muted);">${new Date(notice.timestamp).toLocaleString()}</span>
             </div>
             <p style="margin: 0.25rem 0; line-height: 1.4; color: var(--text-secondary); text-align: justify;">${notice.text}</p>
@@ -1623,6 +1625,43 @@ class App {
     document.getElementById('report-concern-form').reset();
     
     alert('Thank you for reporting this concern. Your teachers have been notified and the chat is paused until review.');
+    
+    this.refreshUI();
+  }
+
+  handleReportProjectConcern(e) {
+    e.preventDefault();
+    const reason = document.getElementById('report-project-reason').value;
+    const details = document.getElementById('report-project-details').value;
+    const student = window.db.getStudent(this.currentStudentId);
+
+    if (!this.activeProjectId || !student) return;
+
+    // Create flag and pause project
+    window.db.updateProject(this.activeProjectId, { paused: true });
+    
+    // Register safeguarding alert
+    const flags = window.db.getFlags();
+    const newFlag = {
+      id: 'flag_proj_' + Date.now(),
+      projectId: this.activeProjectId,
+      status: 'Pending',
+      flaggedAt: new Date().toISOString(),
+      reason: reason,
+      details: details,
+      reportedBy: student.name,
+      reviewedBy: null,
+      reviewedAt: null,
+      actionTaken: null
+    };
+    flags.push(newFlag);
+    window.db.saveTable('flags', flags);
+    window.db.addLog('Project Concern Flagged', `Student ${student.name} flagged project. Reason: ${reason}`, student.name);
+
+    this.closeModal('report-project-concern-modal');
+    document.getElementById('report-project-concern-form').reset();
+    
+    alert('Thank you for reporting this concern. Your teachers have been notified and the project workspace is suspended until review.');
     
     this.refreshUI();
   }
@@ -3279,10 +3318,6 @@ class App {
     });
 
     sortedFlags.forEach(flag => {
-      const msg = window.db.getMessages().find(m => m.id === flag.messageId);
-      const sender = msg ? window.db.getStudent(msg.senderId) : null;
-      const match = msg ? window.db.getMatches().find(m => m.id === msg.matchId) : null;
-      
       // Get resolutions
       const resolutions = window.db.getFlagResolutions(flag);
       const myResolution = resolutions[mySchoolId] || { status: 'Pending' };
@@ -3316,17 +3351,39 @@ class App {
         }
       }
 
+      const isProjectFlag = !!flag.projectId;
+      let flagTitle = '';
+      let flagSubtitle = '';
+      let flagReasonText = '';
+      let flagDetailsText = '';
+
+      if (isProjectFlag) {
+        const proj = window.db.getProject(flag.projectId);
+        flagTitle = flag.reportedBy || 'Student';
+        flagSubtitle = `<span style="font-size: 0.75rem; font-weight: normal; color: var(--text-muted);">Project: ${proj ? proj.title : 'N/A'}</span>`;
+        flagReasonText = `Project Concern: ${flag.reason || 'Safety Alert'}`;
+        flagDetailsText = flag.details || '';
+      } else {
+        const msg = window.db.getMessages().find(m => m.id === flag.messageId);
+        const sender = msg ? window.db.getStudent(msg.senderId) : null;
+        const match = msg ? window.db.getMatches().find(m => m.id === msg.matchId) : null;
+        flagTitle = sender ? sender.name : flag.reportedBy || 'Student';
+        flagSubtitle = `<span style="font-size: 0.75rem; font-weight: normal; color: var(--text-muted);">Match ID: ${match ? match.id : 'N/A'}</span>`;
+        flagReasonText = `Reason: ${flag.reason || msg?.flagReason || 'Triggered Keyword alert'}`;
+        flagDetailsText = msg ? msg.text : 'N/A';
+      }
+
       const row = document.createElement('tr');
       row.innerHTML = `
         <td>${new Date(flag.flaggedAt).toLocaleString()}</td>
         <td style="font-weight: 600;">
-          ${sender ? sender.name : flag.reportedBy || 'Student'}<br>
-          <span style="font-size: 0.75rem; font-weight: normal; color: var(--text-muted);">Match ID: ${match ? match.id : 'N/A'}</span>
+          ${flagTitle}<br>
+          ${flagSubtitle}
         </td>
         <td>
-          <strong style="color: var(--danger); font-size: 0.8rem;">Reason: ${flag.reason || msg?.flagReason || 'Triggered Keyword alert'}</strong>
+          <strong style="color: var(--danger); font-size: 0.8rem;">${flagReasonText}</strong>
           <div style="font-size: 0.85rem; font-style: italic; background: rgba(0,0,0,0.1); padding: 0.5rem; border-radius: 6px; margin-top: 0.25rem;">
-            "${msg ? msg.text : 'N/A'}"
+            "${flagDetailsText}"
           </div>
         </td>
         <td>${statusBadgeHtml}</td>
@@ -3348,32 +3405,67 @@ class App {
     const flag = window.db.getFlags().find(f => f.id === flagId);
     if (!flag) return;
 
-    const msg = window.db.getMessages().find(m => m.id === flag.messageId);
-    const sender = msg ? window.db.getStudent(msg.senderId) : null;
-    const match = msg ? window.db.getMatches().find(m => m.id === msg.matchId) : null;
-    
-    // Get chat context (last 4 messages before flagged one)
+    const isProjectFlag = !!flag.projectId;
     let chatContextMarkup = '';
-    if (match) {
-      const matchMsgs = window.db.getMessages().filter(m => m.matchId === match.id);
-      const flaggedIdx = matchMsgs.findIndex(m => m.id === msg.id);
-      
-      const contextStart = Math.max(0, flaggedIdx - 3);
-      const contextMsgs = matchMsgs.slice(contextStart, flaggedIdx + 1);
+    let slidesMarkup = '';
+    let participantsMarkup = '';
+    let sender = null;
+    let match = null;
+    let proj = null;
 
-      chatContextMarkup = contextMsgs.map(m => {
-        const isFlagged = m.id === msg.id;
-        const senderName = window.db.getStudent(m.senderId)?.name || 'Student';
-        return `
-          <div style="padding: 0.5rem 0.75rem; margin-bottom: 0.5rem; border-radius: 8px; font-size: 0.85rem; 
-                      background: ${isFlagged ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.03)'};
-                      border: ${isFlagged ? '1px solid var(--danger)' : '1px solid var(--panel-border)'}">
-            <strong>${senderName}:</strong> ${m.text}
-            ${m.translation ? `<div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">📝 ${m.translation}</div>` : ''}
-            <div style="font-size: 0.65rem; text-align: right; color: var(--text-muted);">${new Date(m.timestamp).toLocaleTimeString()}</div>
-          </div>
-        `;
-      }).join('');
+    if (isProjectFlag) {
+      proj = window.db.getProject(flag.projectId);
+      if (proj) {
+        if (proj.slides) {
+          slidesMarkup = proj.slides.map((s, idx) => {
+            return `
+              <div style="padding: 0.5rem; background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border); border-radius: 6px; margin-bottom: 0.5rem; font-size: 0.8rem;">
+                <strong>Slide ${idx + 1}: ${s.title || 'Untitled'}</strong> (by ${s.author})
+                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.2rem;">${s.content || '(Empty)'}</div>
+              </div>
+            `;
+          }).join('');
+        }
+        
+        const studentIds = [...proj.creatorSchoolStudentIds, ...proj.targetSchoolStudentIds];
+        participantsMarkup = studentIds.map(sid => {
+          const s = window.db.getStudent(sid);
+          if (!s) return '';
+          return `
+            <label style="display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; cursor: pointer; margin-right: 0.75rem; color: var(--text-primary);">
+              <input type="checkbox" name="proj-flag-recipient" value="${sid}" checked>
+              <span>${s.name.split(' ')[0]}</span>
+            </label>
+          `;
+        }).join('');
+      }
+    } else {
+      const msg = window.db.getMessages().find(m => m.id === flag.messageId);
+      sender = msg ? window.db.getStudent(msg.senderId) : null;
+      match = msg ? window.db.getMatches().find(m => m.id === msg.matchId) : null;
+      
+      // Get chat context (last 4 messages before flagged one)
+      if (match) {
+        const matchMsgs = window.db.getMessages().filter(m => m.matchId === match.id);
+        const flaggedIdx = matchMsgs.findIndex(m => m.id === msg.id);
+        
+        const contextStart = Math.max(0, flaggedIdx - 3);
+        const contextMsgs = matchMsgs.slice(contextStart, flaggedIdx + 1);
+
+        chatContextMarkup = contextMsgs.map(m => {
+          const isFlagged = m.id === msg.id;
+          const senderName = window.db.getStudent(m.senderId)?.name || 'Student';
+          return `
+            <div style="padding: 0.5rem 0.75rem; margin-bottom: 0.5rem; border-radius: 8px; font-size: 0.85rem; 
+                        background: ${isFlagged ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.03)'};
+                        border: ${isFlagged ? '1px solid var(--danger)' : '1px solid var(--panel-border)'}">
+              <strong>${senderName}:</strong> ${m.text}
+              ${m.translation ? `<div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">📝 ${m.translation}</div>` : ''}
+              <div style="font-size: 0.65rem; text-align: right; color: var(--text-muted);">${new Date(m.timestamp).toLocaleTimeString()}</div>
+            </div>
+          `;
+        }).join('');
+      }
     }
 
     const teacher = this.getLoggedTeacher();
@@ -3444,6 +3536,38 @@ class App {
       actionsMarkup = `
         ${partnerSchoolStatusMarkup}
         <div>
+          <!-- Project-specific messaging forms if it is a project flag -->
+          ${isProjectFlag ? `
+            <div class="panel" style="padding: 1rem; border-color: var(--panel-border); background: rgba(255, 255, 255, 0.01); margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 0.75rem;">
+              <h4 style="font-size: 0.85rem; font-weight: bold; margin: 0; color: var(--text-primary);">Teacher Action Desk</h4>
+              
+              <!-- 1. Send Message to Project Group Chat -->
+              <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                <label style="font-size: 0.8rem; font-weight: bold; color: var(--text-secondary);">Send Warning Message to Project Group Chat:</label>
+                <div style="display: flex; gap: 0.5rem;">
+                  <input type="text" id="flag-project-group-msg-input" class="form-control" style="font-size: 0.8rem; padding: 0.35rem;" placeholder="Type message to the whole project team...">
+                  <button type="button" class="btn btn-primary" onclick="app.sendProjectFlagGroupMessage('${flag.id}')" style="font-size: 0.8rem; padding: 0 1rem;">Send</button>
+                </div>
+              </div>
+
+              <!-- 2. Send Message to Individual Students -->
+              <div style="display: flex; flex-direction: column; gap: 0.35rem; border-top: 1px dashed var(--panel-border); padding-top: 0.75rem;">
+                <label style="font-size: 0.8rem; font-weight: bold; color: var(--text-secondary);">Send Warning Notice to Individual Students:</label>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.25rem;">
+                  ${participantsMarkup}
+                </div>
+                <textarea id="flag-project-individual-msg-text" class="form-control" style="height: 50px; font-size: 0.8rem; resize: none;" placeholder="Type warning notice text..."></textarea>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.2rem;">
+                  <label style="display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; cursor: pointer; color: var(--text-primary);">
+                    <input type="checkbox" id="flag-project-individual-msg-agree">
+                    <span>Require student agreement & confirmation</span>
+                  </label>
+                  <button type="button" class="btn btn-secondary btn-small" onclick="app.sendProjectFlagIndividualMessage('${flag.id}')" style="margin-left: auto;">Send Notices</button>
+                </div>
+              </div>
+            </div>
+          ` : ''}
+
           <div class="form-group" style="margin-bottom: 1.25rem;">
             <label for="flag-resolution-notes" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; display: block; color: var(--text-primary);">Action Taken / Resolution Notes (Your School):</label>
             <textarea class="form-control" id="flag-resolution-notes" style="height: 75px; font-size: 0.85rem; resize: vertical;" placeholder="Describe the action taken (e.g. discussed with student, monitored future messages)..." required></textarea>
@@ -3451,10 +3575,36 @@ class App {
           <h4 style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; margin-bottom: 0.75rem;">Select Resolution Action:</h4>
           <div style="display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap;">
             <button class="btn btn-secondary btn-small" onclick="app.closeModal('resolve-flag-modal')">Close</button>
-            <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2);" onclick="app.submitFlagResolution('${flag.id}', 'Cancel Link')">Cancel Student Link</button>
-            <button class="btn btn-secondary btn-small" style="color: var(--warning); border-color: rgba(245, 158, 11, 0.2);" onclick="app.submitFlagResolution('${flag.id}', 'Suspend Chat')">Suspend Chat</button>
+            ${isProjectFlag ? `
+              <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2);" onclick="app.submitFlagResolution('${flag.id}', 'Cancel Project')">Cancel Project</button>
+              <button class="btn btn-secondary btn-small" style="color: var(--warning); border-color: rgba(245, 158, 11, 0.2);" onclick="app.submitFlagResolution('${flag.id}', 'Suspend Project')">Suspend Project</button>
+            ` : `
+              <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2);" onclick="app.submitFlagResolution('${flag.id}', 'Cancel Link')">Cancel Student Link</button>
+              <button class="btn btn-secondary btn-small" style="color: var(--warning); border-color: rgba(245, 158, 11, 0.2);" onclick="app.submitFlagResolution('${flag.id}', 'Suspend Chat')">Suspend Chat</button>
+            `}
             <button class="btn btn-primary btn-small" onclick="app.submitFlagResolution('${flag.id}', 'Mark as Resolved')">Mark as Resolved</button>
             <button class="btn btn-secondary btn-small" style="border-color: var(--success); color: var(--success);" onclick="app.submitFlagResolution('${flag.id}', 'Dismissed')">Dismiss / Safe</button>
+          </div>
+        </div>
+      `;
+    }
+
+    let detailContentHtml = '';
+    if (isProjectFlag) {
+      detailContentHtml = `
+        <div>
+          <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-primary);">Project Slide Outline:</h4>
+          <div style="max-height: 200px; overflow-y: auto; padding-right: 0.25rem;">
+            ${slidesMarkup || '<p style="font-size: 0.8rem; color: var(--text-muted);">No slides found.</p>'}
+          </div>
+        </div>
+      `;
+    } else {
+      detailContentHtml = `
+        <div>
+          <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-primary);">Recent Chat History context:</h4>
+          <div style="max-height: 200px; overflow-y: auto; padding-right: 0.25rem;">
+            ${chatContextMarkup || '<p style="font-size: 0.8rem; color: var(--text-muted);">No chat context loaded.</p>'}
           </div>
         </div>
       `;
@@ -3464,22 +3614,17 @@ class App {
     container.innerHTML = `
       <div style="display: flex; flex-direction: column; gap: 1rem;">
         <div>
-          <span style="font-size: 0.8rem; color: var(--text-secondary);">Reported By: <strong>${flag.reportedBy || sender?.name || 'System'}</strong></span><br>
+          <span style="font-size: 0.8rem; color: var(--text-secondary);">Reported By: <strong>${flag.reportedBy || (sender ? sender.name : 'System')}</strong></span><br>
           <span style="font-size: 0.8rem; color: var(--text-secondary);">Alert Timestamp: <strong>${new Date(flag.flaggedAt).toLocaleString()}</strong></span>
         </div>
         
-        <div class="panel" style="padding: 1rem; border-color: rgba(239, 68, 68, 0.3);">
+        <div class="panel" style="padding: 1rem; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.02);">
           <h4 style="font-size: 0.9rem; color: var(--danger); font-weight: bold; margin-bottom: 0.5rem;">Flagged Violation Reason:</h4>
-          <p style="font-size: 0.85rem; font-weight: 500;">${flag.reason || msg?.flagReason || 'Sensitive Keyword alert'}</p>
+          <p style="font-size: 0.85rem; font-weight: 500; color: var(--text-primary);">${flag.reason || 'Sensitive Keyword alert'}</p>
           ${flag.details ? `<p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem; background: rgba(0,0,0,0.1); padding: 0.5rem; border-radius: 6px;">Details: ${flag.details}</p>` : ''}
         </div>
 
-        <div>
-          <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem;">Recent Chat History context:</h4>
-          <div style="max-height: 200px; overflow-y: auto; padding-right: 0.25rem;">
-            ${chatContextMarkup || '<p style="font-size: 0.8rem; color: var(--text-muted);">No chat context loaded.</p>'}
-          </div>
-        </div>
+        ${detailContentHtml}
 
         <hr style="border-top: 1px solid var(--panel-border);">
 
@@ -3501,6 +3646,80 @@ class App {
     this.executeFlagAction(flagId, action, notes);
   }
 
+  sendProjectFlagGroupMessage(flagId) {
+    const flag = window.db.getFlags().find(f => f.id === flagId);
+    if (!flag || !flag.projectId) return;
+
+    const input = document.getElementById('flag-project-group-msg-input');
+    const text = input ? input.value.trim() : '';
+    if (!text) {
+      alert('Please enter a message.');
+      return;
+    }
+
+    const teacher = this.getLoggedTeacher();
+    const senderId = teacher ? teacher.id : 'coord_1';
+    const senderName = teacher ? teacher.name : 'Teacher';
+
+    window.db.addProjectMessage(flag.projectId, senderId, senderName, text);
+    
+    if (input) input.value = '';
+    alert('Warning message sent to project group chat.');
+  }
+
+  sendProjectFlagIndividualMessage(flagId) {
+    const flag = window.db.getFlags().find(f => f.id === flagId);
+    if (!flag || !flag.projectId) return;
+
+    const checkboxes = document.querySelectorAll('input[name="proj-flag-recipient"]:checked');
+    const recipientIds = Array.from(checkboxes).map(cb => cb.value);
+    
+    if (recipientIds.length === 0) {
+      alert('Please select at least one student recipient.');
+      return;
+    }
+
+    const textarea = document.getElementById('flag-project-individual-msg-text');
+    const text = textarea ? textarea.value.trim() : '';
+    if (!text) {
+      alert('Please enter warning notice text.');
+      return;
+    }
+
+    const agreeCheckbox = document.getElementById('flag-project-individual-msg-agree');
+    const requireAgreement = agreeCheckbox ? agreeCheckbox.checked : false;
+
+    const teacher = this.getLoggedTeacher();
+    const senderId = teacher ? teacher.id : 'coord_1';
+    const senderName = teacher ? teacher.name : 'Teacher';
+
+    const list = window.db.getStaffStudentMessages();
+    recipientIds.forEach(sid => {
+      const newMsg = {
+        id: 'ssm_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+        senderId,
+        senderName,
+        recipientId: sid,
+        text,
+        timestamp: new Date().toISOString(),
+        requireAgreement,
+        status: 'Unread',
+        agreedAt: null
+      };
+      list.push(newMsg);
+
+      const student = window.db.getStudent(sid);
+      const studentName = student ? student.name : 'Student';
+      window.db.addLog('Staff Notice Sent', `Teacher ${senderName} sent notice to student ${studentName}. Require Agreement: ${requireAgreement}`, senderName);
+    });
+
+    window.db.saveTable('staffStudentMessages', list);
+
+    if (textarea) textarea.value = '';
+    if (agreeCheckbox) agreeCheckbox.checked = false;
+    alert('Warning notices sent to selected students successfully.');
+  }
+
   // Teacher submits safeguarding resolution
   executeFlagAction(flagId, action, notes = '') {
     const teacher = this.getLoggedTeacher();
@@ -3512,14 +3731,24 @@ class App {
     if (flag) {
       window.db.resolveFlagForSchool(flagId, schoolId, reviewer, action, notes);
       
-      const msg = window.db.getMessages().find(m => m.id === flag.messageId);
-      if (msg) {
-        if (action === 'Cancel Link') {
-          window.db.deleteMatch(msg.matchId);
-        } else if (action === 'Suspend Chat') {
-          window.db.pauseMatch(msg.matchId, true);
+      if (flag.projectId) {
+        if (action === 'Cancel Project') {
+          window.db.updateProject(flag.projectId, { status: 'Cancelled', paused: false });
+        } else if (action === 'Suspend Project') {
+          window.db.updateProject(flag.projectId, { paused: true });
         } else if (action === 'Mark as Resolved' || action === 'Dismissed') {
-          window.db.pauseMatch(msg.matchId, false);
+          window.db.updateProject(flag.projectId, { paused: false });
+        }
+      } else {
+        const msg = window.db.getMessages().find(m => m.id === flag.messageId);
+        if (msg) {
+          if (action === 'Cancel Link') {
+            window.db.deleteMatch(msg.matchId);
+          } else if (action === 'Suspend Chat') {
+            window.db.pauseMatch(msg.matchId, true);
+          } else if (action === 'Mark as Resolved' || action === 'Dismissed') {
+            window.db.pauseMatch(msg.matchId, false);
+          }
         }
       }
 
@@ -4529,7 +4758,7 @@ class App {
         </div>
       </div>
 
-      <div class="panel" style="padding: 1rem; background: rgba(255,255,255,0.01); border-color: var(--panel-border); margin-top: 0.5rem;">
+      <div class="panel" style="padding: 1rem; background: var(--bg-color); border-color: var(--panel-border); margin-top: 0.5rem;">
         <h5 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">School Biography</h5>
         <p style="font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary); margin: 0; text-align: justify;">
           ${school.description || 'No school description provided yet.'}
@@ -4599,7 +4828,7 @@ class App {
         </div>
       </div>
 
-      <div class="panel" style="padding: 1rem; background: rgba(255,255,255,0.01); border-color: var(--panel-border);">
+      <div class="panel" style="padding: 1rem; background: var(--bg-color); border-color: var(--panel-border);">
         <h5 style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">School Connection</h5>
         <div style="display: flex; align-items: center; gap: 0.75rem;">
           <div style="font-size: 1.5rem;">${this.getSchoolFlag(school?.country)}</div>
@@ -4614,7 +4843,7 @@ class App {
         </div>
       </div>
 
-      <div class="panel" style="padding: 1rem; background: rgba(255,255,255,0.01); border-color: var(--panel-border);">
+      <div class="panel" style="padding: 1rem; background: var(--bg-color); border-color: var(--panel-border);">
         <h5 style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Personal Biography</h5>
         <p style="font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary); margin: 0; text-align: justify; font-style: ${student.personalBiog ? 'normal' : 'italic'};">
           ${biogToShow}
@@ -5285,8 +5514,10 @@ class App {
     chatListContainer.innerHTML = '';
 
     const projects = window.db.getProjects().filter(p => 
-      p.creatorSchoolStudentIds.includes(student.id) || 
-      p.targetSchoolStudentIds.includes(student.id)
+      p.status !== 'Cancelled' && (
+        p.creatorSchoolStudentIds.includes(student.id) || 
+        p.targetSchoolStudentIds.includes(student.id)
+      )
     );
 
     if (projects.length === 0) {
@@ -5412,12 +5643,13 @@ class App {
           chip.style.display = 'inline-flex';
           chip.style.alignItems = 'center';
           chip.style.gap = '0.25rem';
-          chip.style.background = 'rgba(0, 0, 0, 0.15)';
+          chip.style.background = 'var(--panel-bg)';
+          chip.style.color = 'var(--text-primary)';
           chip.style.padding = '0.15rem 0.5rem';
           chip.style.borderRadius = '6px';
           chip.style.border = '1px solid var(--panel-border)';
           chip.style.fontSize = '0.75rem';
-          chip.innerHTML = `${flag} <span style="${isMe ? 'font-weight: bold; color: var(--primary);' : 'font-weight: normal;'}">${displayName}${isMe ? ' (You)' : ''}</span>`;
+          chip.innerHTML = `${flag} <span style="${isMe ? 'font-weight: bold; color: var(--primary);' : 'font-weight: normal; color: var(--text-primary);'}">${displayName}${isMe ? ' (You)' : ''}</span>`;
           chatParticipantsList.appendChild(chip);
         });
       }
@@ -5517,7 +5749,7 @@ class App {
       }
 
       const activeSlide = activeProject.slides[this.activeSlideIndex];
-      const isReadOnly = activeProject.status === 'Published' || activeProject.status === 'PendingPublish';
+      const isReadOnly = activeProject.status === 'Published' || activeProject.status === 'PendingPublish' || activeProject.paused;
 
       // Toggle display modes (Editor vs Carousel Viewer)
       const deckEditor = document.getElementById('proj-deck-editor');
@@ -5790,6 +6022,39 @@ class App {
       const activeSubtabBtn = document.querySelector('.project-subtab-nav .subtab-pill.active');
       const activeId = activeSubtabBtn ? activeSubtabBtn.id.replace('proj-subtab-', '') : 'article';
       this.switchProjectSubtab(activeId);
+
+      // Render or remove suspended warning banner
+      let banner = document.getElementById('project-suspended-banner');
+      if (activeProject.paused) {
+        if (!banner) {
+          banner = document.createElement('div');
+          banner.id = 'project-suspended-banner';
+          banner.style.cssText = 'background: rgba(239, 68, 68, 0.15); border-bottom: 1px solid rgba(239, 68, 68, 0.3); color: var(--danger); padding: 0.75rem 1.25rem; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; justify-content: center;';
+          banner.innerHTML = '<span>⚠️ This project has been suspended for safeguarding review. Slide editing and messaging are locked.</span>';
+          projectActiveState.insertBefore(banner, projectActiveState.firstChild);
+        }
+      } else {
+        if (banner) {
+          banner.remove();
+        }
+      }
+
+      // Disable/enable chat composer
+      const chatTextarea = document.getElementById('proj-chat-textarea');
+      const chatSendBtn = document.getElementById('proj-chat-send-btn');
+      if (chatTextarea && chatSendBtn) {
+        if (activeProject.paused) {
+          chatTextarea.disabled = true;
+          chatTextarea.placeholder = 'Chat is locked during suspension...';
+          chatSendBtn.disabled = true;
+          chatSendBtn.style.opacity = '0.4';
+        } else {
+          chatTextarea.disabled = false;
+          chatTextarea.placeholder = 'Type a message to your project team...';
+          chatSendBtn.disabled = false;
+          chatSendBtn.style.opacity = '1';
+        }
+      }
     }
   }
 
@@ -6152,6 +6417,11 @@ class App {
 
   sendProjectChatMessage() {
     if (!this.activeProjectId) return;
+    const project = window.db.getProject(this.activeProjectId);
+    if (project?.paused) {
+      alert('This project is suspended for safeguarding review.');
+      return;
+    }
     const textarea = document.getElementById('proj-chat-textarea');
     if (!textarea || !textarea.value.trim()) return;
 

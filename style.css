@@ -553,6 +553,29 @@ body {
   border-top: 1px dashed var(--panel-border);
 }
 
+.message-row.sent .message-translation {
+  color: rgba(255, 255, 255, 0.85);
+  border-top: 1px dashed rgba(255, 255, 255, 0.25);
+}
+
+.translation-toggle-btn {
+  color: var(--secondary);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.translation-toggle-btn:hover {
+  color: var(--secondary-hover);
+}
+
+.message-row.sent .translation-toggle-btn {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.message-row.sent .translation-toggle-btn:hover {
+  color: white;
+}
+
 .message-meta {
   font-size: 0.65rem;
   color: var(--text-muted);
