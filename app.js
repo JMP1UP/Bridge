@@ -99,6 +99,14 @@ class App {
     window.addEventListener('DOMContentLoaded', () => this.init());
   }
 
+  translate(key, defaultText) {
+    const lang = this.interfaceLang || 'en';
+    if (window.translator && window.translator.UI_TRANSLATIONS[lang] && window.translator.UI_TRANSLATIONS[lang][key]) {
+      return window.translator.UI_TRANSLATIONS[lang][key];
+    }
+    return defaultText;
+  }
+
   getStudentDisplayName(stud) {
     if (!stud) return 'Unknown';
     let viewerSchoolId = 'school_1';
@@ -2122,7 +2130,7 @@ class App {
           </div>
         </div>
         <p style="font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary); margin-top: 0.75rem; text-align: justify;">
-          ${school.description || 'No school description provided yet.'}
+          ${school.description || this.translate('no_school_description', 'No school description set yet.')}
         </p>
       </div>
     `;
@@ -2153,15 +2161,15 @@ class App {
       linksHtml = `
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; border: 1px dashed var(--panel-border); border-radius: 12px; padding: 2rem; color: var(--text-muted); text-align: center;">
           <span style="font-size: 2.25rem; margin-bottom: 0.5rem;">🔗</span>
-          <h5 style="margin: 0; font-weight: 600;">No Linked Partner Schools</h5>
-          <p style="font-size: 0.75rem; margin-top: 0.25rem;">Use the Matching Tool to pair students and establish international links.</p>
+          <h5 style="margin: 0; font-weight: 600;">${this.translate('no_linked_partners', 'No Linked Partner Schools')}</h5>
+          <p style="font-size: 0.75rem; margin-top: 0.25rem;">${this.translate('propose_matches_desc', 'Propose matches with other schools in the matching center.')}</p>
         </div>
       `;
     } else {
       linksHtml = `
         <div style="display: flex; flex-direction: column; gap: 1rem; height: 100%;">
           <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.25rem; border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">
-            Established Connections (${linkedSchools.length})
+            ${this.translate('active_partnerships', 'Active Partnerships')} (${linkedSchools.length})
           </h4>
           <div style="display: flex; flex-direction: column; gap: 0.75rem; overflow-y: auto; max-height: 240px;">
             ${linkedSchools.map(item => {
@@ -2169,6 +2177,9 @@ class App {
                 ? `<img src="${item.school.logoUrl}" alt="${item.school.name} logo" style="height: 36px; width: 36px; object-fit: contain; border-radius: 4px;">` 
                 : '<div style="height: 36px; width: 36px; background: rgba(255,255,255,0.05); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">🏫</div>';
               
+              const linkedLabel = this.interfaceLang === 'de' ? 'Verknüpfte Schüler' : this.interfaceLang === 'fr' ? 'Élève(s) jumelé(s)' : 'Linked Student(s)';
+              const activeLabel = this.interfaceLang === 'de' ? 'Aktive Verbindung' : this.interfaceLang === 'fr' ? 'Lien actif' : 'Active Link';
+
               return `
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border); border-radius: 12px; transition: all 0.2s;">
                   <div style="display: flex; align-items: center; gap: 0.75rem;">
@@ -2181,8 +2192,8 @@ class App {
                     </div>
                   </div>
                   <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <span class="badge badge-info">${item.count} Linked Student${item.count > 1 ? 's' : ''}</span>
-                    <span class="badge badge-success" style="font-size: 0.65rem;">Active Link</span>
+                    <span class="badge badge-info">${item.count} ${linkedLabel}</span>
+                    <span class="badge badge-success" style="font-size: 0.65rem;">${activeLabel}</span>
                   </div>
                 </div>
               `;
@@ -5343,9 +5354,9 @@ class App {
       </div>
 
       <div class="panel" style="padding: 1rem; background: var(--bg-color); border-color: var(--panel-border); margin-top: 0.5rem;">
-        <h5 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">School Biography</h5>
+        <h5 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">${this.translate('school_biography', 'School Biography')}</h5>
         <p style="font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary); margin: 0; text-align: justify;">
-          ${school.description || 'No school description provided yet.'}
+          ${school.description || this.translate('no_school_description', 'No school description set yet.')}
         </p>
       </div>
 
@@ -8287,7 +8298,7 @@ class App {
     if (myAnnouncements.length === 0) {
       container.innerHTML = `
         <p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; padding: 2rem; margin: 0;">
-          No announcements posted for your school yet.
+          ${this.translate('no_announcements_posted', 'No announcements posted for your school yet.')}
         </p>
       `;
       return;
@@ -8302,13 +8313,13 @@ class App {
           <div style="display: flex; flex-direction: column; gap: 0.25rem; flex: 1; margin-right: 1rem;">
             <h4 style="font-size: 0.95rem; font-weight: 700; margin: 0; color: var(--text-primary);">${ann.title}</h4>
             <span style="font-size: 0.7rem; color: var(--text-muted);">
-              Posted by ${ann.postedBy} on ${new Date(ann.timestamp).toLocaleString()}
+              ${this.translate('posted_by', 'Posted by')} ${ann.postedBy} ${this.translate('on_label', 'on')} ${new Date(ann.timestamp).toLocaleString()}
             </span>
             <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0.25rem 0 0 0; white-space: pre-wrap; line-height: 1.4;">
               ${ann.content}
             </p>
           </div>
-          <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: rgba(239,68,68,0.2); padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="app.deleteAnnouncement('${ann.id}')">Delete</button>
+          <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: rgba(239,68,68,0.2); padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="app.deleteAnnouncement('${ann.id}')">${this.translate('delete_btn', 'Delete')}</button>
         `;
         container.appendChild(div);
       });
