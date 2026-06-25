@@ -2076,8 +2076,33 @@ class App {
       const school = window.db.getSchool(stud.schoolId);
       
       let statusBadge = '';
-      if (stud.matchStatus === 'matched') statusBadge = '<span class="badge badge-success">Matched</span>';
-      else statusBadge = '<span class="badge badge-warning">Unmatched</span>';
+      if (stud.matchStatus === 'matched') {
+        const myActiveMatches = window.db.getMatches().filter(m => m.active && m.studentIds.includes(stud.id));
+        const count = myActiveMatches.length;
+        const partnerNamesList = myActiveMatches.map(m => {
+          const partnerId = m.studentIds.find(id => id !== stud.id);
+          const partner = window.db.getStudent(partnerId || '');
+          if (!partner) return '';
+          const partnerSchool = window.db.getSchool(partner.schoolId);
+          let emojiFlag = '🏫';
+          if (partnerSchool) {
+            const c = partnerSchool.country.toLowerCase();
+            if (c.includes('germany') || c.includes('deutschland')) emojiFlag = '🇩🇪';
+            else if (c.includes('united kingdom') || c.includes('uk') || c.includes('britain') || c.includes('england')) emojiFlag = '🇬🇧';
+            else if (c.includes('france')) emojiFlag = '🇫🇷';
+            else if (c.includes('spain')) emojiFlag = '🇪🇸';
+            else if (c.includes('italy')) emojiFlag = '🇮🇹';
+            else if (c.includes('united states') || c.includes('us')) emojiFlag = '🇺🇸';
+            else if (c.includes('canada')) emojiFlag = '🇨🇦';
+          }
+          const firstName = partner.name.split(' ')[0];
+          return `${emojiFlag} ${firstName}`;
+        }).filter(name => name !== '');
+        const tooltipText = partnerNamesList.length > 0 ? `Matched with: ${partnerNamesList.join(', ')}` : '';
+        statusBadge = `<span class="badge badge-success" title="${tooltipText}" style="cursor: help;">${count} ${count === 1 ? 'Match' : 'Matches'}</span>`;
+      } else {
+        statusBadge = '<span class="badge badge-warning">Unmatched</span>';
+      }
 
       let activeBadge = '';
       if (stud.invitationStatus === 'Active') activeBadge = '<span class="badge badge-success">Active</span>';
@@ -2338,9 +2363,34 @@ class App {
         const myActiveMatches = window.db.getMatches().filter(m => m.active && m.studentIds.includes(stud.id));
         let matchStatusText = '';
         let badgeClass = '';
+        let tooltipAttr = '';
         if (myActiveMatches.length > 0) {
-          matchStatusText = `Matched (${myActiveMatches.length})`;
+          const count = myActiveMatches.length;
+          matchStatusText = `${count} ${count === 1 ? 'Match' : 'Matches'}`;
           badgeClass = 'badge-success';
+          
+          const partnerNamesList = myActiveMatches.map(m => {
+            const partnerId = m.studentIds.find(id => id !== stud.id);
+            const partner = window.db.getStudent(partnerId || '');
+            if (!partner) return '';
+            const partnerSchool = window.db.getSchool(partner.schoolId);
+            let emojiFlag = '🏫';
+            if (partnerSchool) {
+              const c = partnerSchool.country.toLowerCase();
+              if (c.includes('germany') || c.includes('deutschland')) emojiFlag = '🇩🇪';
+              else if (c.includes('united kingdom') || c.includes('uk') || c.includes('britain') || c.includes('england')) emojiFlag = '🇬🇧';
+              else if (c.includes('france')) emojiFlag = '🇫🇷';
+              else if (c.includes('spain')) emojiFlag = '🇪🇸';
+              else if (c.includes('italy')) emojiFlag = '🇮🇹';
+              else if (c.includes('united states') || c.includes('us')) emojiFlag = '🇺🇸';
+              else if (c.includes('canada')) emojiFlag = '🇨🇦';
+            }
+            const firstName = partner.name.split(' ')[0];
+            return `${emojiFlag} ${firstName}`;
+          }).filter(name => name !== '');
+          if (partnerNamesList.length > 0) {
+            tooltipAttr = `title="Matched with: ${partnerNamesList.join(', ')}" style="cursor: help;"`;
+          }
         } else {
           const myProposals = window.db.getMatches().filter(m => !m.active && m.status === 'Proposed' && m.studentIds.includes(stud.id));
           if (myProposals.length > 0) {
@@ -2357,7 +2407,7 @@ class App {
           <div style="flex-grow: 1;">
             <h4 style="font-weight:600; font-size: 0.9rem; margin: 0; color: var(--text-primary); display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; width: 100%;">
               <span>${stud.name} (${stud.age} y/o)</span>
-              <span class="badge ${badgeClass}" style="font-size: 0.65rem; padding: 0.1rem 0.35rem; border-radius: 4px; font-weight: 700; white-space: nowrap;">${matchStatusText}</span>
+              <span class="badge ${badgeClass}" ${tooltipAttr} style="font-size: 0.65rem; padding: 0.1rem 0.35rem; border-radius: 4px; font-weight: 700; white-space: nowrap;">${matchStatusText}</span>
             </h4>
             <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0.2rem 0 0 0;">${stud.gender} • ${stud.yearGroup}</p>
           </div>
@@ -4929,6 +4979,36 @@ class App {
             <tbody>
               ${students.map(s => {
                 const badgeClass = s.matchStatus === 'matched' ? 'badge-success' : (s.matchStatus === 'proposed' ? 'badge-warning' : 'badge-secondary');
+                let matchStatusText = s.matchStatus;
+                let tooltipAttr = '';
+                if (s.matchStatus === 'matched') {
+                  const myActiveMatches = window.db.getMatches().filter(m => m.active && m.studentIds.includes(s.id));
+                  const count = myActiveMatches.length;
+                  matchStatusText = `${count} ${count === 1 ? 'Match' : 'Matches'}`;
+                  
+                  const partnerNamesList = myActiveMatches.map(m => {
+                    const partnerId = m.studentIds.find(id => id !== s.id);
+                    const partner = window.db.getStudent(partnerId || '');
+                    if (!partner) return '';
+                    const partnerSchool = window.db.getSchool(partner.schoolId);
+                    let emojiFlag = '🏫';
+                    if (partnerSchool) {
+                      const c = partnerSchool.country.toLowerCase();
+                      if (c.includes('germany') || c.includes('deutschland')) emojiFlag = '🇩🇪';
+                      else if (c.includes('united kingdom') || c.includes('uk') || c.includes('britain') || c.includes('england')) emojiFlag = '🇬🇧';
+                      else if (c.includes('france')) emojiFlag = '🇫🇷';
+                      else if (c.includes('spain')) emojiFlag = '🇪🇸';
+                      else if (c.includes('italy')) emojiFlag = '🇮🇹';
+                      else if (c.includes('united states') || c.includes('us')) emojiFlag = '🇺🇸';
+                      else if (c.includes('canada')) emojiFlag = '🇨🇦';
+                    }
+                    const firstName = partner.name.split(' ')[0];
+                    return `${emojiFlag} ${firstName}`;
+                  }).filter(name => name !== '');
+                  if (partnerNamesList.length > 0) {
+                    tooltipAttr = `title="Matched with: ${partnerNamesList.join(', ')}" style="cursor: help;"`;
+                  }
+                }
                 const displayName = isOwnSchool ? s.name : s.name.split(' ')[0];
                 const displayEmail = isOwnSchool ? s.email : '[Hidden - GDPR]';
                 return `
@@ -4936,7 +5016,7 @@ class App {
                     <td style="padding: 0.5rem; font-weight: 600;">${displayName}</td>
                     <td style="padding: 0.5rem; color: var(--text-secondary);">${displayEmail}</td>
                     <td style="padding: 0.5rem;">Age ${s.age} (${s.yearGroup})</td>
-                    <td style="padding: 0.5rem;"><span class="badge ${badgeClass}">${s.matchStatus}</span></td>
+                    <td style="padding: 0.5rem;"><span class="badge ${badgeClass}" ${tooltipAttr}>${matchStatusText}</span></td>
                   </tr>
                 `;
               }).join('')}
