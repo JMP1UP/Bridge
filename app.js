@@ -753,13 +753,25 @@ class App {
         this.setLanguage(stud.language);
         document.getElementById('ui-lang-selector').value = stud.language;
       }
+    } else if (role === 'teacher') {
+      this.currentCoordinatorId = coordId || 'coord_1';
+      const teacher = window.db.getCoordinator(this.currentCoordinatorId);
+      if (teacher) {
+        const school = window.db.getSchool(teacher.schoolId);
+        if (school && school.language) {
+          this.setLanguage(school.language);
+          document.getElementById('ui-lang-selector').value = school.language;
+        } else {
+          this.setLanguage('en');
+          document.getElementById('ui-lang-selector').value = 'en';
+        }
+      } else {
+        this.setLanguage('en');
+        document.getElementById('ui-lang-selector').value = 'en';
+      }
     } else {
       this.setLanguage('en');
       document.getElementById('ui-lang-selector').value = 'en';
-    }
-    
-    if (role === 'teacher') {
-      this.currentCoordinatorId = coordId || 'coord_1';
     }
     
     this.activeMatchId = null;
