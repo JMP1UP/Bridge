@@ -87,6 +87,9 @@ class App {
     this.activeCoordinatorId = null;
     this.currentProjArticlePhotoDataUrl = '';
     this.activeSlideIndex = 0;
+    this.projectsSubTab = 'gallery';
+    this.selectedProjectBroadcastIds = [];
+    this.activeModeratedProjectId = null;
     
     // Bind listeners
     window.addEventListener('DOMContentLoaded', () => this.init());
@@ -3392,7 +3395,15 @@ class App {
             ? `<button class="btn btn-danger btn-small" onclick="app.openResolveFlagModal('${flag.id}')">Review & Take Action</button>`
             : `<div style="display: flex; flex-direction: column; gap: 0.35rem;">
                  <span style="font-size: 0.75rem; color: var(--text-muted);">Resolved by:<br>${myResolution.reviewedBy}<br>Action: ${myResolution.actionTaken}</span>
-                 <button class="btn btn-secondary btn-small" style="font-size: 0.7rem; padding: 0.2rem 0.4rem;" onclick="app.openResolveFlagModal('${flag.id}')">View D  openResolveFlagModal(flagId, tabId = 'details') {
+                 <button class="btn btn-secondary btn-small" style="font-size: 0.7rem; padding: 0.2rem 0.4rem;" onclick="app.openResolveFlagModal('${flag.id}')">View Details</button>
+               </div>`}
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
+
+  openResolveFlagModal(flagId, tabId = 'details') {
     const flag = window.db.getFlags().find(f => f.id === flagId);
     if (!flag) return;
 
@@ -5627,7 +5638,10 @@ class App {
         badgeClass = 'badge-warning';
       }
 
-      const badgeStatus = `<span class="badge ${badgeClass}" style="font-size: 0.75rem; padding: 0.15rem 0.4rem;">${statusText}</span>`;
+      let badgeStatus = `<span class="badge ${badgeClass}" style="font-size: 0.75rem; padding: 0.15rem 0.4rem;">${statusText}</span>`;
+      if (project.paused) {
+        badgeStatus += ` <span class="badge badge-warning" style="font-size: 0.75rem; padding: 0.15rem 0.4rem; color: #fbbf24; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25);">Suspended</span>`;
+      }
 
       item.innerHTML = `
         <div class="user-avatar" style="width: 32px; height: 32px; font-size: 0.8rem; background: var(--accent); display: flex; align-items: center; justify-content: center;">
@@ -6623,73 +6637,435 @@ class App {
       }
     }
 
-    // 4. Populate Active & Published Projects
-    const activeTbody = document.getElementById('teach-active-projects-tbody');
-    if (activeTbody) {
-      activeTbody.innerHTML = '';
-      const activeProjects = window.db.getProjects().filter(p => 
-        (p.creatorSchoolId === schoolId || p.targetSchoolId === schoolId) && p.status !== 'Proposed'
-      );
+    // 4. Update Projects Subtabs UI and Render Lists
+    const subtabGallery = document.getElementById('subtab-btn-gallery');
+    const subtabCancelled = document.getElementById('subtab-btn-cancelled');
+    const galleryView = document.getElementById('teach-projects-gallery-subview');
+    const cancelledView = document.getElementById('teach-projects-cancelled-subview');
+    
+    if (this.projectsSubTab === 'gallery') {
+      if (subtabGallery) {
+        subtabGallery.style.background = 'var(--secondary)';
+        subtabGallery.style.border = 'none';
+        subtabGallery.style.color = '#fff';
+        subtabGallery.style.fontWeight = '700';
+      }
+      if (subtabCancelled) {
+        subtabCancelled.style.background = 'transparent';
+        subtabCancelled.style.border = '1px solid var(--panel-border)';
+        subtabCancelled.style.color = 'var(--text-secondary)';
+        subtabCancelled.style.fontWeight = '500';
+      }
+      if (galleryView) galleryView.style.display = 'flex';
+      if (cancelledView) cancelledView.style.display = 'none';
+    } else {
+      if (subtabGallery) {
+        subtabGallery.style.background = 'transparent';
+        subtabGallery.style.border = '1px solid var(--panel-border)';
+        subtabGallery.style.color = 'var(--text-secondary)';
+        subtabGallery.style.fontWeight = '500';
+      }
+      if (subtabCancelled) {
+        subtabCancelled.style.background = 'var(--secondary)';
+        subtabCancelled.style.border = 'none';
+        subtabCancelled.style.color = '#fff';
+        subtabCancelled.style.fontWeight = '700';
+      }
+      if (galleryView) galleryView.style.display = 'none';
+      if (cancelledView) cancelledView.style.display = 'flex';
+    }
+
+    // Render Active Gallery Grid
+    const galleryGrid = document.getElementById('teach-projects-gallery-grid');
+    if (galleryGrid) {
+      galleryGrid.innerHTML = '';
+      
+      const activeProjects = window.db.getProjects()
+        .filter(p => (p.creatorSchoolId === schoolId || p.targetSchoolId === schoolId) && p.status !== 'Cancelled' && p.status !== 'Proposed')
+        .sort((a, b) => {
+          const aPaused = a.paused ? 1 : 0;
+          const bPaused = b.paused ? 1 : 0;
+          return bPaused - aPaused; // Sort suspended projects to top
+        });
+
+      // Update Broadcast Count display
+      const broadcastCountEl = document.getElementById('broadcast-selected-count');
+      if (broadcastCountEl) {
+        broadcastCountEl.textContent = `${this.selectedProjectBroadcastIds.length} selected`;
+      }
 
       if (activeProjects.length === 0) {
-        activeTbody.innerHTML = `
-          <tr>
-            <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
-              No active or published projects yet.
-            </td>
-          </tr>
+        galleryGrid.innerHTML = `
+          <div style="grid-column: span 3; text-align: center; color: var(--text-muted); padding: 2rem; font-style: italic;">
+            No active shared projects found.
+          </div>
         `;
       } else {
         activeProjects.forEach(p => {
-          const creatorSchool = window.db.getSchool(p.creatorSchoolId);
-          const targetSchool = window.db.getSchool(p.targetSchoolId);
-          const cStudents = p.creatorSchoolStudentIds.map(sid => window.db.getStudent(sid)?.name || '').filter(Boolean).join(', ');
-          const tStudents = p.targetSchoolStudentIds.map(sid => window.db.getStudent(sid)?.name || '').filter(Boolean).join(', ');
+          const isCreator = p.creatorSchoolId === schoolId;
+          const partnerSchoolId = isCreator ? p.targetSchoolId : p.creatorSchoolId;
+          const partnerSchool = window.db.getSchool(partnerSchoolId);
+          const isSelected = this.selectedProjectBroadcastIds.includes(p.id);
 
-          const isMySchoolApproved = (p.creatorSchoolId === schoolId) ? p.creatorSchoolApproved : p.targetSchoolApproved;
-          const isPendingAction = p.status === 'PendingPublish' && !isMySchoolApproved;
+          const localStudentNames = (isCreator ? p.creatorSchoolStudentIds : p.targetSchoolStudentIds)
+            .map(sid => window.db.getStudent(sid)?.name || 'Unknown')
+            .join(', ');
+          const partnerStudentNames = (isCreator ? p.targetSchoolStudentIds : p.creatorSchoolStudentIds)
+            .map(sid => window.db.getStudent(sid)?.name || 'Unknown')
+            .join(', ');
 
-          let statusText = p.status;
-          let badgeClass = 'badge-info';
-          if (p.status === 'Published') {
-            badgeClass = 'badge-success';
-          } else if (p.status === 'PendingPublish') {
-            badgeClass = 'badge-warning';
-            statusText = 'Review Required';
-          }
+          const card = document.createElement('div');
+          card.className = 'panel';
+          card.style.padding = '1.25rem';
+          card.style.display = 'flex';
+          card.style.flexDirection = 'column';
+          card.style.gap = '0.75rem';
+          card.style.position = 'relative';
+          card.style.border = p.paused ? '1px solid rgba(245,158,11,0.3)' : '1px solid var(--panel-border)';
+          card.style.background = p.paused ? 'rgba(245,158,11,0.02)' : 'var(--panel-bg)';
 
-          const tr = document.createElement('tr');
-          tr.style.borderBottom = '1px solid var(--panel-border)';
-          tr.innerHTML = `
-            <td style="padding: 0.75rem; vertical-align: top; font-weight: 600; color: var(--text-primary); font-size: 0.85rem;">
-              ${p.title}
-            </td>
-            <td style="padding: 0.75rem; vertical-align: top; font-size: 0.75rem; color: var(--text-muted); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${p.brief}">
+          card.innerHTML = `
+            <!-- Broadcast Checkbox -->
+            <div style="position: absolute; top: 1rem; right: 1rem;">
+              <input type="checkbox" id="chk-broadcast-${p.id}" style="cursor: pointer; width: 16px; height: 16px;" ${isSelected ? 'checked' : ''} onclick="app.toggleProjectBroadcastSelect('${p.id}')">
+            </div>
+
+            <div style="padding-right: 1.5rem;">
+              <h4 style="font-size: 0.95rem; font-weight: 800; margin: 0; color: var(--text-primary);">${p.title}</h4>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">Partner: ${partnerSchool ? partnerSchool.name : 'Unknown School'}</span>
+            </div>
+
+            <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0; height: 3.6em; line-height: 1.2em; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
               ${p.brief}
-            </td>
-            <td style="padding: 0.75rem; vertical-align: top; font-size: 0.75rem; line-height: 1.4; color: var(--text-secondary);">
-              <strong>${creatorSchool?.code || 'School 1'}:</strong> ${cStudents || 'None'}<br>
-              <strong>${targetSchool?.code || 'School 2'}:</strong> ${tStudents || 'None'}
-            </td>
-            <td style="padding: 0.75rem; vertical-align: middle;">
-              <span class="badge ${badgeClass}" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">${statusText}</span>
-            </td>
-            <td style="padding: 0.75rem; vertical-align: middle;">
-              ${isPendingAction ? `
-                <button class="btn btn-warning btn-small alert-pulse" onclick="app.openReviewProjectModal('${p.id}')" style="font-weight: 700; padding: 0.4rem 0.85rem; font-size: 0.75rem;">
-                  Review & Authorize
-                </button>
+            </p>
+
+            <div style="display: flex; flex-direction: column; gap: 0.35rem; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 0.5rem; font-size: 0.75rem; color: var(--text-secondary);">
+              <div><strong>Your Students:</strong> ${localStudentNames || 'None'}</div>
+              <div><strong>Partner Students:</strong> ${partnerStudentNames || 'None'}</div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 0.5rem; margin-top: auto;">
+              ${p.paused ? `
+                <span class="badge badge-warning" style="font-size: 0.7rem; padding: 0.15rem 0.4rem; font-weight: 700; color: #fbbf24; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25);">🔒 Suspended</span>
               ` : `
-                <button class="btn btn-secondary btn-small" onclick="app.openReviewProjectModal('${p.id}')" style="padding: 0.4rem 0.85rem; font-size: 0.75rem;">
-                  Review Details
-                </button>
+                <span class="badge badge-success" style="font-size: 0.7rem; padding: 0.15rem 0.4rem; font-weight: 700; color: #34d399; background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.25);">✓ Active</span>
               `}
-            </td>
+              <span style="font-size: 0.7rem; color: var(--text-muted);">Cards: ${p.slides ? p.slides.length : 0}</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin-top: 0.25rem;">
+              <button class="btn btn-secondary btn-small" onclick="app.toggleSuspendProject('${p.id}', ${!!p.paused})" style="font-size: 0.7rem; color: ${p.paused ? 'var(--text-primary)' : '#f59e0b'}; border-color: ${p.paused ? 'rgba(59,130,246,0.2)' : 'rgba(245,158,11,0.2)'};">
+                ${p.paused ? '🔓 Unsuspend' : '🔒 Suspend'}
+              </button>
+              <button class="btn btn-secondary btn-small" onclick="app.cancelProject('${p.id}')" style="font-size: 0.7rem; color: var(--danger); border-color: rgba(239,68,68,0.2);">
+                🚫 Cancel
+              </button>
+              <button class="btn btn-primary btn-small" onclick="app.openProjectModerationChat('${p.id}')" style="grid-column: span 2; font-size: 0.7rem; justify-content: center; display: flex;">
+                💬 Moderate Chat & Cards
+              </button>
+            </div>
           `;
-          activeTbody.appendChild(tr);
+          galleryGrid.appendChild(card);
         });
       }
     }
+
+    // Render Cancelled List
+    const cancelledList = document.getElementById('teach-projects-cancelled-list');
+    if (cancelledList) {
+      cancelledList.innerHTML = '';
+      const cancelledProjects = window.db.getProjects()
+        .filter(p => (p.creatorSchoolId === schoolId || p.targetSchoolId === schoolId) && p.status === 'Cancelled');
+
+      if (cancelledProjects.length === 0) {
+        cancelledList.innerHTML = `
+          <div style="text-align: center; color: var(--text-muted); padding: 2rem; font-style: italic; background: rgba(255,255,255,0.01); border: 1px dashed var(--panel-border); border-radius: 8px;">
+            No cancelled projects in desk.
+          </div>
+        `;
+      } else {
+        cancelledProjects.forEach(p => {
+          const isCreator = p.creatorSchoolId === schoolId;
+          const partnerSchoolId = isCreator ? p.targetSchoolId : p.creatorSchoolId;
+          const partnerSchool = window.db.getSchool(partnerSchoolId);
+
+          const item = document.createElement('div');
+          item.className = 'panel';
+          item.style.padding = '1rem';
+          item.style.display = 'flex';
+          item.style.justifyContent = 'space-between';
+          item.style.alignItems = 'center';
+          item.style.gap = '1rem';
+          item.style.flexWrap = 'wrap';
+
+          item.innerHTML = `
+            <div>
+              <h4 style="font-size: 0.9rem; font-weight: 800; margin: 0; color: var(--text-primary);">${p.title}</h4>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">Partner: ${partnerSchool ? partnerSchool.name : 'Unknown School'}</span>
+              <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0.2rem 0 0 0;">${p.brief}</p>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn btn-secondary btn-small" onclick="app.reinstateProject('${p.id}')" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
+                🔄 Reinstate
+              </button>
+              <button class="btn btn-secondary btn-small" onclick="app.deleteProjectPermanently('${p.id}')" style="font-size: 0.75rem; color: var(--danger); border-color: rgba(239,68,68,0.25); padding: 0.3rem 0.6rem;">
+                🗑️ Delete Permanently
+              </button>
+            </div>
+          `;
+          cancelledList.appendChild(item);
+        });
+      }
+    }
+  }
+
+  switchProjectsSubtab(tabName) {
+    this.projectsSubTab = tabName;
+    this.selectedProjectBroadcastIds = [];
+    this.renderTeacherProjects();
+  }
+
+  toggleProjectBroadcastSelect(projectId) {
+    const idx = this.selectedProjectBroadcastIds.indexOf(projectId);
+    if (idx === -1) {
+      this.selectedProjectBroadcastIds.push(projectId);
+    } else {
+      this.selectedProjectBroadcastIds.splice(idx, 1);
+    }
+    
+    // Update count display
+    const countEl = document.getElementById('broadcast-selected-count');
+    if (countEl) {
+      countEl.textContent = `${this.selectedProjectBroadcastIds.length} selected`;
+    }
+  }
+
+  toggleSelectAllBroadcast() {
+    const teacher = this.getLoggedTeacher();
+    if (!teacher) return;
+    const schoolId = teacher.schoolId;
+
+    const activeProjs = window.db.getProjects()
+      .filter(p => (p.creatorSchoolId === schoolId || p.targetSchoolId === schoolId) && p.status !== 'Cancelled' && p.status !== 'Proposed');
+    const activeIds = activeProjs.map(p => p.id);
+
+    if (this.selectedProjectBroadcastIds.length === activeIds.length) {
+      this.selectedProjectBroadcastIds = [];
+    } else {
+      this.selectedProjectBroadcastIds = activeIds;
+    }
+    this.renderTeacherProjects();
+  }
+
+  sendBulkBroadcast() {
+    const textEl = document.getElementById('broadcast-message-textarea');
+    if (!textEl) return;
+    const text = textEl.value.trim();
+    if (!text) {
+      alert('Please type a message to broadcast.');
+      return;
+    }
+    if (this.selectedProjectBroadcastIds.length === 0) {
+      alert('Please select at least one project.');
+      return;
+    }
+
+    const teacher = this.getLoggedTeacher();
+    const teacherName = teacher ? `Teacher ${teacher.name}` : 'Teacher';
+
+    this.selectedProjectBroadcastIds.forEach(pid => {
+      window.db.addProjectMessage(pid, teacher.id, teacherName, text);
+    });
+
+    window.db.addLog(
+      'Broadcast Message Sent',
+      `Sent broadcast message to ${this.selectedProjectBroadcastIds.length} projects.`,
+      teacherName
+    );
+
+    alert(`Broadcast message sent successfully to ${this.selectedProjectBroadcastIds.length} projects.`);
+    textEl.value = '';
+    this.selectedProjectBroadcastIds = [];
+    this.refreshUI();
+  }
+
+  toggleSuspendProject(projectId, currentPaused) {
+    const teacher = this.getLoggedTeacher();
+    const teacherName = teacher ? `Teacher ${teacher.name}` : 'Teacher';
+    const project = window.db.getProject(projectId);
+    if (!project) return;
+
+    window.db.updateProject(projectId, { paused: !currentPaused });
+    
+    window.db.addLog(
+      !currentPaused ? 'Project Suspended' : 'Project Unsuspended',
+      `${teacherName} ${!currentPaused ? 'suspended' : 'unsuspended'} project "${project.title}".`,
+      teacherName
+    );
+
+    this.refreshUI();
+  }
+
+  cancelProject(projectId) {
+    const teacher = this.getLoggedTeacher();
+    const teacherName = teacher ? `Teacher ${teacher.name}` : 'Teacher';
+    const project = window.db.getProject(projectId);
+    if (!project) return;
+
+    window.db.updateProject(projectId, { status: 'Cancelled' });
+    
+    window.db.addLog(
+      'Project Cancelled',
+      `${teacherName} cancelled project "${project.title}". It is now hidden from students.`,
+      teacherName
+    );
+
+    this.refreshUI();
+  }
+
+  reinstateProject(projectId) {
+    const teacher = this.getLoggedTeacher();
+    const teacherName = teacher ? `Teacher ${teacher.name}` : 'Teacher';
+    const project = window.db.getProject(projectId);
+    if (!project) return;
+
+    window.db.updateProject(projectId, { status: 'Published', paused: false });
+    
+    window.db.addLog(
+      'Project Reinstated',
+      `${teacherName} reinstated project "${project.title}".`,
+      teacherName
+    );
+
+    this.refreshUI();
+  }
+
+  deleteProjectPermanently(projectId) {
+    const teacher = this.getLoggedTeacher();
+    const teacherName = teacher ? `Teacher ${teacher.name}` : 'Teacher';
+    const project = window.db.getProject(projectId);
+    if (!project) return;
+
+    if (confirm(`Are you sure you want to permanently delete the project "${project.title}"? This will delete all project cards, slides, and group messages. This action cannot be undone.`)) {
+      window.db.deleteProject(projectId);
+      
+      window.db.addLog(
+        'Project Permanently Deleted',
+        `${teacherName} permanently deleted project "${project.title}".`,
+        teacherName
+      );
+
+      this.refreshUI();
+    }
+  }
+
+  openProjectModerationChat(projectId) {
+    const project = window.db.getProject(projectId);
+    if (!project) return;
+
+    this.activeModeratedProjectId = projectId;
+
+    const modal = document.getElementById('teacher-project-moderation-modal');
+    const titleEl = document.getElementById('moderation-modal-title');
+    const slidesContainer = document.getElementById('moderation-slides-container');
+    const chatHistory = document.getElementById('moderation-chat-history');
+    const chatInput = document.getElementById('moderation-chat-input');
+
+    if (!modal) return;
+
+    titleEl.textContent = `💬 Moderating Project: ${project.title}`;
+    if (chatInput) chatInput.value = '';
+
+    // Render slides
+    if (slidesContainer) {
+      slidesContainer.innerHTML = '';
+      if (project.slides && project.slides.length > 0) {
+        project.slides.forEach((s, index) => {
+          const div = document.createElement('div');
+          div.style.padding = '0.65rem';
+          div.style.background = 'rgba(255,255,255,0.02)';
+          div.style.border = '1px solid var(--panel-border)';
+          div.style.borderRadius = '8px';
+          div.style.marginBottom = '0.5rem';
+          div.innerHTML = `
+            <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.15rem;">
+              <span>Card ${index + 1}</span>
+              <strong>By ${s.author}</strong>
+            </div>
+            <h5 style="margin: 0 0 0.2rem 0; font-size: 0.8rem; color: var(--text-primary); font-weight: 700;">${s.title}</h5>
+            <p style="margin: 0; font-size: 0.75rem; color: var(--text-secondary); white-space: pre-wrap;">${s.content}</p>
+          `;
+          slidesContainer.appendChild(div);
+        });
+      } else {
+        slidesContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-style: italic; font-size: 0.8rem; padding: 1rem;">No slides created yet.</div>`;
+      }
+    }
+
+    // Render Chat
+    this.renderModerationChat();
+
+    // Show modal
+    modal.classList.add('active');
+  }
+
+  renderModerationChat() {
+    const projectId = this.activeModeratedProjectId;
+    if (!projectId) return;
+
+    const chatHistory = document.getElementById('moderation-chat-history');
+    if (!chatHistory) return;
+
+    chatHistory.innerHTML = '';
+    const msgs = window.db.getProjectMessages().filter(m => m.projectId === projectId);
+
+    if (msgs.length === 0) {
+      chatHistory.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-style: italic; font-size: 0.8rem; padding: 2rem; margin: auto;">No messages in this chat yet.</div>`;
+    } else {
+      msgs.forEach(m => {
+        const isTeacher = m.senderName && m.senderName.startsWith('Teacher');
+        const msgDiv = document.createElement('div');
+        msgDiv.style.display = 'flex';
+        msgDiv.style.flexDirection = 'column';
+        msgDiv.style.alignSelf = isTeacher ? 'flex-end' : 'flex-start';
+        msgDiv.style.maxWidth = '85%';
+        msgDiv.style.padding = '0.4rem 0.65rem';
+        msgDiv.style.borderRadius = '12px';
+        msgDiv.style.background = isTeacher ? 'rgba(59, 130, 246, 0.25)' : 'rgba(255,255,255,0.04)';
+        msgDiv.style.border = isTeacher ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid rgba(255,255,255,0.03)';
+        msgDiv.style.marginBottom = '0.25rem';
+        
+        msgDiv.innerHTML = `
+          <span style="font-size: 0.65rem; font-weight: 700; color: ${isTeacher ? '#60a5fa' : 'var(--text-secondary)'};">${m.senderName}</span>
+          <span style="font-size: 0.75rem; margin-top: 0.1rem; color: var(--text-primary);">${m.text}</span>
+          <span style="font-size: 0.6rem; color: var(--text-muted); align-self: flex-end; margin-top: 0.1rem;">${new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+        `;
+        chatHistory.appendChild(msgDiv);
+      });
+      chatHistory.scrollTop = chatHistory.scrollHeight;
+    }
+  }
+
+  sendProjectModerationMessage() {
+    const projectId = this.activeModeratedProjectId;
+    if (!projectId) return;
+
+    const input = document.getElementById('moderation-chat-input');
+    if (!input) return;
+    const text = input.value.trim();
+    if (!text) return;
+
+    const teacher = this.getLoggedTeacher();
+    const senderId = teacher ? teacher.id : 'coord_1';
+    const senderName = teacher ? `Teacher ${teacher.name}` : 'Teacher';
+
+    window.db.addProjectMessage(projectId, senderId, senderName, text);
+    input.value = '';
+    
+    // Rerender chat
+    this.renderModerationChat();
+    // Keep parent UI in sync if messages count changed
+    this.refreshUI();
   }
 
   handleProjectLaunch(e) {

@@ -888,6 +888,22 @@ class LocalDB {
     }
   }
 
+  deleteProject(id) {
+    let list = this.getProjects();
+    list = list.filter(p => p.id !== id);
+    this.saveTable('projects', list);
+
+    // Cascade delete project messages
+    let msgs = this.getProjectMessages();
+    msgs = msgs.filter(m => m.projectId !== id);
+    this.saveTable('projectMessages', msgs);
+
+    // Cascade delete project flags
+    let flags = this.getFlags();
+    flags = flags.filter(f => f.projectId !== id);
+    this.saveTable('flags', flags);
+  }
+
   addProjectMessage(projectId, senderId, senderName, text) {
     const list = this.getProjectMessages();
     const newMsg = {
