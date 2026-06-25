@@ -1289,16 +1289,26 @@
                 <h3 style="font-size: 0.95rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.35rem;">
                   <span>📢</span> Bulk Message Broadcast
                 </h3>
-                <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0;">
-                  Select projects in the gallery below and compose a message to broadcast to their group chats at once.
-                </p>
-                <textarea class="form-control" id="broadcast-message-textarea" placeholder="Type a broadcast message to selected project chats..." style="height: 60px; font-size: 0.8rem; resize: vertical;"></textarea>
+                <textarea class="form-control" id="broadcast-message-textarea" oninput="app.updateBroadcastSubmitButton()" placeholder="Type a broadcast message to selected project chats..." style="height: 60px; font-size: 0.8rem; resize: vertical;"></textarea>
+                
+                <!-- Broadcast Targeting Selector -->
+                <div style="display: flex; gap: 1.25rem; padding: 0.2rem 0; flex-wrap: wrap;" id="broadcast-target-wrapper">
+                  <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; cursor: pointer; color: var(--text-primary);">
+                    <input type="radio" name="proto-broadcast-target" id="broadcast-target-selected" value="selected" checked onclick="app.setBroadcastTarget('selected')" style="accent-color: var(--primary);">
+                    Selected projects only (<span id="broadcast-selected-count-label">0</span> ticked)
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; cursor: pointer; color: var(--text-primary);">
+                    <input type="radio" name="proto-broadcast-target" id="broadcast-target-all" value="all" onclick="app.setBroadcastTarget('all')" style="accent-color: var(--primary);">
+                    All connected projects (<span id="broadcast-all-count-label">0</span>)
+                  </label>
+                </div>
+
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
                   <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <button type="button" class="btn btn-secondary btn-small" onclick="app.toggleSelectAllBroadcast()" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">Select All</button>
+                    <button type="button" class="btn btn-secondary btn-small" id="broadcast-select-all-btn" onclick="app.toggleSelectAllBroadcast()" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">Select All</button>
                     <span id="broadcast-selected-count" style="font-size: 0.75rem; color: var(--text-secondary);">0 selected</span>
                   </div>
-                  <button type="button" class="btn btn-primary btn-small" onclick="app.sendBulkBroadcast()" style="font-size: 0.75rem; padding: 0.3rem 0.75rem;">Send Broadcast</button>
+                  <button type="button" class="btn btn-primary btn-small" id="broadcast-submit-btn" onclick="app.sendBulkBroadcast()" style="font-size: 0.75rem; padding: 0.3rem 0.75rem;">Send Broadcast</button>
                 </div>
               </div>
 

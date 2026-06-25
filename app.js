@@ -89,6 +89,7 @@ class App {
     this.activeSlideIndex = 0;
     this.projectsSubTab = 'gallery';
     this.selectedProjectBroadcastIds = [];
+    this.broadcastTarget = 'selected';
     this.activeModeratedProjectId = null;
     
     // Bind listeners
@@ -6833,10 +6834,49 @@ class App {
           return bPaused - aPaused; // Sort suspended projects to top
         });
 
-      // Update Broadcast Count display
-      const broadcastCountEl = document.getElementById('broadcast-selected-count');
-      if (broadcastCountEl) {
-        broadcastCountEl.textContent = `${this.selectedProjectBroadcastIds.length} selected`;
+      // Update Broadcast Targeting UI elements
+      const countEl = document.getElementById('broadcast-selected-count');
+      const labelTicked = document.getElementById('broadcast-selected-count-label');
+      const labelAll = document.getElementById('broadcast-all-count-label');
+      const btnSelectAll = document.getElementById('broadcast-select-all-btn');
+      const btnSubmit = document.getElementById('broadcast-submit-btn');
+      
+      const radioSelected = document.getElementById('broadcast-target-selected');
+      const radioAll = document.getElementById('broadcast-target-all');
+      
+      if (radioSelected && radioAll) {
+        radioSelected.checked = (this.broadcastTarget === 'selected');
+        radioAll.checked = (this.broadcastTarget === 'all');
+      }
+
+      if (labelTicked) labelTicked.textContent = this.selectedProjectBroadcastIds.length;
+      if (labelAll) labelAll.textContent = activeProjects.length;
+
+      if (countEl) {
+        if (this.broadcastTarget === 'all') {
+          countEl.textContent = 'All projects targeted';
+        } else {
+          countEl.textContent = `${this.selectedProjectBroadcastIds.length} selected`;
+        }
+      }
+
+      if (btnSelectAll) {
+        btnSelectAll.disabled = (this.broadcastTarget === 'all');
+        btnSelectAll.style.opacity = (this.broadcastTarget === 'all') ? 0.5 : 1;
+        btnSelectAll.style.cursor = (this.broadcastTarget === 'all') ? 'not-allowed' : 'pointer';
+        
+        btnSelectAll.textContent = (this.selectedProjectBroadcastIds.length === activeProjects.length && this.selectedProjectBroadcastIds.length > 0)
+          ? "Deselect All"
+          : "Select All";
+      }
+
+      if (btnSubmit) {
+        const isMsgEmpty = !document.getElementById('broadcast-message-textarea')?.value.trim();
+        const noSelection = (this.broadcastTarget === 'selected' && this.selectedProjectBroadcastIds.length === 0);
+        btnSubmit.disabled = isMsgEmpty || noSelection;
+        btnSubmit.style.opacity = (isMsgEmpty || noSelection) ? 0.5 : 1;
+        btnSubmit.style.cursor = (isMsgEmpty || noSelection) ? 'not-allowed' : 'pointer';
+        btnSubmit.textContent = (this.broadcastTarget === 'all') ? "Send Broadcast to All" : "Send Broadcast to Selected";
       }
 
       if (activeProjects.length === 0) {
@@ -6872,7 +6912,7 @@ class App {
           card.innerHTML = `
             <!-- Broadcast Checkbox -->
             <div style="position: absolute; top: 1rem; right: 1rem;">
-              <input type="checkbox" id="chk-broadcast-${p.id}" style="cursor: pointer; width: 16px; height: 16px;" ${isSelected ? 'checked' : ''} onclick="app.toggleProjectBroadcastSelect('${p.id}')">
+              <input type="checkbox" id="chk-broadcast-${p.id}" style="width: 16px; height: 16px; cursor: ${this.broadcastTarget === 'all' ? 'not-allowed' : 'pointer'}; opacity: ${this.broadcastTarget === 'all' ? 0.6 : 1};" ${(this.broadcastTarget === 'all' || isSelected) ? 'checked' : ''} ${this.broadcastTarget === 'all' ? 'disabled' : ''} onclick="app.toggleProjectBroadcastSelect('${p.id}')">
             </div>
 
             <div style="padding-right: 1.5rem;">
@@ -7002,6 +7042,24 @@ class App {
     this.renderTeacherProjects();
   }
 
+  setBroadcastTarget(target) {
+    this.broadcastTarget = target;
+    this.renderTeacherProjects();
+  }
+
+  updateBroadcastSubmitButton() {
+    const textEl = document.getElementById('broadcast-message-textarea');
+    const btnSubmit = document.getElementById('broadcast-submit-btn');
+    if (textEl && btnSubmit) {
+      const text = textEl.value.trim();
+      const isMsgEmpty = !text;
+      const noSelection = (this.broadcastTarget === 'selected' && this.selectedProjectBroadcastIds.length === 0);
+      btnSubmit.disabled = isMsgEmpty || noSelection;
+      btnSubmit.style.opacity = (isMsgEmpty || noSelection) ? 0.5 : 1;
+      btnSubmit.style.cursor = (isMsgEmpty || noSelection) ? 'not-allowed' : 'pointer';
+    }
+  }
+
   sendBulkBroadcast() {
     const textEl = document.getElementById('broadcast-message-textarea');
     if (!textEl) return;
@@ -7010,27 +7068,39 @@ class App {
       alert('Please type a message to broadcast.');
       return;
     }
-    if (this.selectedProjectBroadcastIds.length === 0) {
+
+    const teacher = this.getLoggedTeacher();
+    if (!teacher) return;
+    const schoolId = teacher.schoolId;
+
+    const activeProjs = window.db.getProjects()
+      .filter(p => (p.creatorSchoolId === schoolId || p.targetSchoolId === schoolId) && p.status !== 'Cancelled' && p.status !== 'Proposed');
+    
+    const targetProjectIds = this.broadcastTarget === 'all'
+      ? activeProjs.map(p => p.id)
+      : this.selectedProjectBroadcastIds;
+
+    if (targetProjectIds.length === 0) {
       alert('Please select at least one project.');
       return;
     }
 
-    const teacher = this.getLoggedTeacher();
-    const teacherName = teacher ? `Teacher ${teacher.name}` : 'Teacher';
+    const teacherName = `Teacher ${teacher.name}`;
 
-    this.selectedProjectBroadcastIds.forEach(pid => {
+    targetProjectIds.forEach(pid => {
       window.db.addProjectMessage(pid, teacher.id, teacherName, text);
     });
 
     window.db.addLog(
       'Broadcast Message Sent',
-      `Sent broadcast message to ${this.selectedProjectBroadcastIds.length} projects.`,
+      `Sent broadcast message to ${targetProjectIds.length} projects.`,
       teacherName
     );
 
-    alert(`Broadcast message sent successfully to ${this.selectedProjectBroadcastIds.length} projects.`);
+    alert(`Broadcast message sent successfully to ${targetProjectIds.length} projects.`);
     textEl.value = '';
     this.selectedProjectBroadcastIds = [];
+    this.broadcastTarget = 'selected';
     this.refreshUI();
   }
 
