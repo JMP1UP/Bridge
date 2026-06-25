@@ -1816,12 +1816,12 @@
 
   <!-- Safeguarding Flag Resolve Detail Modal -->
   <div class="modal-overlay" id="resolve-flag-modal">
-    <div class="modal-content" style="max-width: 600px;">
-      <div class="modal-header">
+    <div class="modal-content" style="max-width: 600px; max-height: 90vh; display: flex; flex-direction: column;">
+      <div class="modal-header" style="flex-shrink: 0;">
         <h3 class="panel-title">🛡️ Safeguarding Review Desk</h3>
         <button class="modal-close" onclick="app.closeModal('resolve-flag-modal')">&times;</button>
       </div>
-      <div id="flag-detail-content">
+      <div id="flag-detail-content" style="overflow-y: auto; flex-grow: 1; padding-right: 5px;">
         <!-- Loaded dynamically by JS -->
       </div>
     </div>
