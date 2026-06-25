@@ -105,7 +105,11 @@
             </a></li>
             <li><a class="nav-link" data-tab="teach-matching">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="18" y1="8" x2="23" y2="13"></line><line x1="23" y1="8" x2="18" y2="13"></line></svg>
-              <span data-localize="matching_tool">Matching Tool</span>
+              <span data-localize="teach_matching">Penpal Matching</span>
+            </a></li>
+            <li><a class="nav-link" data-tab="teach-partnerships">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px; fill: none; stroke: currentColor;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+              <span>School Partnerships</span>
             </a></li>
             <li><a class="nav-link" data-tab="teach-safeguarding">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
@@ -875,9 +879,6 @@
           <button class="subtab-btn" id="subtab-active-btn" onclick="app.switchMatchingSubtab('active')">
             Active Matches
           </button>
-          <button class="subtab-btn" id="subtab-connections-btn" onclick="app.switchMatchingSubtab('connections')">
-            School Connections
-          </button>
         </div>
 
         <!-- Matching Metrics Overview -->
@@ -1009,10 +1010,43 @@
             </div>
           </div>
         </div>
+      </section>
 
-        <!-- Subtab 4: School Connections & Directory -->
-        <div id="matching-subtab-connections" style="display: none;">
-          <!-- Content populated dynamically by JS -->
+      <!-- Teacher School Partnerships Tab -->
+      <section class="tab-view-panel" id="view-teach-partnerships" style="display: none;">
+        <div class="partnerships-layout" style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; align-items: start;">
+          <!-- Left Column: Establish connection -->
+          <div class="panel" style="padding: 1.5rem;">
+            <div class="panel-header" style="padding: 0 0 0.5rem 0; border-bottom: 1px solid var(--panel-border); margin-bottom: 1rem;">
+              <h2 class="panel-title" style="font-size: 1.1rem; font-weight: 700; margin: 0;">🤝 New Connection</h2>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0 0 1rem 0;">
+              Propose a connection request to link with another school on the platform.
+            </p>
+            <form id="establish-connection-form" onsubmit="app.handleSendConnectionRequest(event)">
+              <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="connect-target-school-select" style="font-weight: 600; font-size: 0.8rem; display: block; margin-bottom: 0.35rem;">Target School:</label>
+                <select id="connect-target-school-select" class="form-control" required style="font-size: 0.85rem;">
+                  <option value="">-- Choose school to connect --</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="connect-message-note" style="font-weight: 600; font-size: 0.8rem; display: block; margin-bottom: 0.35rem;">Message Note:</label>
+                <textarea id="connect-message-note" class="form-control" placeholder="Introduce your school and state language/age target groups..." style="height: 100px; resize: vertical; font-size: 0.85rem;"></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary" style="width: 100%;">Send Connection Invite</button>
+            </form>
+          </div>
+
+          <!-- Right Column: Linked partnerships directory -->
+          <div class="panel" style="padding: 1.5rem;">
+            <div class="panel-header" style="padding: 0 0 0.5rem 0; border-bottom: 1px solid var(--panel-border); margin-bottom: 1.25rem;">
+              <h2 class="panel-title" style="font-size: 1.1rem; font-weight: 700; margin: 0;">🏫 Linked School Partnerships</h2>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;" id="linked-partnerships-directory">
+              <!-- Dynamically populated via app.js -->
+            </div>
+          </div>
         </div>
       </section>
 

@@ -841,6 +841,7 @@ class App {
       this.populateTeacherSettings();
       this.renderTeacherMessages();
       this.renderTeacherProjects();
+      this.renderSchoolConnections();
     } else if (this.currentRole === 'admin') {
       this.renderAdminDashboard();
       this.renderAdminSchools();
@@ -2285,7 +2286,7 @@ class App {
       if (selectEl && selectEl.options.length === 0) {
         nameEl.innerHTML = '<span style="color: var(--danger);">⚠️ No Connected Partner Schools</span>';
         metaEl.textContent = 'Action Required';
-        descEl.innerHTML = 'You cannot suggest matches until you connect with a school. Please go to the <strong>School Connections</strong> tab to find partner schools and establish a connection.';
+        descEl.innerHTML = 'You cannot suggest matches until you connect with a school. Please go to the <strong>School Partnerships</strong> tab to find partner schools and establish a connection.';
         countEl.textContent = 'N/A';
       } else {
         nameEl.textContent = 'No School Selected';
@@ -2537,7 +2538,7 @@ class App {
 
     // Add a dashed shortcut card to request new connections
     html += `
-      <div class="metric-card" onclick="app.switchMatchingSubtab('connections')" style="border: 2px dashed var(--panel-border); background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 120px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--primary)'; this.style.background='rgba(var(--primary-rgb), 0.03)'" onmouseout="this.style.borderColor='var(--panel-border)'; this.style.background='transparent'">
+      <div class="metric-card" onclick="app.switchTab('teach-partnerships')" style="border: 2px dashed var(--panel-border); background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 120px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--primary)'; this.style.background='rgba(var(--primary-rgb), 0.03)'" onmouseout="this.style.borderColor='var(--panel-border)'; this.style.background='transparent'">
         <div style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; height: 100%;">
           <span style="font-size: 1.6rem; line-height: 1; display: block; margin: 0;">🔗</span>
           <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); display: block; line-height: 1.2;">Establish a New Connection</span>
@@ -3081,66 +3082,60 @@ class App {
   renderSchoolConnections() {
     const teacher = this.getLoggedTeacher();
     const schoolId = teacher ? teacher.schoolId : 'school_1';
-    const container = document.getElementById('matching-subtab-connections');
-    if (!container) return;
+    
+    // 1. Populate unconnected target schools dropdown select
+    const selectEl = document.getElementById('connect-target-school-select');
+    if (selectEl) {
+      const connections = window.db.getSchoolConnections();
+      const connectedOrRequestedSchoolIds = connections.filter(c => 
+        c.fromSchoolId === schoolId || c.toSchoolId === schoolId
+      ).map(c => c.fromSchoolId === schoolId ? c.toSchoolId : c.fromSchoolId);
+      
+      const unconnectedSchools = window.db.getSchools().filter(s => 
+        s.id !== schoolId && !connectedOrRequestedSchoolIds.includes(s.id)
+      );
+
+      selectEl.innerHTML = '<option value="">-- Choose school to connect --</option>' +
+        unconnectedSchools.map(s => `<option value="${s.id}">${s.name} (${s.country})</option>`).join('');
+    }
+
+    // 2. Populate partnerships directory
+    const directoryEl = document.getElementById('linked-partnerships-directory');
+    if (!directoryEl) return;
 
     const connections = window.db.getSchoolConnections();
     const established = connections.filter(c => c.status === 'Connected' && (c.fromSchoolId === schoolId || c.toSchoolId === schoolId));
     const incoming = connections.filter(c => c.status === 'Pending' && c.toSchoolId === schoolId);
     const sent = connections.filter(c => c.status === 'Pending' && c.fromSchoolId === schoolId);
 
-    const connectedOrRequestedSchoolIds = connections.filter(c => 
-      c.fromSchoolId === schoolId || c.toSchoolId === schoolId
-    ).map(c => c.fromSchoolId === schoolId ? c.toSchoolId : c.fromSchoolId);
-    
-    const unconnectedSchools = window.db.getSchools().filter(s => 
-      s.id !== schoolId && !connectedOrRequestedSchoolIds.includes(s.id)
-    );
+    let html = '';
 
-    // Build Established Connections section
-    let establishedHtml = '';
-    if (established.length === 0) {
-      establishedHtml = `
-        <div style="text-align: center; padding: 2rem; color: var(--text-secondary); border: 1px dashed var(--panel-border); border-radius: 12px; background: rgba(255,255,255,0.01);">
-          <span style="font-size: 2rem; display: block; margin-bottom: 0.5rem;">🔗</span>
-          <h4 style="margin: 0; font-size: 0.95rem; font-weight: 600;">No Connected Schools</h4>
-          <p style="font-size: 0.75rem; margin: 0.25rem 0 0 0; color: var(--text-muted);">Find a partner school below and request a connection to start matching students.</p>
-        </div>
-      `;
-    } else {
-      establishedHtml = `
-        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-          ${established.map(c => {
-            const partnerSchoolId = c.fromSchoolId === schoolId ? c.toSchoolId : c.fromSchoolId;
-            const school = window.db.getSchool(partnerSchoolId);
+    // A. Pending Incoming Requests
+    if (incoming.length > 0) {
+      html += `
+        <div style="margin-bottom: 0.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
+          <h3 style="font-size: 0.9rem; font-weight: 700; color: var(--primary); margin: 0; text-transform: uppercase; letter-spacing: 0.05em;">📥 Incoming Requests (${incoming.length})</h3>
+          ${incoming.map(c => {
+            const school = window.db.getSchool(c.fromSchoolId);
             const flag = this.getSchoolFlag(school?.country);
-            
-            // Calculate active matches count
-            const matches = window.db.getMatches().filter(m => m.active && 
-              m.studentIds.some(id => {
-                const stud = window.db.getStudent(id);
-                return stud && stud.schoolId === schoolId;
-              }) &&
-              m.studentIds.some(id => {
-                const stud = window.db.getStudent(id);
-                return stud && stud.schoolId === partnerSchoolId;
-              })
-            );
-            
+            const sender = window.db.getCoordinators().find(co => co.schoolId === c.fromSchoolId) || { name: 'Unknown Coordinator', email: '' };
             return `
-              <div class="panel" style="padding: 1rem; background: rgba(255,255,255,0.02); display: flex; justify-content: space-between; align-items: center; border-radius: 12px; border: 1px solid var(--panel-border);">
-                <div style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;" onclick="app.openSchoolDetail('${school?.id}')">
-                  <div style="font-size: 1.5rem; width: 40px; height: 40px; background: rgba(0,0,0,0.15); border-radius: 8px; display: flex; align-items: center; justify-content: center;">🏫</div>
+              <div class="panel" style="padding: 1rem; background: rgba(6, 182, 212, 0.03); border: 1px solid rgba(6, 182, 212, 0.2); border-radius: 8px; display: flex; flex-direction: column; gap: 0.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
                   <div>
-                    <h4 style="font-weight: 700; font-size: 0.95rem; margin: 0; display: flex; align-items: center; gap: 0.4rem; text-decoration: underline;">
+                    <h4 style="font-weight: 700; font-size: 0.9rem; margin: 0; color: var(--text-primary); display: flex; align-items: center; gap: 0.35rem;">
                       ${flag} ${school?.name}
                     </h4>
-                    <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0.15rem 0 0 0;">${school?.city}, ${school?.country} • Lang: ${school?.language.toUpperCase()}</p>
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">${school?.city}, ${school?.country}</span>
+                  </div>
+                  <div style="display: flex; gap: 0.35rem;">
+                    <button class="btn btn-primary btn-small" onclick="app.acceptConnectionRequest('${c.id}')" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Accept</button>
+                    <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2); padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="app.declineConnectionRequest('${c.id}')">Decline</button>
                   </div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                  <span class="badge badge-info">${matches.length} Pen Pal Match${matches.length === 1 ? '' : 'es'}</span>
-                  <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2);" onclick="app.removeSchoolConnection('${c.id}')">Disconnect</button>
+                <div style="background: rgba(0,0,0,0.1); border-radius: 6px; padding: 0.5rem; font-size: 0.75rem;">
+                  <div style="font-weight: 600; color: var(--secondary); margin-bottom: 0.15rem;">From: ${sender.name} (${sender.email})</div>
+                  <div style="font-style: italic; color: var(--text-secondary); line-height: 1.4;">"${c.requestMessage || 'No request message note.'}"</div>
                 </div>
               </div>
             `;
@@ -3149,105 +3144,29 @@ class App {
       `;
     }
 
-    // Build Pending Incoming Connection Requests section
-    let incomingHtml = '';
-    if (incoming.length > 0) {
-      incomingHtml = `
-        <div style="margin-bottom: 2rem;">
-          <h3 style="font-size: 1rem; font-weight: 700; color: var(--primary); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">📥 Incoming Connection Requests (${incoming.length})</h3>
-          <div style="display: flex; flex-direction: column; gap: 1rem;">
-            ${incoming.map(c => {
-              const school = window.db.getSchool(c.fromSchoolId);
-              const flag = this.getSchoolFlag(school?.country);
-              const sender = window.db.getCoordinators().find(co => co.schoolId === c.fromSchoolId) || { name: 'Unknown Coordinator', email: '' };
-              
-              return `
-                <div class="panel" style="padding: 1.25rem; background: rgba(6, 182, 212, 0.03); border: 1px solid rgba(6, 182, 212, 0.25); border-radius: 14px; display: flex; flex-direction: column; gap: 0.75rem;">
-                  <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem;">
-                    <div>
-                      <h4 style="font-weight: 700; font-size: 1rem; margin: 0; color: var(--text-primary); display: flex; align-items: center; gap: 0.4rem;">
-                        ${flag} ${school?.name}
-                      </h4>
-                      <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0.15rem 0 0 0;">${school?.city}, ${school?.country} • Lang: ${school?.language.toUpperCase()}</p>
-                    </div>
-                    <div style="display: flex; gap: 0.5rem;">
-                      <button class="btn btn-primary btn-small" onclick="app.acceptConnectionRequest('${c.id}')">Accept</button>
-                      <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2);" onclick="app.declineConnectionRequest('${c.id}')">Decline</button>
-                    </div>
-                  </div>
-                  <div style="background: rgba(0,0,0,0.15); border-radius: 8px; padding: 0.75rem; font-size: 0.8rem; border: 1px solid var(--panel-border);">
-                    <div style="font-weight: 600; margin-bottom: 0.35rem; color: var(--secondary);">From Coordinator: ${sender.name} (${sender.email})</div>
-                    <div style="font-style: italic; margin-bottom: 0.5rem; color: var(--text-secondary); line-height: 1.4;">"<strong>Coordinator Biography:</strong> ${c.requestorBio || 'Not provided.'}"</div>
-                    ${c.requestMessage ? `<div style="color: var(--text-secondary); line-height: 1.4; border-top: 1px solid var(--panel-border); padding-top: 0.4rem; margin-top: 0.4rem;"><strong>Personal Message:</strong> ${c.requestMessage}</div>` : ''}
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        </div>
-      `;
-    }
-
-    // Build Sent Requests section
-    let sentHtml = '';
+    // B. Outgoing Sent Requests
     if (sent.length > 0) {
-      sentHtml = `
-        <div style="margin-top: 1.5rem; margin-bottom: 1.5rem;">
-          <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.05em; margin-bottom: 0.75rem; text-transform: uppercase;">📤 Outgoing Requests Sent (${sent.length})</h4>
-          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-            ${sent.map(c => {
-              const school = window.db.getSchool(c.toSchoolId);
-              const flag = this.getSchoolFlag(school?.country);
-              return `
-                <div class="panel" style="padding: 1rem; background: rgba(255,255,255,0.01); display: flex; justify-content: space-between; align-items: center; border-radius: 12px; border: 1px solid var(--panel-border);">
-                  <div style="display: flex; align-items: center; gap: 0.75rem;">
-                    <div style="font-size: 1.5rem; width: 40px; height: 40px; background: rgba(0,0,0,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center;">🏫</div>
-                    <div>
-                      <h5 style="font-weight: 700; font-size: 0.9rem; margin: 0; display: flex; align-items: center; gap: 0.4rem;">
-                        ${flag} ${school?.name}
-                      </h5>
-                      <span style="font-size: 0.75rem; color: var(--text-muted);">${school?.city}, ${school?.country}</span>
-                    </div>
-                  </div>
-                  <div style="display: flex; align-items: center; gap: 1rem;">
-                    <span class="badge badge-warning" style="font-size: 0.7rem; padding: 0.15rem 0.5rem;">Pending Acceptance</span>
-                    <button class="btn btn-secondary btn-small" style="color: var(--text-muted);" onclick="app.declineConnectionRequest('${c.id}')">Cancel Request</button>
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        </div>
-      `;
-    }
-
-    // Build Find Partner Schools section
-    let partnerSchoolsHtml = '';
-    if (unconnectedSchools.length === 0) {
-      partnerSchoolsHtml = `
-        <div style="text-align: center; padding: 2rem; color: var(--text-muted); border: 1px dashed var(--panel-border); border-radius: 12px; background: rgba(255,255,255,0.01);">
-          No other schools are currently available to connect.
-        </div>
-      `;
-    } else {
-      partnerSchoolsHtml = `
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem;">
-          ${unconnectedSchools.map(s => {
-            const flag = this.getSchoolFlag(s.country);
+      html += `
+        <div style="margin-bottom: 0.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
+          <h3 style="font-size: 0.9rem; font-weight: 700; color: var(--text-secondary); margin: 0; text-transform: uppercase; letter-spacing: 0.05em;">📤 Sent Requests (${sent.length})</h3>
+          ${sent.map(c => {
+            const school = window.db.getSchool(c.toSchoolId);
+            const flag = this.getSchoolFlag(school?.country);
             return `
-              <div class="panel" style="padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; border-radius: 14px; border: 1px solid var(--panel-border); background: rgba(255,255,255,0.01); transition: transform 0.2s, border-color 0.2s;" onmouseover="this.style.borderColor='var(--secondary)'" onmouseout="this.style.borderColor='var(--panel-border)'">
-                <div>
-                  <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                    <span style="font-size: 1.5rem;">🏫</span>
-                    <h5 style="font-weight: 700; font-size: 0.95rem; margin: 0; line-height: 1.3; color: var(--text-primary);">${s.name}</h5>
+              <div class="panel" style="padding: 0.75rem 1rem; background: rgba(255,255,255,0.01); display: flex; justify-content: space-between; align-items: center; border-radius: 8px; border: 1px solid var(--panel-border);">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span style="font-size: 1.25rem;">🏫</span>
+                  <div>
+                    <h5 style="font-weight: 700; font-size: 0.85rem; margin: 0; color: var(--text-primary); display: flex; align-items: center; gap: 0.25rem;">
+                      ${flag} ${school?.name}
+                    </h5>
+                    <span style="font-size: 0.7rem; color: var(--text-muted);">${school?.city}, ${school?.country}</span>
                   </div>
-                  <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0.25rem 0;"><strong>Location:</strong> ${flag} ${s.city}, ${s.country}</p>
-                  <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0.25rem 0;"><strong>Language:</strong> ${s.language.toUpperCase()}</p>
-                  <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem; line-height: 1.45; text-align: justify; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
-                    ${s.description || 'No biography details provided.'}
-                  </p>
                 </div>
-                <button class="btn btn-primary btn-small" style="width: 100%;" onclick="app.openConnectRequestModal('${s.id}')">+ Request Connection</button>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span class="badge badge-warning" style="font-size: 0.65rem; padding: 0.15rem 0.35rem;">Pending</span>
+                  <button class="btn btn-secondary btn-small" style="color: var(--text-muted); padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="app.declineConnectionRequest('${c.id}')">Cancel</button>
+                </div>
               </div>
             `;
           }).join('')}
@@ -3255,30 +3174,133 @@ class App {
       `;
     }
 
-    container.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 1.75rem;">
-        
-        <!-- Incoming Requests section -->
-        ${incomingHtml}
+    // C. Active Partnerships Directory
+    if (established.length === 0) {
+      if (incoming.length === 0 && sent.length === 0) {
+        html += `
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 200px; color: var(--text-muted); text-align: center; border: 1px dashed var(--panel-border); border-radius: 8px; padding: 1.5rem;">
+            <span style="font-size: 2rem; margin-bottom: 0.5rem;">🤝</span>
+            <h4 style="margin: 0; font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">No School Partnerships</h4>
+            <p style="font-size: 0.75rem; margin-top: 0.25rem; color: var(--text-secondary);">Use the "New Connection" panel on the left to link with partner schools.</p>
+          </div>
+        `;
+      }
+    } else {
+      html += established.map(c => {
+        const partnerSchoolId = c.fromSchoolId === schoolId ? c.toSchoolId : c.fromSchoolId;
+        const school = window.db.getSchool(partnerSchoolId);
+        if (!school) return '';
 
-        <!-- Established Connections section -->
-        <div>
-          <h3 style="font-size: 1rem; font-weight: 700; color: var(--secondary); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">🔗 Established Connections (${established.length})</h3>
-          ${establishedHtml}
-        </div>
+        const flag = this.getSchoolFlag(school.country);
+        const partnerCoordinator = window.db.getCoordinators().find(co => co.schoolId === partnerSchoolId);
 
-        <!-- Sent Requests section -->
-        ${sentHtml}
+        // Metrics calculations
+        const myStudents = window.db.getStudents().filter(s => s.schoolId === schoolId);
+        const linkedStudentsCount = window.db.getMatches().filter(m => 
+          m.active && 
+          m.studentIds.some(sid => myStudents.some(ms => ms.id === sid)) &&
+          m.studentIds.some(sid => {
+            const studentObj = window.db.getStudent(sid);
+            return studentObj && studentObj.schoolId === partnerSchoolId;
+          })
+        ).length;
 
-        <!-- Find Partner Schools Directory section -->
-        <div style="margin-top: 1rem; border-top: 1px solid var(--panel-border); padding-top: 1.5rem;">
-          <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">🔍 School Directory (Find Exchange Partners)</h3>
-          <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.25rem;">Establish connection requests with school coordinators before proposing student matches.</p>
-          ${partnerSchoolsHtml}
-        </div>
+        const sharedProjectsCount = window.db.getProjects().filter(p => 
+          p.status !== 'Cancelled' &&
+          ((p.creatorSchoolId === schoolId && p.targetSchoolId === partnerSchoolId) ||
+           (p.creatorSchoolId === partnerSchoolId && p.targetSchoolId === schoolId))
+        ).length;
 
-      </div>
-    `;
+        let coordHtml = '';
+        if (partnerCoordinator) {
+          coordHtml = `
+            <div style="display: flex; align-items: center; gap: 0.5rem; border-top: 1px solid rgba(255, 255, 255, 0.04); padding-top: 0.75rem; margin-top: 0.75rem;">
+              <div style="width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--panel-border); overflow: hidden; background: rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.8rem; font-weight: bold; color: var(--text-muted);">
+                ${partnerCoordinator.photoUrl ? `<img src="${partnerCoordinator.photoUrl}" alt="${partnerCoordinator.name}" style="width: 100%; height: 100%; object-fit: cover;" />` : partnerCoordinator.name.charAt(0)}
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 0.1rem; line-height: 1.2;">
+                <span style="font-size: 0.65rem; color: var(--text-muted);">School Coordinator</span>
+                <strong style="font-size: 0.75rem; color: var(--text-primary);">${partnerCoordinator.name}</strong>
+                ${partnerCoordinator.email ? `<span style="font-size: 0.65rem; color: var(--text-muted);">✉️ ${partnerCoordinator.email}</span>` : ''}
+              </div>
+            </div>
+          `;
+        }
+
+        return `
+          <div class="panel" style="padding: 1.25rem; background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 8px; display: flex; flex-direction: column; gap: 0.75rem;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;" onclick="app.openSchoolDetail('${school.id}')">
+                <span style="font-size: 1.75rem;">🏫</span>
+                <div>
+                  <h4 style="font-weight: 800; font-size: 0.95rem; margin: 0; color: var(--text-primary); text-decoration: underline;">
+                    ${flag} ${school.name}
+                  </h4>
+                  <span style="font-size: 0.7rem; color: var(--text-muted);">📍 ${school.city}, ${school.country}</span>
+                </div>
+              </div>
+              
+              <button 
+                class="btn btn-secondary btn-small"
+                style="color: var(--danger); border-color: rgba(239, 68, 68, 0.25); padding: 0.25rem 0.5rem; font-size: 0.75rem;"
+                onclick="app.removeSchoolConnection('${c.id}')"
+              >
+                Disconnect
+              </button>
+            </div>
+
+            <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0; line-height: 1.4;">
+              ${school.description || 'No description provided by school.'}
+            </p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; background: rgba(255, 255, 255, 0.02); padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid var(--panel-border);">
+              <div style="display: flex; flex-direction: column;">
+                <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Linked Students</span>
+                <strong style="font-size: 0.85rem; color: var(--secondary);">${linkedStudentsCount} Pairing(s)</strong>
+              </div>
+              <div style="display: flex; flex-direction: column;">
+                <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Shared Group Projects</span>
+                <strong style="font-size: 0.85rem; color: var(--secondary);">${sharedProjectsCount} Project(s)</strong>
+              </div>
+            </div>
+
+            ${coordHtml}
+          </div>
+        `;
+      }).join('');
+    }
+
+    directoryEl.innerHTML = html;
+  }
+
+  handleSendConnectionRequest(event) {
+    event.preventDefault();
+    const selectEl = document.getElementById('connect-target-school-select');
+    const msgEl = document.getElementById('connect-message-note');
+    const targetSchoolId = selectEl.value;
+    const requestMessage = msgEl.value.trim();
+
+    if (!targetSchoolId) return;
+
+    const teacher = this.getLoggedTeacher();
+    const schoolId = teacher ? teacher.schoolId : 'school_1';
+    const requestorBio = teacher ? (teacher.bio || '') : '';
+
+    window.db.addSchoolConnection({
+      fromSchoolId: schoolId,
+      toSchoolId: targetSchoolId,
+      requestMessage,
+      requestorBio
+    });
+
+    // Add audit log
+    const name = teacher ? teacher.name : 'Teacher';
+    const targetSchool = window.db.getSchool(targetSchoolId);
+    window.db.addLog('Connection Requested', `Sent connection request to ${targetSchool ? targetSchool.name : 'another school'}.`, name);
+
+    alert('Connection request sent successfully!');
+    msgEl.value = '';
+    this.refreshUI();
   }
 
   // Opens connection request modal
