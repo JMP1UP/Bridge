@@ -3392,16 +3392,7 @@ class App {
             ? `<button class="btn btn-danger btn-small" onclick="app.openResolveFlagModal('${flag.id}')">Review & Take Action</button>`
             : `<div style="display: flex; flex-direction: column; gap: 0.35rem;">
                  <span style="font-size: 0.75rem; color: var(--text-muted);">Resolved by:<br>${myResolution.reviewedBy}<br>Action: ${myResolution.actionTaken}</span>
-                 <button class="btn btn-secondary btn-small" style="font-size: 0.7rem; padding: 0.2rem 0.4rem;" onclick="app.openResolveFlagModal('${flag.id}')">View Details</button>
-               </div>`}
-        </td>
-      `;
-      tbody.appendChild(row);
-    });
-  }
-
-  // Opens resolution Safeguarding detail modal
-  openResolveFlagModal(flagId) {
+                 <button class="btn btn-secondary btn-small" style="font-size: 0.7rem; padding: 0.2rem 0.4rem;" onclick="app.openResolveFlagModal('${flag.id}')">View D  openResolveFlagModal(flagId, tabId = 'details') {
     const flag = window.db.getFlags().find(f => f.id === flagId);
     if (!flag) return;
 
@@ -3464,6 +3455,7 @@ class App {
         }
       }
         
+      if (proj) {
         const studentIds = [...proj.creatorSchoolStudentIds, ...proj.targetSchoolStudentIds];
         participantsMarkup = studentIds.map(sid => {
           const s = window.db.getStudent(sid);
@@ -3528,7 +3520,7 @@ class App {
               Status: <strong>Resolved</strong> by <strong>${otherResolution.reviewedBy}</strong> on <strong>${new Date(otherResolution.reviewedAt).toLocaleString()}</strong>
             </p>
             <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0 0 0.25rem 0;">
-              Action Taken: <span class="badge badge-success" style="font-size: 0.65rem; padding: 0.05rem 0.2rem;">${otherResolution.actionTaken}</span>
+              Action Taken: <span class="badge badge-success" style="font-size: 0.65rem; padding: 0.05rem 0.25rem;">${otherResolution.actionTaken}</span>
             </p>
             <p style="font-size: 0.75rem; color: var(--text-primary); background: rgba(0,0,0,0.15); padding: 0.4rem; border-radius: 4px; margin: 0.25rem 0 0 0; font-style: italic;">
               Comment: "${otherResolution.resolutionNotes || 'No comment'}"
@@ -3652,25 +3644,70 @@ class App {
       `;
     }
 
+    const activeTab = tabId || 'details';
+
+    // Premium navigation switcher tabs row
+    const tabsRowMarkup = `
+      <div style="display: flex; gap: 0.35rem; border-bottom: 1px solid var(--panel-border); padding-bottom: 0.75rem; margin-bottom: 0.75rem;">
+        <button type="button" 
+                style="background: ${activeTab === 'details' ? 'rgba(var(--primary-rgb), 0.12)' : 'none'}; 
+                       border: 1px solid ${activeTab === 'details' ? 'var(--primary)' : 'transparent'}; 
+                       color: ${activeTab === 'details' ? 'var(--text-primary)' : 'var(--text-secondary)'}; 
+                       font-weight: 600; font-size: 0.8rem; cursor: pointer; padding: 0.4rem 0.85rem; border-radius: 8px; transition: all 0.2s; outline: none;"
+                onclick="app.openResolveFlagModal('${flag.id}', 'details')">
+          🛡️ Alert Details
+        </button>
+        <button type="button" 
+                style="background: ${activeTab === 'content' ? 'rgba(var(--primary-rgb), 0.12)' : 'none'}; 
+                       border: 1px solid ${activeTab === 'content' ? 'var(--primary)' : 'transparent'}; 
+                       color: ${activeTab === 'content' ? 'var(--text-primary)' : 'var(--text-secondary)'}; 
+                       font-weight: 600; font-size: 0.8rem; cursor: pointer; padding: 0.4rem 0.85rem; border-radius: 8px; transition: all 0.2s; outline: none;"
+                onclick="app.openResolveFlagModal('${flag.id}', 'content')">
+          📁 Flagged Content
+        </button>
+        <button type="button" 
+                style="background: ${activeTab === 'actions' ? 'rgba(var(--primary-rgb), 0.12)' : 'none'}; 
+                       border: 1px solid ${activeTab === 'actions' ? 'var(--primary)' : 'transparent'}; 
+                       color: ${activeTab === 'actions' ? 'var(--text-primary)' : 'var(--text-secondary)'}; 
+                       font-weight: 600; font-size: 0.8rem; cursor: pointer; padding: 0.4rem 0.85rem; border-radius: 8px; transition: all 0.2s; outline: none;"
+                onclick="app.openResolveFlagModal('${flag.id}', 'actions')">
+          ⚡ Take Action
+        </button>
+      </div>
+    `;
+
+    let activeBodyMarkup = '';
+    if (activeTab === 'details') {
+      activeBodyMarkup = `
+        <div style="font-size: 0.8rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.35rem;">
+          <div>Alert Type: <strong>${isProjectFlag ? 'Project Safeguarding Concern' : 'Chat Sensitive Keyword Alert'}</strong></div>
+          <div>Alert Timestamp: <strong>${new Date(flag.flaggedAt).toLocaleString()}</strong></div>
+          <div>Reporter: <strong>${flag.reportedBy || (sender ? sender.name : 'System Safeguard')}</strong></div>
+        </div>
+        
+        <div class="panel" style="padding: 1rem; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.02); margin-top: 0.5rem;">
+          <h4 style="font-size: 0.9rem; color: var(--danger); font-weight: bold; margin-bottom: 0.5rem; margin-top: 0;">Flagged Violation Reason:</h4>
+          <p style="font-size: 0.85rem; font-weight: 500; color: var(--text-primary); margin: 0;">${flag.reason || 'Sensitive Keyword alert'}</p>
+          ${flag.details ? `<p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem; background: rgba(0,0,0,0.1); padding: 0.5rem; border-radius: 6px; margin-bottom: 0;">Details: ${flag.details}</p>` : ''}
+        </div>
+
+        <div style="margin-top: 0.5rem;">
+          ${partnerSchoolStatusMarkup}
+        </div>
+      `;
+    } else if (activeTab === 'content') {
+      activeBodyMarkup = detailContentHtml;
+    } else {
+      activeBodyMarkup = actionsMarkup;
+    }
+
     const container = document.getElementById('flag-detail-content');
     container.innerHTML = `
       <div style="display: flex; flex-direction: column; gap: 1rem;">
-        <div>
-          <span style="font-size: 0.8rem; color: var(--text-secondary);">Reported By: <strong>${flag.reportedBy || (sender ? sender.name : 'System')}</strong></span><br>
-          <span style="font-size: 0.8rem; color: var(--text-secondary);">Alert Timestamp: <strong>${new Date(flag.flaggedAt).toLocaleString()}</strong></span>
+        ${tabsRowMarkup}
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          ${activeBodyMarkup}
         </div>
-        
-        <div class="panel" style="padding: 1rem; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.02);">
-          <h4 style="font-size: 0.9rem; color: var(--danger); font-weight: bold; margin-bottom: 0.5rem;">Flagged Violation Reason:</h4>
-          <p style="font-size: 0.85rem; font-weight: 500; color: var(--text-primary);">${flag.reason || 'Sensitive Keyword alert'}</p>
-          ${flag.details ? `<p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem; background: rgba(0,0,0,0.1); padding: 0.5rem; border-radius: 6px;">Details: ${flag.details}</p>` : ''}
-        </div>
-
-        ${detailContentHtml}
-
-        <hr style="border-top: 1px solid var(--panel-border);">
-
-        ${actionsMarkup}
       </div>
     `;
 
@@ -7051,7 +7088,7 @@ class App {
           <input type="text" id="edit-slide-photo-${slideId}" class="form-control" style="font-size: 0.8rem; padding: 0.2rem 0.4rem; background: var(--bg-color); color: var(--text-primary); border: 1px solid var(--panel-border); border-radius: 4px;" value="${slide.photoUrl || ''}">
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 0.4rem; margin-top: 0.35rem;">
-          <button type="button" class="btn btn-secondary btn-small" style="font-size: 0.7rem; padding: 0.15rem 0.4rem; height: auto;" onclick="app.openResolveFlagModal('${flagId}')">Cancel</button>
+          <button type="button" class="btn btn-secondary btn-small" style="font-size: 0.7rem; padding: 0.15rem 0.4rem; height: auto;" onclick="app.openResolveFlagModal('${flagId}', 'content')">Cancel</button>
           <button type="button" class="btn btn-primary btn-small" style="font-size: 0.7rem; padding: 0.15rem 0.4rem; height: auto;" onclick="app.saveSlideInline('${flagId}', '${projectId}', '${slideId}')">Save Changes</button>
         </div>
       </div>
@@ -7080,7 +7117,7 @@ class App {
     window.db.addAuditLog("Project Content Moderated", `Teacher ${teacherName} edited slide "${slide.title}" in project "${proj.title}" to moderate content.`, teacherName);
     
     // Refresh modal
-    this.openResolveFlagModal(flagId);
+    this.openResolveFlagModal(flagId, 'content');
   }
 }
 
