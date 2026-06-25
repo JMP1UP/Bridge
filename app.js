@@ -3413,6 +3413,7 @@ class App {
     let match = null;
     let proj = null;
 
+    let projectChatMarkup = '';
     if (isProjectFlag) {
       proj = window.db.getProject(flag.projectId);
       if (proj) {
@@ -3426,18 +3427,42 @@ class App {
                 </div>
               `;
             }
+            const editBadge = s.editableByOthers !== false ? '🔓 Group Editable' : '🔒 Author Locked';
             return `
-              <div style="padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.01); border: 1px solid var(--panel-border); border-radius: 6px; margin-bottom: 0.4rem; font-size: 0.8rem; display: flex; flex-direction: column; gap: 0.25rem;">
+              <div id="flag-proj-slide-${s.id}" style="padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.01); border: 1px solid var(--panel-border); border-radius: 6px; margin-bottom: 0.4rem; font-size: 0.8rem; display: flex; flex-direction: column; gap: 0.25rem;">
                 <div style="display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: bold;">
                   <span style="color: var(--text-primary);">Slide ${idx + 1}: ${s.title || 'Untitled'}</span>
-                  <span style="font-weight: normal; color: var(--text-muted); font-size: 0.7rem;">by ${s.author}</span>
+                  <span style="font-weight: normal; color: var(--text-muted); font-size: 0.7rem;">by ${s.author} • ${editBadge}</span>
                 </div>
                 <div style="font-size: 0.75rem; color: var(--text-secondary); white-space: pre-wrap; line-height: 1.4;">${s.content || '(Empty content)'}</div>
                 ${imgMarkup}
+                <div style="display: flex; justify-content: flex-end; margin-top: 0.2rem;">
+                  <button type="button" class="btn btn-secondary btn-small" style="font-size: 0.7rem; padding: 0.15rem 0.4rem; height: auto;" onclick="app.startEditingSlideInline('${flag.id}', '${proj.id}', '${s.id}')">✏️ Edit Content</button>
+                </div>
               </div>
             `;
           }).join('');
         }
+
+        // Prepare project chat history
+        const projMsgs = window.db.getMessages().filter(m => m.projectId === flag.projectId);
+        if (projMsgs.length === 0) {
+          projectChatMarkup = `<p style="font-size: 0.75rem; color: var(--text-muted); font-style: italic;">No messages in group chat yet.</p>`;
+        } else {
+          projectChatMarkup = projMsgs.map(m => {
+            const senderName = window.db.getStudent(m.senderId)?.name || m.senderName || 'Student';
+            const country = window.db.getStudent(m.senderId) ? window.db.getSchool(window.db.getStudent(m.senderId).schoolId)?.country : '';
+            const flagSvg = country ? app.getSchoolFlag(country) : '';
+            return `
+              <div style="font-size: 0.75rem; line-height: 1.4; margin-bottom: 0.3rem;">
+                <strong>${flagSvg} <span style="color: var(--text-primary);">${senderName}:</span></strong>
+                <span style="color: var(--text-secondary);">${m.text}</span>
+                ${m.translation ? `<div style="font-size: 0.7rem; color: var(--text-muted); padding-left: 0.5rem; font-style: italic;">📝 ${m.translation}</div>` : ''}
+              </div>
+            `;
+          }).join('');
+        }
+      }
         
         const studentIds = [...proj.creatorSchoolStudentIds, ...proj.targetSchoolStudentIds];
         participantsMarkup = studentIds.map(sid => {
@@ -3606,8 +3631,13 @@ class App {
       detailContentHtml = `
         <div>
           <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-primary);">Project Slide Outline:</h4>
-          <div style="max-height: 200px; overflow-y: auto; padding-right: 0.25rem;">
+          <div style="max-height: 180px; overflow-y: auto; padding-right: 0.25rem; margin-bottom: 0.75rem;">
             ${slidesMarkup || '<p style="font-size: 0.8rem; color: var(--text-muted);">No slides found.</p>'}
+          </div>
+          
+          <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-primary);">Project Group Chat History:</h4>
+          <div style="max-height: 120px; overflow-y: auto; padding: 0.5rem; border: 1px solid var(--panel-border); border-radius: 6px; background: rgba(0,0,0,0.1); padding-right: 0.25rem;">
+            ${projectChatMarkup}
           </div>
         </div>
       `;
@@ -6997,6 +7027,60 @@ class App {
     document.getElementById('login-screen').style.setProperty('display', 'flex', 'important');
     document.querySelector('.app-container').style.setProperty('display', 'none', 'important');
     this.populateLoginScreen();
+  }
+
+  startEditingSlideInline(flagId, projectId, slideId) {
+    const proj = window.db.getProject(projectId);
+    const slide = proj.slides.find(s => s.id === slideId);
+    if (!slide) return;
+    
+    const container = document.getElementById(`flag-proj-slide-${slideId}`);
+    container.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 0.4rem; width: 100%; padding: 0.25rem 0;">
+        <div style="font-size: 0.75rem; font-weight: bold; color: var(--primary);">Editing Card Content</div>
+        <div style="display: flex; flex-direction: column; gap: 0.15rem;">
+          <label style="font-size: 0.7rem; color: var(--text-secondary); font-weight: bold;">Title</label>
+          <input type="text" id="edit-slide-title-${slideId}" class="form-control" style="font-size: 0.8rem; padding: 0.2rem 0.4rem; background: var(--bg-color); color: var(--text-primary); border: 1px solid var(--panel-border); border-radius: 4px;" value="${slide.title || ''}">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.15rem;">
+          <label style="font-size: 0.7rem; color: var(--text-secondary); font-weight: bold;">Content Body</label>
+          <textarea id="edit-slide-content-${slideId}" class="form-control" style="height: 60px; font-size: 0.8rem; padding: 0.2rem 0.4rem; background: var(--bg-color); color: var(--text-primary); border: 1px solid var(--panel-border); border-radius: 4px; resize: vertical;">${slide.content || ''}</textarea>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.15rem;">
+          <label style="font-size: 0.7rem; color: var(--text-secondary); font-weight: bold;">Photo URL (Optional)</label>
+          <input type="text" id="edit-slide-photo-${slideId}" class="form-control" style="font-size: 0.8rem; padding: 0.2rem 0.4rem; background: var(--bg-color); color: var(--text-primary); border: 1px solid var(--panel-border); border-radius: 4px;" value="${slide.photoUrl || ''}">
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.4rem; margin-top: 0.35rem;">
+          <button type="button" class="btn btn-secondary btn-small" style="font-size: 0.7rem; padding: 0.15rem 0.4rem; height: auto;" onclick="app.openResolveFlagModal('${flagId}')">Cancel</button>
+          <button type="button" class="btn btn-primary btn-small" style="font-size: 0.7rem; padding: 0.15rem 0.4rem; height: auto;" onclick="app.saveSlideInline('${flagId}', '${projectId}', '${slideId}')">Save Changes</button>
+        </div>
+      </div>
+    `;
+  }
+
+  saveSlideInline(flagId, projectId, slideId) {
+    const projects = window.db.getProjects();
+    const proj = projects.find(p => p.id === projectId);
+    if (!proj) return;
+    const slide = proj.slides.find(s => s.id === slideId);
+    if (!slide) return;
+    
+    const titleVal = document.getElementById(`edit-slide-title-${slideId}`).value.trim();
+    const contentVal = document.getElementById(`edit-slide-content-${slideId}`).value.trim();
+    const photoVal = document.getElementById(`edit-slide-photo-${slideId}`).value.trim();
+    
+    slide.title = titleVal;
+    slide.content = contentVal;
+    slide.photoUrl = photoVal;
+    
+    window.db.saveTable('projects', projects);
+    
+    const teacher = this.getLoggedTeacher();
+    const teacherName = teacher ? teacher.name : 'Teacher';
+    window.db.addAuditLog("Project Content Moderated", `Teacher ${teacherName} edited slide "${slide.title}" in project "${proj.title}" to moderate content.`, teacherName);
+    
+    // Refresh modal
+    this.openResolveFlagModal(flagId);
   }
 }
 
