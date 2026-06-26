@@ -714,6 +714,22 @@ class App {
         badgeEl.onclick = null;
       }
     }
+
+    // Dynamic brand/logo subtitle based on active role
+    const brandDescEl = document.querySelector('.brand > span');
+    if (brandDescEl) {
+      if (this.currentRole === 'student') {
+        brandDescEl.textContent = this.translate('student_portal_subtitle', 'Student Portal');
+      } else if (this.currentRole === 'teacher') {
+        brandDescEl.textContent = this.translate('teacher_portal_subtitle', 'Teacher Portal');
+      } else if (this.currentRole === 'admin') {
+        brandDescEl.textContent = this.translate('admin_portal_subtitle', 'Admin Portal');
+      } else if (this.currentRole === 'new-coordinator') {
+        brandDescEl.textContent = this.translate('onboarding_portal_subtitle', 'Onboarding Portal');
+      } else {
+        brandDescEl.textContent = this.translate('connecting_students_subtitle', 'connecting students across cultures');
+      }
+    }
   }
 
   // Dynamic Navigation sidebars
@@ -780,11 +796,11 @@ class App {
       const template = window.translator.UI_TRANSLATIONS[this.interfaceLang].welcome_subtitle_student || "Welcome, {name}! Connect with your cultural exchange partner.";
       subtitleEl.textContent = template.replace('{name}', student?.name || 'Student');
     } else if (this.currentRole === 'teacher') {
-      subtitleEl.textContent = 'Staff Portal: Monitor safety, review student articles, and pair partners.';
+      subtitleEl.textContent = this.translate('teacher_portal_subtitle_desc', 'Staff Portal: Monitor safety, review student articles, and pair partners.');
     } else if (this.currentRole === 'admin') {
-      subtitleEl.textContent = 'Platform Management Dashboard: Audit global actions and register schools.';
+      subtitleEl.textContent = this.translate('platform_admin_subtitle_desc', 'Platform Management Dashboard: Audit global actions and register schools.');
     } else if (this.currentRole === 'new-coordinator') {
-      subtitleEl.textContent = 'Coordinator Onboarding: Connect your school to Bridge to participate.';
+      subtitleEl.textContent = this.translate('coordinator_onboarding_subtitle_desc', 'Coordinator Onboarding: Connect your school to Bridge to participate.');
     }
 
     // Refresh dynamic views on switch
@@ -797,11 +813,11 @@ class App {
     if (this.theme === 'dark') {
       this.theme = 'light';
       document.documentElement.setAttribute('data-theme', 'light');
-      btn.textContent = '☀️ Light Mode';
+      btn.textContent = `☀️ ${this.translate('light_mode_btn', 'Light Mode')}`;
     } else {
       this.theme = 'dark';
       document.documentElement.removeAttribute('data-theme');
-      btn.textContent = '🌙 Dark Mode';
+      btn.textContent = `🌙 ${this.translate('dark_mode_btn', 'Dark Mode')}`;
     }
   }
 
@@ -826,6 +842,29 @@ class App {
         }
       }
     });
+
+    // Programmatically translate core header elements (cache-safe)
+    const interfaceLabel = document.querySelector('#ui-lang-selector-container span');
+    if (interfaceLabel) {
+      interfaceLabel.textContent = this.translate('interface_language_label', 'Interface:');
+    }
+
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+      logoutBtn.innerHTML = `🚪 ${this.translate('logout_btn', 'Logout')}`;
+    }
+
+    const themeBtn = document.getElementById('theme-toggle-btn');
+    if (themeBtn) {
+      if (this.theme === 'light') {
+        themeBtn.textContent = `☀️ ${this.translate('light_mode_btn', 'Light Mode')}`;
+      } else {
+        themeBtn.textContent = `🌙 ${this.translate('dark_mode_btn', 'Dark Mode')}`;
+      }
+    }
+
+    // Refresh user badge to localize brand subtitle
+    this.updateUserBadge();
 
     // Update headings/labels
     const activeLink = document.querySelector('.nav-link.active');
@@ -2042,6 +2081,44 @@ class App {
     document.getElementById('stat-flagged-concerns').textContent = flags.length;
     document.getElementById('stat-pending-articles').textContent = pendingArticles.length + pendingBiogs.length;
 
+    // Programmatic translations for stats card labels (cache-safe overlay)
+    const statTotalLabel = document.getElementById('stat-total-students').nextElementSibling;
+    if (statTotalLabel) statTotalLabel.textContent = this.translate('total_students', 'Total Students');
+
+    const statUnmatchedLabel = document.getElementById('stat-unmatched-students').nextElementSibling;
+    if (statUnmatchedLabel) statUnmatchedLabel.textContent = this.translate('unmatched_students', 'Unmatched Students');
+
+    const statFlaggedLabel = document.getElementById('stat-flagged-concerns').nextElementSibling;
+    if (statFlaggedLabel) statFlaggedLabel.textContent = this.translate('flagged_issues', 'Flagged Issues');
+
+    const statPendingLabel = document.getElementById('stat-pending-articles').nextElementSibling;
+    if (statPendingLabel) statPendingLabel.textContent = this.translate('pending_reviews', 'Pending Reviews');
+
+    // Programmatic translations for panel headings
+    const spotlightTitle = document.querySelector('#teacher-school-spotlight-panel .panel-title span');
+    if (spotlightTitle) spotlightTitle.textContent = this.translate('my_school_spotlight', 'My School Spotlight');
+
+    const editProfileBtn = document.querySelector('#teacher-school-spotlight-panel .panel-header button');
+    if (editProfileBtn) editProfileBtn.textContent = this.translate('edit_profile', 'Edit Profile');
+
+    const announcementsTitle = document.querySelector('#teacher-announcements-panel .panel-title span');
+    if (announcementsTitle) announcementsTitle.textContent = this.translate('announcements_manager', 'School Announcements Manager');
+
+    const postAnnouncementBtn = document.querySelector('#teacher-announcements-panel .panel-header button span');
+    if (postAnnouncementBtn) postAnnouncementBtn.textContent = this.translate('post_announcement_btn', 'Post Announcement');
+
+    const safetyTitle = document.querySelector('#view-teach-dashboard .news-grid .panel:nth-child(1) .panel-title span');
+    if (safetyTitle) safetyTitle.textContent = this.translate('safeguarding_immediate_concerns', 'Immediate Safeguarding Concerns');
+    
+    const safetyBtn = document.querySelector('#view-teach-dashboard .news-grid .panel:nth-child(1) .panel-header button');
+    if (safetyBtn) safetyBtn.textContent = this.translate('view_hub_btn', 'View Hub');
+
+    const articlesTitle = document.querySelector('#view-teach-dashboard .news-grid .panel:nth-child(2) .panel-title span');
+    if (articlesTitle) articlesTitle.textContent = this.translate('articles_awaiting_approval_header', 'Articles Awaiting Editorial Approval');
+    
+    const articlesBtn = document.querySelector('#view-teach-dashboard .news-grid .panel:nth-child(2) .panel-header button');
+    if (articlesBtn) articlesBtn.textContent = this.translate('view_desk_btn', 'View desk');
+
     // Toggle red alert styling if there are unresolved flags
     const flagCard = document.getElementById('stat-flagged-card');
     const navAlertCount = document.getElementById('flagged-alert-count');
@@ -2146,11 +2223,11 @@ class App {
             <h4 style="font-weight: 700; font-size: 1.1rem; margin: 0; line-height: 1.2;">
               <span style="cursor: pointer; text-decoration: underline; color: var(--secondary);" onclick="app.openSchoolDetail('${school.id}')">${school.name}</span>
             </h4>
-            <span style="font-size: 0.8rem; color: var(--text-secondary);">${school.city}, ${school.country}</span>
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">${this.translate(school.city.toLowerCase(), school.city)}, ${this.translate(school.country.toLowerCase(), school.country)}</span>
           </div>
         </div>
         <p style="font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary); margin-top: 0.75rem; text-align: justify;">
-          ${school.description || this.translate('no_school_description', 'No school description set yet.')}
+          ${this.translate(school.id + '_desc', school.description) || this.translate('no_school_description', 'No school description set yet.')}
         </p>
       </div>
     `;
@@ -2208,7 +2285,7 @@ class App {
                       <h5 style="font-weight: 700; font-size: 0.9rem; margin: 0;">
                         <span style="cursor: pointer; text-decoration: underline; color: var(--secondary);" onclick="app.openSchoolDetail('${item.school.id}')">${item.school.name}</span>
                       </h5>
-                      <span style="font-size: 0.75rem; color: var(--text-muted);">${item.school.city}, ${item.school.country}</span>
+                      <span style="font-size: 0.75rem; color: var(--text-muted);">${this.translate(item.school.city.toLowerCase(), item.school.city)}, ${this.translate(item.school.country.toLowerCase(), item.school.country)}</span>
                     </div>
                   </div>
                   <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -2472,8 +2549,8 @@ class App {
     const school = window.db.getSchool(schoolId);
     if (school) {
       nameEl.innerHTML = `${this.getSchoolFlag(school.country)} ${school.name}`;
-      metaEl.textContent = `${school.country} • ${school.city}`;
-      descEl.textContent = school.description || 'No description available for this school.';
+      metaEl.textContent = `${this.translate(school.country.toLowerCase(), school.country)} • ${this.translate(school.city.toLowerCase(), school.city)}`;
+      descEl.textContent = this.translate(school.id + '_desc', school.description) || this.translate('no_description_available_default', 'No description available for this school.');
       
       // Calculate unmatched students count
       const students = window.db.getStudents();
@@ -2482,14 +2559,14 @@ class App {
     } else {
       const selectEl = document.getElementById('partner-school-select');
       if (selectEl && selectEl.options.length === 0) {
-        nameEl.innerHTML = '<span style="color: var(--danger);">⚠️ No Connected Partner Schools</span>';
-        metaEl.textContent = 'Action Required';
-        descEl.innerHTML = 'You cannot suggest matches until you connect with a school. Please go to the <strong>School Partnerships</strong> tab to find partner schools and establish a connection.';
+        nameEl.innerHTML = `<span style="color: var(--danger);">${this.translate('no_connected_partner_schools', '⚠️ No Connected Partner Schools')}</span>`;
+        metaEl.textContent = this.translate('action_required', 'Action Required');
+        descEl.innerHTML = this.translate('no_connected_partner_schools_desc', 'You cannot suggest matches until you connect with a school. Please go to the <strong>School Partnerships</strong> tab to find partner schools and establish a connection.');
         countEl.textContent = 'N/A';
       } else {
-        nameEl.textContent = 'No School Selected';
+        nameEl.textContent = this.translate('no_school_selected', 'No School Selected');
         metaEl.textContent = '';
-        descEl.textContent = 'Please choose a partner school from the dropdown to continue.';
+        descEl.textContent = this.translate('choose_partner_school_desc', 'Please choose a partner school from the dropdown to continue.');
         countEl.textContent = '0';
       }
     }
@@ -2505,6 +2582,15 @@ class App {
     // Dynamic school ID
     const teacher = this.getLoggedTeacher();
     const schoolId = teacher ? teacher.schoolId : 'school_1';
+
+    // Translate own school heading in matching
+    const ownSchoolTitleEl = document.getElementById('matching-own-school-title');
+    if (ownSchoolTitleEl && schoolId) {
+      const ownSchool = window.db.getSchool(schoolId);
+      if (ownSchool) {
+        ownSchoolTitleEl.innerHTML = `🏫 ${ownSchool.name} (${this.translate(ownSchool.country.toLowerCase(), ownSchool.country)})`;
+      }
+    }
 
     // Show all local students (matched and unmatched) sorted: unmatched first, then alphabetically
     const myStudents = students.filter(s => s.schoolId === schoolId).sort((a, b) => {
