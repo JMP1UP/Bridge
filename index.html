@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bridge – connecting students across cultures</title>
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=1.1.18">
+  <link rel="stylesheet" href="style.css?v=1.1.20">
 </head>
 <body>
   
@@ -1055,7 +1055,7 @@
               </div>
               <div class="form-group" style="margin-bottom: 1rem;">
                 <label for="connect-message-note" style="font-weight: 600; font-size: 0.8rem; display: block; margin-bottom: 0.35rem;" data-localize="message_note_label">Message Note:</label>
-                <textarea id="connect-message-note" class="form-control" placeholder="Introduce your school and state language/age target groups..." style="height: 100px; resize: vertical; font-size: 0.85rem;"></textarea>
+                <textarea id="connect-message-note" class="form-control" placeholder="Introduce your school and state language/age target groups..." style="height: 100px; resize: vertical; font-size: 0.85rem;" data-localize="connect_message_note_placeholder"></textarea>
               </div>
               <button type="submit" class="btn btn-primary" style="width: 100%;" data-localize="send_connection_invite_btn">Send Connection Invite</button>
             </form>
@@ -1124,17 +1124,17 @@
           <form id="school-profile-form">
             <div class="form-group">
               <label for="school-desc-input" data-localize="school_bio_description_label">School Biography & Description</label>
-              <textarea class="form-control" id="school-desc-input" style="height: 120px; resize: vertical;" placeholder="Tell exchange partners and students about your school..." required></textarea>
+              <textarea class="form-control" id="school-desc-input" style="height: 120px; resize: vertical;" placeholder="Tell exchange partners and students about your school..." required data-localize="school_desc_input_placeholder"></textarea>
             </div>
             
             <div class="form-group">
               <label for="coordinator-name-input" data-localize="coordinator_name_label">Coordinator Name</label>
-              <input type="text" class="form-control" id="coordinator-name-input" placeholder="Enter your name..." required />
+              <input type="text" class="form-control" id="coordinator-name-input" placeholder="Enter your name..." required data-localize="coordinator_name_input_placeholder" />
             </div>
 
             <div class="form-group">
               <label for="coordinator-bio-input" data-localize="coordinator_bio_intro_label">Coordinator Biography & Introduction</label>
-              <textarea class="form-control" id="coordinator-bio-input" style="height: 100px; resize: vertical;" placeholder="Introduce yourself to partner school coordinators (e.g. your teaching experience, role)..." required></textarea>
+              <textarea class="form-control" id="coordinator-bio-input" style="height: 100px; resize: vertical;" placeholder="Introduce yourself to partner school coordinators (e.g. your teaching experience, role)..." required data-localize="coordinator_bio_input_placeholder"></textarea>
             </div>
 
             <!-- Coordinator Profile Picture upload -->
@@ -1289,11 +1289,11 @@
             <form id="launch-project-form">
               <div class="form-group" style="margin-bottom: 0.75rem;">
                 <label for="launch-proj-title" style="font-size: 0.75rem; font-weight: 600;" data-localize="project_title_label">Project Title</label>
-                <input type="text" id="launch-proj-title" class="form-control" style="font-size: 0.85rem;" placeholder="e.g. Sustainable Cities" required>
+                <input type="text" id="launch-proj-title" class="form-control" style="font-size: 0.85rem;" placeholder="e.g. Sustainable Cities" required data-localize="launch_proj_title_placeholder">
               </div>
               <div class="form-group" style="margin-bottom: 0.75rem;">
                 <label for="launch-proj-brief" style="font-size: 0.75rem; font-weight: 600;" data-localize="project_brief_label">Project Brief (Instructions)</label>
-                <textarea id="launch-proj-brief" class="form-control" style="height: 100px; resize: vertical; font-size: 0.85rem;" placeholder="Define the task, objectives, and topics for students to present..." required></textarea>
+                <textarea id="launch-proj-brief" class="form-control" style="height: 100px; resize: vertical; font-size: 0.85rem;" placeholder="Define the task, objectives, and topics for students to present..." required data-localize="launch_proj_brief_placeholder"></textarea>
               </div>
               <div class="form-group" style="margin-bottom: 0.75rem;">
                 <label for="launch-proj-school" style="font-size: 0.75rem; font-weight: 600;" data-localize="target_partner_school_label">Target Partner School</label>
@@ -1354,7 +1354,7 @@
                 <h3 style="font-size: 0.95rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.35rem;">
                   <span>📢</span> <span data-localize="bulk_message_broadcast_title">Bulk Message Broadcast</span>
                 </h3>
-                <textarea class="form-control" id="broadcast-message-textarea" oninput="app.updateBroadcastSubmitButton()" placeholder="Type a broadcast message to selected project chats..." style="height: 60px; font-size: 0.8rem; resize: vertical;"></textarea>
+                <textarea class="form-control" id="broadcast-message-textarea" oninput="app.updateBroadcastSubmitButton()" placeholder="Type a broadcast message to selected project chats..." style="height: 60px; font-size: 0.8rem; resize: vertical;" data-localize="broadcast_message_textarea_placeholder"></textarea>
                 
                 <!-- Broadcast Targeting Selector -->
                 <div style="display: flex; gap: 1.25rem; padding: 0.2rem 0; flex-wrap: wrap;" id="broadcast-target-wrapper">
@@ -1412,34 +1412,34 @@
       <section class="tab-view-panel" id="view-new-coord-onboarding" style="display: none;">
         <div class="panel">
           <div class="panel-header">
-            <h2 class="panel-title">👋 Connect Your School to Bridge</h2>
+            <h2 class="panel-title">👋 <span data-localize="onboarding_panel_title">Connect Your School to Bridge</span></h2>
           </div>
-          <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6;">
+          <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6;" data-localize="onboarding_panel_desc">
             Welcome to the Bridge Onboarding Portal! In order to participate in the international cultural exchange, your school must be registered on the platform.
           </p>
 
           <div class="onboarding-grid" style="display: grid; gap: 2rem;">
             <!-- Register School Form -->
             <div class="panel" style="background: rgba(255,255,255,0.01); border-color: var(--panel-border);">
-              <h3 style="font-weight: 700; font-size: 1.1rem; margin-bottom: 1rem;">Request New School Registration</h3>
+              <h3 style="font-weight: 700; font-size: 1.1rem; margin-bottom: 1rem;" data-localize="request_new_school_reg_title">Request New School Registration</h3>
               <form id="request-school-registration-form">
                 <div class="form-group">
-                  <label for="req-school-name">School Name</label>
-                  <input type="text" id="req-school-name" class="form-control" placeholder="e.g. Oakridge Academy" required>
+                  <label for="req-school-name" data-localize="school_name_label">School Name</label>
+                  <input type="text" id="req-school-name" class="form-control" placeholder="e.g. Oakridge Academy" required data-localize="req_school_name_placeholder">
                 </div>
                 <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                   <div>
-                    <label for="req-school-country">Country</label>
-                    <input type="text" id="req-school-country" class="form-control" placeholder="e.g. United Kingdom" required>
+                    <label for="req-school-country" data-localize="country_label">Country</label>
+                    <input type="text" id="req-school-country" class="form-control" placeholder="e.g. United Kingdom" required data-localize="req_school_country_placeholder">
                   </div>
                   <div>
-                    <label for="req-school-city">City</label>
-                    <input type="text" id="req-school-city" class="form-control" placeholder="e.g. London" required>
+                    <label for="req-school-city" data-localize="city_label">City</label>
+                    <input type="text" id="req-school-city" class="form-control" placeholder="e.g. London" required data-localize="req_school_city_placeholder">
                   </div>
                 </div>
                 <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                   <div>
-                    <label for="req-school-lang">Primary Language</label>
+                    <label for="req-school-lang" data-localize="primary_lang_label">Primary Language</label>
                     <select id="req-school-lang" class="form-control">
                       <option value="en">English (EN)</option>
                       <option value="de">German (DE)</option>
@@ -1448,25 +1448,25 @@
                     </select>
                   </div>
                   <div>
-                    <label for="req-school-code">Desired Code ID</label>
-                    <input type="text" id="req-school-code" class="form-control" placeholder="e.g. OAK-UK" required>
+                    <label for="req-school-code" data-localize="desired_code_id_label">Desired Code ID</label>
+                    <input type="text" id="req-school-code" class="form-control" placeholder="e.g. OAK-UK" required data-localize="req_school_code_placeholder">
                   </div>
                 </div>
                 
-                <h4 style="font-size: 0.9rem; font-weight: 700; color: var(--text-secondary); margin-top: 1.25rem; margin-bottom: 0.5rem; border-top: 1px solid var(--panel-border); padding-top: 1rem;">
+                <h4 style="font-size: 0.9rem; font-weight: 700; color: var(--text-secondary); margin-top: 1.25rem; margin-bottom: 0.5rem; border-top: 1px solid var(--panel-border); padding-top: 1rem;" data-localize="coord_account_info_header">
                   Coordinator Account Info
                 </h4>
                 <div class="form-group">
-                  <label for="req-coord-name">Your Full Name</label>
-                  <input type="text" id="req-coord-name" class="form-control" placeholder="e.g. Mr. David Green" required>
+                  <label for="req-coord-name" data-localize="your_full_name_label">Your Full Name</label>
+                  <input type="text" id="req-coord-name" class="form-control" placeholder="e.g. Mr. David Green" required data-localize="req_coord_name_placeholder">
                 </div>
                 <div class="form-group">
-                  <label for="req-coord-email">Your Email Address</label>
-                  <input type="email" id="req-coord-email" class="form-control" placeholder="e.g. david@oakridge.edu" required>
+                  <label for="req-coord-email" data-localize="your_email_address_label">Your Email Address</label>
+                  <input type="email" id="req-coord-email" class="form-control" placeholder="e.g. david@oakridge.edu" required data-localize="req_coord_email_placeholder">
                 </div>
 
                 <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem;">
-                  <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Registration Request</button>
+                  <button type="submit" class="btn btn-primary" style="width: 100%;" data-localize="submit_reg_request_btn">Submit Registration Request</button>
                 </div>
               </form>
             </div>
@@ -1474,22 +1474,22 @@
             <!-- Onboarding Info/Checklist -->
             <div style="display: flex; flex-direction: column; gap: 1.25rem;">
               <div class="panel" style="background: rgba(59, 130, 246, 0.03); border-color: rgba(59, 130, 246, 0.15);">
-                <h4 style="font-weight: 700; font-size: 0.95rem; color: var(--primary); margin-bottom: 0.5rem;">📋 What Happens Next?</h4>
+                <h4 style="font-weight: 700; font-size: 0.95rem; color: var(--primary); margin-bottom: 0.5rem;" data-localize="onboarding_what_happens_next">📋 What Happens Next?</h4>
                 <ol style="font-size: 0.8rem; line-height: 1.6; color: var(--text-secondary); padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.5rem;">
-                  <li><strong>Submit Request:</strong> Fill out the form to request a new school registration.</li>
-                  <li><strong>Admin Review:</strong> A Platform Administrator will review your school information and verify your credentials.</li>
-                  <li><strong>Setup Admin Account:</strong> Upon approval, your school profile is created, and your coordinator account is granted **School Admin** rights.</li>
-                  <li><strong>Invite Students:</strong> You can then log in, manage settings, and invite your students.</li>
+                  <li data-localize="onboarding_step_1"><strong>Submit Request:</strong> Fill out the form to request a new school registration.</li>
+                  <li data-localize="onboarding_step_2"><strong>Admin Review:</strong> A Platform Administrator will review your school information and verify your credentials.</li>
+                  <li data-localize="onboarding_step_3"><strong>Setup Admin Account:</strong> Upon approval, your school profile is created, and your coordinator account is granted **School Admin** rights.</li>
+                  <li data-localize="onboarding_step_4"><strong>Invite Students:</strong> You can then log in, manage settings, and invite your students.</li>
                 </ol>
               </div>
 
               <div class="panel" style="background: rgba(255,255,255,0.01); border-color: var(--panel-border);">
-                <h4 style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem;">🏫 Approved Schools Directory</h4>
-                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">If your school has already been approved, ask your Lead Administrator to create an invitation link for you, or contact system support.</p>
+                <h4 style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem;" data-localize="onboarding_approved_schools_dir">🏫 Approved Schools Directory</h4>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;" data-localize="onboarding_approved_schools_desc">If your school has already been approved, ask your Lead Administrator to create an invitation link for you, or contact system support.</p>
                 
                 <!-- Search Input -->
                 <div style="position: relative; margin-bottom: 0.75rem;">
-                  <input type="text" id="onboarding-school-search" class="form-control" style="font-size: 0.8rem; padding: 0.45rem 2rem 0.45rem 0.75rem;" placeholder="Search by school or coordinator...">
+                  <input type="text" id="onboarding-school-search" class="form-control" style="font-size: 0.8rem; padding: 0.45rem 2rem 0.45rem 0.75rem;" placeholder="Search by school or coordinator..." data-localize="onboarding_school_search_placeholder">
                   <span style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); font-size: 0.8rem; color: var(--text-muted); pointer-events: none;">🔍</span>
                 </div>
 
@@ -2190,8 +2190,8 @@
   </div>
 
   <!-- Core Scripts -->
-  <script src="database.js?v=1.1.18"></script>
-  <script src="translation.js?v=1.1.18"></script>
-  <script src="app.js?v=1.1.18"></script>
+  <script src="database.js?v=1.1.20"></script>
+  <script src="translation.js?v=1.1.20"></script>
+  <script src="app.js?v=1.1.20"></script>
 </body>
 </html>
