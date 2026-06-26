@@ -128,10 +128,10 @@ class App {
   }
 
   getLogonDisplay(level) {
-    if (level === 'High') return 'Today';
-    if (level === 'Medium') return '2 days ago';
-    if (level === 'Low') return '8 days ago';
-    return 'Never';
+    if (level === 'High') return this.translate('activity_today', 'Today');
+    if (level === 'Medium') return this.translate('activity_2days', '2 days ago');
+    if (level === 'Low') return this.translate('activity_8days', '8 days ago');
+    return this.translate('activity_never', 'Never');
   }
 
   getSchoolFlag(country, size = 'small') {
@@ -1423,7 +1423,7 @@ class App {
               <span>${flag} ${partnerName}</span>
               ${badgeStatus}
             </div>
-            <div class="chat-item-preview">${lastMsg ? lastMsg.text : 'Start chatting...'}</div>
+            <div class="chat-item-preview">${lastMsg ? lastMsg.text : this.translate('start_chatting_placeholder', 'Start chatting...')}</div>
           </div>
         `;
 
@@ -2042,7 +2042,7 @@ class App {
     safeguardTeaser.innerHTML = '';
     
     if (flags.length === 0) {
-      safeguardTeaser.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1rem;">No safety concerns pending review.</p>`;
+      safeguardTeaser.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1rem;">${this.translate('dashboard_no_safety_concerns', 'No safety concerns pending review.')}</p>`;
     } else {
       flags.slice(0, 3).forEach(flag => {
         const msg = window.db.getMessages().find(m => m.id === flag.messageId);
@@ -2059,10 +2059,10 @@ class App {
         
         item.innerHTML = `
           <div>
-            <h5 style="font-size: 0.85rem; font-weight: 600; color: #f87171;">Flagged Alert from ${sender ? sender.name : flag.reportedBy || 'Student'}</h5>
+            <h5 style="font-size: 0.85rem; font-weight: 600; color: #f87171;">${this.translate('dashboard_flagged_alert_from', 'Flagged Alert from')} ${sender ? sender.name : flag.reportedBy || this.translate('student_label_default', 'Student')}</h5>
             <p style="font-size: 0.75rem; color: var(--text-secondary); max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">"${msg ? msg.text : flag.reason}"</p>
           </div>
-          <button class="btn btn-danger btn-small" onclick="app.switchTab('teach-safeguarding')">Review</button>
+          <button class="btn btn-danger btn-small" onclick="app.switchTab('teach-safeguarding')">${this.translate('review_btn', 'Review')}</button>
         `;
         safeguardTeaser.appendChild(item);
       });
@@ -2072,7 +2072,7 @@ class App {
     articlesTeaser.innerHTML = '';
     
     if (pendingArticles.length === 0) {
-      articlesTeaser.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1rem;">No articles awaiting review.</p>`;
+      articlesTeaser.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1rem;">${this.translate('dashboard_no_articles_review', 'No articles awaiting review.')}</p>`;
     } else {
       pendingArticles.slice(0, 3).forEach(art => {
         const author = window.db.getStudent(art.authorId);
@@ -2089,9 +2089,9 @@ class App {
         item.innerHTML = `
           <div>
             <h5 style="font-size: 0.85rem; font-weight: 600;">"${art.title}"</h5>
-            <span style="font-size: 0.75rem; color: var(--text-secondary);">By ${author ? author.name : 'Student'}</span>
+            <span style="font-size: 0.75rem; color: var(--text-secondary);">${this.translate('by_author', 'By')} ${author ? author.name : this.translate('student_label_default', 'Student')}</span>
           </div>
-          <button class="btn btn-secondary btn-small" onclick="app.switchTab('teach-editor')">Approve Desk</button>
+          <button class="btn btn-secondary btn-small" onclick="app.switchTab('teach-editor')">${this.translate('approve_desk_btn', 'Approve Desk')}</button>
         `;
         articlesTeaser.appendChild(item);
       });
@@ -2115,7 +2115,7 @@ class App {
       : '';
     const photoHtml = school.photoUrl 
       ? `<img src="${school.photoUrl}" alt="${school.name} campus" style="width: 100%; height: 150px; object-fit: cover; border-radius: 12px; margin-bottom: 0.75rem;">` 
-      : '<div style="height: 150px; background: rgba(0,0,0,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">No campus photo added</div>';
+      : '<div style="height: 150px; background: rgba(0,0,0,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">${this.translate('no_campus_photo', '${this.translate('no_campus_photo', 'No campus photo added')}')}</div>';
 
     const leftCol = `
       <div style="display: flex; flex-direction: column;">
@@ -2177,8 +2177,8 @@ class App {
                 ? `<img src="${item.school.logoUrl}" alt="${item.school.name} logo" style="height: 36px; width: 36px; object-fit: contain; border-radius: 4px;">` 
                 : '<div style="height: 36px; width: 36px; background: rgba(255,255,255,0.05); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">🏫</div>';
               
-              const linkedLabel = this.interfaceLang === 'de' ? 'Verknüpfte Schüler' : this.interfaceLang === 'fr' ? 'Élève(s) jumelé(s)' : 'Linked Student(s)';
-              const activeLabel = this.interfaceLang === 'de' ? 'Aktive Verbindung' : this.interfaceLang === 'fr' ? 'Lien actif' : 'Active Link';
+              const linkedLabel = this.translate('linked_students_badge', 'Linked Student(s)');
+              const activeLabel = this.translate('active_link_badge', 'Active Link');
 
               return `
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border); border-radius: 12px; transition: all 0.2s;">
@@ -2251,16 +2251,16 @@ class App {
           const firstName = partner.name.split(' ')[0];
           return `${emojiFlag} ${firstName}`;
         }).filter(name => name !== '');
-        const tooltipText = partnerNamesList.length > 0 ? `Matched with: ${partnerNamesList.join(', ')}` : '';
-        statusBadge = `<span class="badge badge-success" title="${tooltipText}" style="cursor: help;">${count} ${count === 1 ? 'Match' : 'Matches'}</span>`;
+        const tooltipText = partnerNamesList.length > 0 ? `${this.translate('matched_status_badge', 'Matched')} with: ${partnerNamesList.join(', ')}` : '';
+        statusBadge = `<span class="badge badge-success" title="${tooltipText}" style="cursor: help;">${count} ${count === 1 ? this.translate('match_label', 'Match') : this.translate('matches_label', 'Matches')}</span>`;
       } else {
-        statusBadge = '<span class="badge badge-warning">Unmatched</span>';
+        statusBadge = `<span class="badge badge-warning">${this.translate('unmatched_status_badge', 'Unmatched')}</span>`;
       }
 
       let activeBadge = '';
-      if (stud.invitationStatus === 'Active') activeBadge = '<span class="badge badge-success">Active</span>';
-      else if (stud.invitationStatus === 'Archived') activeBadge = '<span class="badge badge-danger">Archived</span>';
-      else activeBadge = '<span class="badge badge-info">Invited</span>';
+      if (stud.invitationStatus === 'Active') activeBadge = `<span class="badge badge-success">${this.translate('active_status', 'Active')}</span>`;
+      else if (stud.invitationStatus === 'Archived') activeBadge = `<span class="badge badge-danger">${this.translate('archived_status', 'Archived')}</span>`;
+      else activeBadge = `<span class="badge badge-info">${this.translate('invited_status', 'Invited')}</span>`;
 
       const row = document.createElement('tr');
       row.innerHTML = `
@@ -2277,11 +2277,11 @@ class App {
         <td>${activeBadge}</td>
         <td>
           ${stud.invitationStatus === 'Invited' 
-            ? `<button class="btn btn-secondary btn-small" onclick="app.simulateInviteResend('${stud.id}')" title="Resend Invite Code">Resend invite</button>` 
+            ? `<button class="btn btn-secondary btn-small" onclick="app.simulateInviteResend('${stud.id}')" title="${this.translate('resend_invite_code_title', 'Resend Invite Code')}">${this.translate('resend_invite_btn', 'Resend invite')}</button>` 
             : stud.invitationStatus === 'Active' 
-              ? `<button class="btn btn-secondary btn-small" onclick="app.simulateResetPassword('${stud.id}')" title="Reset Student Password">Reset PW</button>` 
+              ? `<button class="btn btn-secondary btn-small" onclick="app.simulateResetPassword('${stud.id}')" title="${this.translate('reset_student_password_title', 'Reset Student Password')}">${this.translate('reset_pw_btn', 'Reset PW')}</button>` 
               : ''}
-          <button class="btn btn-danger btn-small" onclick="app.removeStudentAccount('${stud.id}')">Archive</button>
+          <button class="btn btn-danger btn-small" onclick="app.removeStudentAccount('${stud.id}')">${this.translate('archive_btn', 'Archive')}</button>
         </td>
       `;
       tbody.appendChild(row);
@@ -2501,7 +2501,7 @@ class App {
 
     colEn.innerHTML = '';
     if (myStudents.length === 0) {
-      colEn.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem; font-size: 0.85rem;">No students found for your school.</div>`;
+      colEn.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem; font-size: 0.85rem;">${this.translate('no_students_found_for_school', 'No students found for your school.')}</div>`;
     } else {
       myStudents.forEach(stud => {
         const card = document.createElement('div');
@@ -2519,7 +2519,7 @@ class App {
         let tooltipAttr = '';
         if (myActiveMatches.length > 0) {
           const count = myActiveMatches.length;
-          matchStatusText = `${count} ${count === 1 ? 'Match' : 'Matches'}`;
+          matchStatusText = `${count} ${count === 1 ? this.translate('match_label', 'Match') : this.translate('matches_label', 'Matches')}`;
           badgeClass = 'badge-success';
           
           const partnerNamesList = myActiveMatches.map(m => {
@@ -2542,15 +2542,15 @@ class App {
             return `${emojiFlag} ${firstName}`;
           }).filter(name => name !== '');
           if (partnerNamesList.length > 0) {
-            tooltipAttr = `title="Matched with: ${partnerNamesList.join(', ')}" style="cursor: help;"`;
+            tooltipAttr = `title="${this.translate('matched_status_badge', 'Matched')} with: ${partnerNamesList.join(', ')}" style="cursor: help;"`;
           }
         } else {
           const myProposals = window.db.getMatches().filter(m => !m.active && m.status === 'Proposed' && m.studentIds.includes(stud.id));
           if (myProposals.length > 0) {
-            matchStatusText = `Proposed (${myProposals.length})`;
+            matchStatusText = `${this.translate('proposed_status', 'Proposed')} (${myProposals.length})`;
             badgeClass = 'badge-warning';
           } else {
-            matchStatusText = 'Unmatched';
+            matchStatusText = this.translate('unmatched_status_badge', 'Unmatched');
             badgeClass = 'badge-info';
           }
         }
@@ -2559,7 +2559,7 @@ class App {
           <input type="checkbox" class="match-select-checkbox" value="${stud.id}" id="chk-match-${stud.id}" style="cursor: pointer; width: 16px; height: 16px;">
           <div style="flex-grow: 1;">
             <h4 style="font-weight:600; font-size: 0.9rem; margin: 0; color: var(--text-primary); display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; width: 100%;">
-              <span>${stud.name} (${stud.age} y/o)</span>
+              <span>${stud.name} (${stud.age} ${this.translate('years_old_suffix', 'y/o')})</span>
               <span class="badge ${badgeClass}" ${tooltipAttr} style="font-size: 0.65rem; padding: 0.1rem 0.35rem; border-radius: 4px; font-weight: 700; white-space: nowrap;">${matchStatusText}</span>
             </h4>
             <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0.2rem 0 0 0;">${stud.gender} • ${stud.yearGroup}</p>
@@ -2657,13 +2657,13 @@ class App {
           </div>
         </div>
         <div style="font-size: 1.5rem; font-weight: 800; font-family: var(--font-title); color: var(--accent); margin: 0.25rem 0;">
-          ${overallMatchRate}% <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">of students paired</span>
+          ${overallMatchRate}% <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">${this.translate('of_students_paired', 'of students paired')}</span>
         </div>
         <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem; font-weight: 500;">
-          ${matchedMyStudents} of ${totalMyStudents} students paired
+          ${matchedMyStudents} ${this.translate('of_label_lowercase', 'of')} ${totalMyStudents} ${this.translate('students_paired_label', 'students paired')}
         </div>
         <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem;">
-          ${totalPendingProposals} pending request${totalPendingProposals === 1 ? '' : 's'}
+          ${totalPendingProposals === 1 ? this.translate('pending_request_singular', '1 pending request') : this.translate('pending_requests_plural', '{count} pending requests').replace('{count}', totalPendingProposals)}
         </div>
         <div class="metric-progress-track">
           <div class="metric-progress-fill" style="width: 0%;" data-value="${overallMatchRate}%"></div>
@@ -2698,16 +2698,16 @@ class App {
       }).length;
 
       let statusClass = 'inactive-link';
-      let statusText = 'No Connection';
+      let statusText = this.translate('no_connection_status', 'No Connection');
       let badgeStyle = 'background: rgba(255,255,255,0.05); color: var(--text-muted);';
 
       if (activeCount > 0) {
         statusClass = 'active-link';
-        statusText = 'Active Link';
+        statusText = this.translate('active_link_status', 'Active Link');
         badgeStyle = 'background: rgba(16, 185, 129, 0.12); color: var(--success);';
       } else if (pendingCount > 0) {
         statusClass = 'pending-link';
-        statusText = 'Pending Proposal';
+        statusText = this.translate('pending_proposal_status', 'Pending Proposal');
         badgeStyle = 'background: rgba(245, 158, 11, 0.12); color: var(--warning);';
       }
 
@@ -2728,12 +2728,12 @@ class App {
             </div>
           </div>
           <div style="font-size: 1.5rem; font-weight: 800; font-family: var(--font-title); color: ${activeCount > 0 ? 'var(--success)' : 'var(--text-secondary)'}; margin: 0.25rem 0;">
-            ${activeCount} <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">active connection${activeCount === 1 ? '' : 's'}</span>
+            ${activeCount} <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">${activeCount === 1 ? this.translate('active_connection_singular', 'active connection') : this.translate('active_connections_plural', 'active connections')}</span>
           </div>
           <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem; font-weight: 500;">
             ${pendingCount > 0 
-              ? `<span style="color: var(--warning);">⚡ ${pendingCount} pending request${pendingCount === 1 ? '' : 's'}</span>` 
-              : 'No pending requests'}
+              ? `<span style="color: var(--warning);">⚡ ${pendingCount === 1 ? this.translate('pending_request_singular', '1 pending request') : this.translate('pending_requests_plural', '{count} pending requests').replace('{count}', pendingCount)}</span>` 
+              : this.translate('no_pending_requests', 'No pending requests')}
           </div>
         </div>
       `;
@@ -2744,8 +2744,8 @@ class App {
       <div class="metric-card" onclick="app.switchTab('teach-partnerships')" style="border: 2px dashed var(--panel-border); background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 120px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--primary)'; this.style.background='rgba(var(--primary-rgb), 0.03)'" onmouseout="this.style.borderColor='var(--panel-border)'; this.style.background='transparent'">
         <div style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; height: 100%;">
           <span style="font-size: 1.6rem; line-height: 1; display: block; margin: 0;">🔗</span>
-          <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); display: block; line-height: 1.2;">Establish a New Connection</span>
-          <span style="font-size: 0.7rem; color: var(--text-muted); display: block; line-height: 1.2;">Find other schools on Bridge</span>
+          <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); display: block; line-height: 1.2;">${this.translate('establish_new_connection', 'Establish a New Connection')}</span>
+          <span style="font-size: 0.7rem; color: var(--text-muted); display: block; line-height: 1.2;">${this.translate('find_other_schools', 'Find other schools on Bridge')}</span>
         </div>
       </div>
     `;
@@ -2851,10 +2851,10 @@ class App {
     const partnerSchoolId = match.proposedBySchoolId !== ownSchoolId ? match.proposedBySchoolId : match.pendingApprovalFromSchoolId;
     const partnerSchool = window.db.getSchool(partnerSchoolId);
 
-    const schoolName = partnerSchool ? partnerSchool.name : 'Exchange School';
-    const age = partnerStudent ? `${partnerStudent.age} y/o` : 'Unknown';
+    const schoolName = partnerSchool ? partnerSchool.name : this.translate('exchange_school_fallback', 'Exchange School');
+    const age = partnerStudent ? `${partnerStudent.age} ${this.translate('years_old_suffix', 'y/o')}` : 'Unknown';
     const gender = partnerStudent ? partnerStudent.gender : 'Unknown';
-    const biog = partnerStudent ? (partnerStudent.personalBiog || 'No biography text available.') : 'No details available.';
+    const biog = partnerStudent ? (partnerStudent.personalBiog || this.translate('no_biography_text_available', 'No biography text available.')) : this.translate('no_details_available', 'No details available.');
     const partnerFirstName = partnerStudent ? partnerStudent.name.split(' ')[0] : 'Partner';
 
     const country = partnerSchool ? partnerSchool.country : '';
@@ -2891,7 +2891,7 @@ class App {
       });
 
       if (sortedStudents.length === 0) {
-        studentsListContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 1rem;">No local students found.</div>`;
+        studentsListContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 1rem;">${this.translate('no_local_students_found', 'No local students found.')}</div>`;
       } else {
         sortedStudents.forEach(s => {
           const item = document.createElement('div');
@@ -2900,11 +2900,11 @@ class App {
           
           let statusBadge = '';
           if (s.matchStatus === 'unmatched') {
-            statusBadge = `<span class="badge" style="background: rgba(40, 167, 69, 0.15); color: #28a745; border: 1px solid rgba(40, 167, 69, 0.3);">Unmatched</span>`;
+            statusBadge = `<span class="badge" style="background: rgba(40, 167, 69, 0.15); color: #28a745; border: 1px solid rgba(40, 167, 69, 0.3);">${this.translate('unmatched_status_badge', 'Unmatched')}</span>`;
           } else if (s.matchStatus === 'proposed') {
-            statusBadge = `<span class="badge" style="background: rgba(255, 193, 7, 0.15); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.3);">Proposed Match</span>`;
+            statusBadge = `<span class="badge" style="background: rgba(255, 193, 7, 0.15); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.3);">${this.translate('proposed_match_status', 'Proposed Match')}</span>`;
           } else if (s.matchStatus === 'matched') {
-            statusBadge = `<span class="badge" style="background: rgba(23, 162, 184, 0.15); color: #17a2b8; border: 1px solid rgba(23, 162, 184, 0.3);">Matched</span>`;
+            statusBadge = `<span class="badge" style="background: rgba(23, 162, 184, 0.15); color: #17a2b8; border: 1px solid rgba(23, 162, 184, 0.3);">${this.translate('matched_status_badge', 'Matched')}</span>`;
           }
 
           const isSelected = this.selectedAssignStudentId === s.id;
@@ -2936,7 +2936,7 @@ class App {
           item.innerHTML = `
             <div>
               <div style="font-weight: 700; color: var(--text-primary); font-size: 1rem;">${s.name}</div>
-              <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">${s.age} y/o • ${s.gender}</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">${s.age} ${this.translate('years_old_suffix', 'y/o')} • ${s.gender}</div>
             </div>
             <div>
               ${statusBadge}
@@ -3036,9 +3036,9 @@ class App {
         hasIncoming = true;
         incomingCount++;
 
-        const age = partnerStudent ? `${partnerStudent.age} y/o` : 'Unknown';
+        const age = partnerStudent ? `${partnerStudent.age} ${this.translate('years_old_suffix', 'y/o')}` : 'Unknown';
         const gender = partnerStudent ? partnerStudent.gender : 'Unknown';
-        const schoolName = partnerSchool ? partnerSchool.name : 'Exchange School';
+        const schoolName = partnerSchool ? partnerSchool.name : this.translate('exchange_school_fallback', 'Exchange School');
         const firstName = partnerStudent ? partnerStudent.name.split(' ')[0] : 'Unknown';
 
         const assignedStudentId = this.tempAssignments[match.id];
@@ -3049,13 +3049,13 @@ class App {
           assignHtml = `
             <div style="display: flex; flex-direction: column; gap: 0.2rem; min-width: 160px;">
               <span style="font-weight: 700; font-size: 0.95rem; color: var(--secondary);">${assignedStudent.name}</span>
-              <span style="font-size: 0.75rem; color: var(--text-muted);">${assignedStudent.age} y/o • ${assignedStudent.gender}</span>
-              <a href="#" onclick="app.openAssignStudentModal('${match.id}'); return false;" style="font-size: 0.75rem; color: var(--text-muted); text-decoration: underline; margin-top: 0.15rem; display: inline-block;">Change Student</a>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">${assignedStudent.age} ${this.translate('years_old_suffix', 'y/o')} • ${assignedStudent.gender}</span>
+              <a href="#" onclick="app.openAssignStudentModal('${match.id}'); return false;" style="font-size: 0.75rem; color: var(--text-muted); text-decoration: underline; margin-top: 0.15rem; display: inline-block;">${this.translate('change_student_link', 'Change Student')}</a>
             </div>
           `;
         } else {
           assignHtml = `
-            <button class="btn btn-secondary btn-small" onclick="app.openAssignStudentModal('${match.id}')" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">Select Student...</button>
+            <button class="btn btn-secondary btn-small" onclick="app.openAssignStudentModal('${match.id}')" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">${this.translate('select_student_btn', 'Select Student...')}</button>
           `;
         }
 
@@ -3066,16 +3066,16 @@ class App {
               <div>
                 <strong style="color: var(--text-primary); font-size: 0.95rem;">${firstName}</strong>
                 <span style="font-size: 0.8rem; color: var(--text-secondary); margin-left: 0.25rem;">(${gender} • ${age})</span>
-                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem;">School: ${schoolName}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem;">${this.translate('school_label', 'School')}: ${schoolName}</div>
               </div>
-              <button class="btn btn-secondary btn-small" onclick="app.openBioModal('${partnerStudentId}')" style="padding: 0.25rem 0.55rem; font-size: 0.7rem; font-weight: 600; border-radius: 6px;">📖 Read Bio</button>
+              <button class="btn btn-secondary btn-small" onclick="app.openBioModal('${partnerStudentId}')" style="padding: 0.25rem 0.55rem; font-size: 0.7rem; font-weight: 600; border-radius: 6px;">${this.translate('read_bio_btn', '📖 Read Bio')}</button>
             </div>
           </td>
           <td>${assignHtml}</td>
           <td>${dateStr}</td>
           <td>
-            <button class="btn btn-primary btn-small" ${!assignedStudent ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''} onclick="app.confirmProposal('${match.id}')">Confirm Match</button>
-            <button class="btn btn-secondary btn-small" onclick="app.declineProposal('${match.id}')" style="color:var(--danger); border-color:var(--danger);">Decline</button>
+            <button class="btn btn-primary btn-small" ${!assignedStudent ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''} onclick="app.confirmProposal('${match.id}')">${this.translate('confirm_match_btn', 'Confirm Match')}</button>
+            <button class="btn btn-secondary btn-small" onclick="app.declineProposal('${match.id}')" style="color:var(--danger); border-color:var(--danger);">${this.translate('decline_btn', 'Decline')}</button>
           </td>
         `;
         incomingTbody.appendChild(row);
@@ -3085,15 +3085,15 @@ class App {
 
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td style="font-weight: 600;">${myStudent ? myStudent.name : 'Unknown'}<br><span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">${myStudent?.gender} • ${myStudent?.age} y/o</span></td>
+          <td style="font-weight: 600;">${myStudent ? myStudent.name : 'Unknown'}<br><span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">${myStudent?.gender} • ${myStudent?.age} ${this.translate('years_old_suffix', 'y/o')}</span></td>
           <td>
-            <div style="font-weight: 600;">${partnerSchool ? partnerSchool.name : 'Partner School'}</div>
-            <div style="font-size: 0.75rem; color: var(--text-muted);">Awaiting Assignment</div>
+            <div style="font-weight: 600;">${partnerSchool ? partnerSchool.name : this.translate('matching_partner_school', 'Partner School')}</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">${this.translate('awaiting_assignment_status', 'Awaiting Assignment')}</div>
           </td>
           <td>${dateStr}</td>
-          <td><span class="badge badge-warning">Awaiting Partner Approval</span></td>
+          <td><span class="badge badge-warning">${this.translate('awaiting_partner_approval_status', 'Awaiting Partner Approval')}</span></td>
           <td>
-            <button class="btn btn-secondary btn-small" onclick="app.declineProposal('${match.id}')" style="color:var(--danger); border-color:var(--danger);">Withdraw Suggestion</button>
+            <button class="btn btn-secondary btn-small" onclick="app.declineProposal('${match.id}')" style="color:var(--danger); border-color:var(--danger);">${this.translate('withdraw_suggestion_btn', 'Withdraw Suggestion')}</button>
           </td>
         `;
         sentTbody.appendChild(row);
@@ -3101,10 +3101,10 @@ class App {
     });
 
     if (!hasIncoming) {
-      incomingTbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No incoming match requests awaiting approval.</td></tr>`;
+      incomingTbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">${this.translate('no_incoming_requests', 'No incoming match requests awaiting approval.')}</td></tr>`;
     }
     if (!hasSent) {
-      sentTbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No sent suggestions pending.</td></tr>`;
+      sentTbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">${this.translate('no_sent_suggestions', 'No sent suggestions pending.')}</td></tr>`;
     }
 
     const badge = document.getElementById('matching-requests-badge');
@@ -3180,7 +3180,7 @@ class App {
 
     tbody.innerHTML = '';
     if (activeMatches.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No active matches connected yet.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">${this.translate('no_active_matches', 'No active matches connected yet.')}</td></tr>`;
       return;
     }
 
@@ -3200,24 +3200,24 @@ class App {
         <td style="padding: 0.5rem;"><input type="checkbox" class="match-select-checkbox" value="${match.id}" onclick="app.updateBulkActiveMatchesState()"></td>
         <td style="font-weight: 600;">
           ${myStudent ? myStudent.name : 'Unknown'}<br>
-          <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: normal;">${myStudent?.gender} • ${myStudent?.age} y/o</span>
+          <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: normal;">${myStudent?.gender} • ${myStudent?.age} ${this.translate('years_old_suffix', 'y/o')}</span>
         </td>
         <td>
           <div style="display: flex; align-items: center; justify-content: space-between; max-width: 220px;">
             <div>
               <strong style="color: var(--text-primary); font-size: 0.9rem;">${partnerFirstName}</strong>
-              <span style="font-size: 0.75rem; color: var(--text-secondary); margin-left: 0.25rem;">(${partnerStudent?.gender} • ${partnerStudent?.age} y/o)</span>
+              <span style="font-size: 0.75rem; color: var(--text-secondary); margin-left: 0.25rem;">(${partnerStudent?.gender} • ${partnerStudent?.age} ${this.translate('years_old_suffix', 'y/o')})</span>
             </div>
-            <button class="btn btn-secondary btn-small" onclick="app.openBioModal('${partnerStudentId}')" style="padding: 0.2rem 0.5rem; font-size: 0.7rem; font-weight: 600; border-radius: 6px;">📖 Read Bio</button>
+            <button class="btn btn-secondary btn-small" onclick="app.openBioModal('${partnerStudentId}')" style="padding: 0.2rem 0.5rem; font-size: 0.7rem; font-weight: 600; border-radius: 6px;">${this.translate('read_bio_btn', '📖 Read Bio')}</button>
           </div>
         </td>
         <td>
-          <div style="font-weight: 600;">${partnerSchool ? partnerSchool.name : 'Partner School'}</div>
+          <div style="font-weight: 600;">${partnerSchool ? partnerSchool.name : this.translate('matching_partner_school', 'Partner School')}</div>
           <span style="font-size: 0.75rem; color: var(--text-muted);">${partnerSchool ? partnerSchool.city + ', ' + partnerSchool.country : ''}</span>
         </td>
         <td>${dateStr}</td>
         <td>
-          <button class="btn btn-secondary btn-small" onclick="app.deleteActiveMatch('${match.id}')" style="color: var(--danger); border-color: var(--danger); font-weight: 600;">Disband Match</button>
+          <button class="btn btn-secondary btn-small" onclick="app.deleteActiveMatch('${match.id}')" style="color: var(--danger); border-color: var(--danger); font-weight: 600;">${this.translate('disband_match_btn', 'Disband Match')}</button>
         </td>
       `;
       tbody.appendChild(row);
@@ -3225,9 +3225,9 @@ class App {
   }
 
   deleteActiveMatch(matchId) {
-    if (confirm('Are you sure you want to disband this penpal match? This will unlink the students and reset them to unmatched.')) {
+    if (confirm(this.translate('disband_confirm_prompt', 'Are you sure you want to disband this penpal match? This will unlink the students and reset them to unmatched.'))) {
       window.db.deleteMatch(matchId);
-      alert('Match disbanded successfully.');
+      alert(this.translate('disband_success_msg', 'Match disbanded successfully.'));
       this.refreshUI();
     }
   }
@@ -3298,7 +3298,7 @@ class App {
         s.id !== schoolId && !connectedOrRequestedSchoolIds.includes(s.id)
       );
 
-      selectEl.innerHTML = '<option value="">-- Choose school to connect --</option>' +
+      selectEl.innerHTML = `<option value="">${this.translate('choose_school_to_connect', '-- Choose school to connect --')}</option>` +
         unconnectedSchools.map(s => `<option value="${s.id}">${s.name} (${s.country})</option>`).join('');
     }
 
@@ -3317,7 +3317,7 @@ class App {
     if (incoming.length > 0) {
       html += `
         <div style="margin-bottom: 0.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
-          <h3 style="font-size: 0.9rem; font-weight: 700; color: var(--primary); margin: 0; text-transform: uppercase; letter-spacing: 0.05em;">📥 Incoming Requests (${incoming.length})</h3>
+          <h3 style="font-size: 0.9rem; font-weight: 700; color: var(--primary); margin: 0; text-transform: uppercase; letter-spacing: 0.05em;">📥 ${this.translate('incoming_requests_header', 'Incoming Requests')} (${incoming.length})</h3>
           ${incoming.map(c => {
             const school = window.db.getSchool(c.fromSchoolId);
             const flag = this.getSchoolFlag(school?.country);
@@ -3332,13 +3332,13 @@ class App {
                     <span style="font-size: 0.75rem; color: var(--text-muted);">${school?.city}, ${school?.country}</span>
                   </div>
                   <div style="display: flex; gap: 0.35rem;">
-                    <button class="btn btn-primary btn-small" onclick="app.acceptConnectionRequest('${c.id}')" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Accept</button>
-                    <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2); padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="app.declineConnectionRequest('${c.id}')">Decline</button>
+                    <button class="btn btn-primary btn-small" onclick="app.acceptConnectionRequest('${c.id}')" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">${this.translate('accept_btn', 'Accept')}</button>
+                    <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2); padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="app.declineConnectionRequest('${c.id}')">${this.translate('decline_btn', 'Decline')}</button>
                   </div>
                 </div>
                 <div style="background: rgba(0,0,0,0.1); border-radius: 6px; padding: 0.5rem; font-size: 0.75rem;">
-                  <div style="font-weight: 600; color: var(--secondary); margin-bottom: 0.15rem;">From: ${sender.name} (<a href="mailto:${sender.email}" style="color: var(--secondary); text-decoration: underline;">${sender.email}</a>)</div>
-                  <div style="font-style: italic; color: var(--text-secondary); line-height: 1.4;">"${c.requestMessage || 'No request message note.'}"</div>
+                  <div style="font-weight: 600; color: var(--secondary); margin-bottom: 0.15rem;">${this.translate('from_label', 'From')}: ${sender.name} (<a href="mailto:${sender.email}" style="color: var(--secondary); text-decoration: underline;">${sender.email}</a>)</div>
+                  <div style="font-style: italic; color: var(--text-secondary); line-height: 1.4;">"${c.requestMessage || this.translate('no_request_message_note', 'No request message note.')}"</div>
                 </div>
               </div>
             `;
@@ -3351,7 +3351,7 @@ class App {
     if (sent.length > 0) {
       html += `
         <div style="margin-bottom: 0.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
-          <h3 style="font-size: 0.9rem; font-weight: 700; color: var(--text-secondary); margin: 0; text-transform: uppercase; letter-spacing: 0.05em;">📤 Sent Requests (${sent.length})</h3>
+          <h3 style="font-size: 0.9rem; font-weight: 700; color: var(--text-secondary); margin: 0; text-transform: uppercase; letter-spacing: 0.05em;">📤 ${this.translate('sent_requests_header', 'Sent Requests')} (${sent.length})</h3>
           ${sent.map(c => {
             const school = window.db.getSchool(c.toSchoolId);
             const flag = this.getSchoolFlag(school?.country);
@@ -3367,8 +3367,8 @@ class App {
                   </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
-                  <span class="badge badge-warning" style="font-size: 0.65rem; padding: 0.15rem 0.35rem;">Pending</span>
-                  <button class="btn btn-secondary btn-small" style="color: var(--text-muted); padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="app.declineConnectionRequest('${c.id}')">Cancel</button>
+                  <span class="badge badge-warning" style="font-size: 0.65rem; padding: 0.15rem 0.35rem;">${this.translate('pending_status', 'Pending')}</span>
+                  <button class="btn btn-secondary btn-small" style="color: var(--text-muted); padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="app.declineConnectionRequest('${c.id}')">${this.translate('cancel_btn', 'Cancel')}</button>
                 </div>
               </div>
             `;
@@ -3383,8 +3383,8 @@ class App {
         html += `
           <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 200px; color: var(--text-muted); text-align: center; border: 1px dashed var(--panel-border); border-radius: 8px; padding: 1.5rem;">
             <span style="font-size: 2rem; margin-bottom: 0.5rem;">🤝</span>
-            <h4 style="margin: 0; font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">No School Partnerships</h4>
-            <p style="font-size: 0.75rem; margin-top: 0.25rem; color: var(--text-secondary);">Use the "New Connection" panel on the left to link with partner schools.</p>
+            <h4 style="margin: 0; font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">${this.translate('no_school_partnerships', 'No School Partnerships')}</h4>
+            <p style="font-size: 0.75rem; margin-top: 0.25rem; color: var(--text-secondary);">${this.translate('no_school_partnerships_desc', 'Use the "New Connection" panel on the left to link with partner schools.')}</p>
           </div>
         `;
       }
@@ -3422,7 +3422,7 @@ class App {
                 ${partnerCoordinator.photoUrl ? `<img src="${partnerCoordinator.photoUrl}" alt="${partnerCoordinator.name}" style="width: 100%; height: 100%; object-fit: cover;" />` : partnerCoordinator.name.charAt(0)}
               </div>
               <div style="display: flex; flex-direction: column; gap: 0.1rem; line-height: 1.2;">
-                <span style="font-size: 0.65rem; color: var(--text-muted);">School Coordinator</span>
+                <span style="font-size: 0.65rem; color: var(--text-muted);">${this.translate('school_coordinator_label', 'School Coordinator')}</span>
                 <strong style="font-size: 0.75rem; color: var(--text-primary);">${partnerCoordinator.name}</strong>
                 ${partnerCoordinator.email ? `<span style="font-size: 0.65rem; color: var(--text-muted);">✉️ <a href="mailto:${partnerCoordinator.email}" style="color: var(--secondary); text-decoration: underline;">${partnerCoordinator.email}</a></span>` : ''}
               </div>
@@ -3448,22 +3448,22 @@ class App {
                 style="color: var(--danger); border-color: rgba(239, 68, 68, 0.25); padding: 0.25rem 0.5rem; font-size: 0.75rem;"
                 onclick="app.removeSchoolConnection('${c.id}')"
               >
-                Disconnect
+                ${this.translate('disconnect_btn', 'Disconnect')}
               </button>
             </div>
 
             <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0; line-height: 1.4;">
-              ${school.description || 'No description provided by school.'}
+              ${school.description || this.translate('no_description_provided_by_school', 'No description provided by school.')}
             </p>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; background: rgba(255, 255, 255, 0.02); padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid var(--panel-border);">
               <div style="display: flex; flex-direction: column;">
-                <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Linked Students</span>
-                <strong style="font-size: 0.85rem; color: var(--secondary);">${linkedStudentsCount} Pairing(s)</strong>
+                <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">${this.translate('linked_students_metric', 'Linked Students')}</span>
+                <strong style="font-size: 0.85rem; color: var(--secondary);">${linkedStudentsCount} ${this.translate('pairings_suffix', 'Pairing(s)')}</strong>
               </div>
               <div style="display: flex; flex-direction: column;">
-                <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Shared Group Projects</span>
-                <strong style="font-size: 0.85rem; color: var(--secondary);">${sharedProjectsCount} Project(s)</strong>
+                <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">${this.translate('shared_group_projects_metric', 'Shared Group Projects')}</span>
+                <strong style="font-size: 0.85rem; color: var(--secondary);">${sharedProjectsCount} ${this.translate('projects_suffix', 'Project(s)')}</strong>
               </div>
             </div>
 
@@ -3603,13 +3603,13 @@ class App {
     if (!student) return;
 
     const firstName = student.name.split(' ')[0];
-    const biog = student.personalBiog || student.pendingBiog || 'No biography text written by this student yet.';
+    const biog = student.personalBiog || student.pendingBiog || this.translate('no_biography_written', 'No biography text written by this student yet.');
 
     const titleEl = document.getElementById('bio-modal-title');
     const bodyEl = document.getElementById('bio-modal-body');
 
     if (titleEl && bodyEl) {
-      titleEl.textContent = `${firstName}'s Biography`;
+      titleEl.textContent = this.translate('student_biography_title', "{name}'s Biography").replace('{name}', firstName);
       bodyEl.textContent = `"${biog}"`;
       this.openModal('view-bio-modal');
     }
@@ -3672,7 +3672,7 @@ class App {
 
     tbody.innerHTML = '';
     if (displayFlags.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No ${this.safeguardFilter === 'open' ? 'open' : 'resolved'} safeguarding alerts logged.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">${this.safeguardFilter === 'open' ? this.translate('safeguarding_no_open_alerts', 'No open safeguarding alerts pending review.') : this.translate('safeguarding_no_resolved_alerts', 'No resolved safeguarding alerts recorded.')}</td></tr>`;
       return;
     }
 
@@ -3701,9 +3701,9 @@ class App {
 
       let statusBadgeHtml = '';
       if (myResolution.status === 'Resolved') {
-        statusBadgeHtml = `<div style="margin-bottom: 0.35rem;"><span class="badge badge-success">Resolved (You)</span></div>`;
+        statusBadgeHtml = `<div style="margin-bottom: 0.35rem;"><span class="badge badge-success">${this.translate('safeguarding_resolved_you', 'Resolved (You)')}</span></div>`;
       } else {
-        statusBadgeHtml = `<div style="margin-bottom: 0.35rem;"><span class="badge badge-danger">Unresolved (You)</span></div>`;
+        statusBadgeHtml = `<div style="margin-bottom: 0.35rem;"><span class="badge badge-danger">${this.translate('safeguarding_unresolved_you', 'Unresolved (You)')}</span></div>`;
       }
 
       if (otherSchool) {
@@ -3711,13 +3711,13 @@ class App {
         if (otherResolution && otherResolution.status === 'Resolved') {
           statusBadgeHtml += `
             <div style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.25;">
-              ${flagImg} ${otherSchool.name}: <span class="badge badge-success" style="font-size: 0.65rem; padding: 0.05rem 0.2rem;">Resolved</span><br>
-              <span style="font-size: 0.7rem; color: var(--text-muted); font-style: italic;">"${otherResolution.resolutionNotes || 'No comment'}"</span>
+              ${flagImg} ${otherSchool.name}: <span class="badge badge-success" style="font-size: 0.65rem; padding: 0.05rem 0.2rem;">${this.translate('resolved_status', 'Resolved')}</span><br>
+              <span style="font-size: 0.7rem; color: var(--text-muted); font-style: italic;">"${otherResolution.resolutionNotes || this.translate('safeguarding_no_comment', 'No comment')}"</span>
             </div>`;
         } else {
           statusBadgeHtml += `
             <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.25;">
-              ${flagImg} ${otherSchool.name}: <span class="badge badge-danger" style="font-size: 0.65rem; padding: 0.05rem 0.2rem;">Unresolved</span>
+              ${flagImg} ${otherSchool.name}: <span class="badge badge-danger" style="font-size: 0.65rem; padding: 0.05rem 0.2rem;">${this.translate('safeguarding_unresolved_badge', 'Unresolved')}</span>
             </div>`;
         }
       }
@@ -3730,17 +3730,17 @@ class App {
 
       if (isProjectFlag) {
         const proj = window.db.getProject(flag.projectId);
-        flagTitle = flag.reportedBy || 'Student';
-        flagSubtitle = `<span style="font-size: 0.75rem; font-weight: normal; color: var(--text-muted);">Project: ${proj ? proj.title : 'N/A'}</span>`;
-        flagReasonText = `Project Concern: ${flag.reason || 'Safety Alert'}`;
+        flagTitle = flag.reportedBy || this.translate('student_label_default', 'Student');
+        flagSubtitle = `<span style="font-size: 0.75rem; font-weight: normal; color: var(--text-muted);">	ext{${this.translate('culture_post_project', 'Project')}}: 	ext{${proj ? proj.title : 'N/A'}}</span>`;
+        flagReasonText = `${this.translate('project_concern_label', 'Project Concern')}: ${flag.reason || this.translate('safety_alert_label', 'Safety Alert')}`;
         flagDetailsText = flag.details || '';
       } else {
         const msg = window.db.getMessages().find(m => m.id === flag.messageId);
         const sender = msg ? window.db.getStudent(msg.senderId) : null;
         const match = msg ? window.db.getMatches().find(m => m.id === msg.matchId) : null;
-        flagTitle = sender ? sender.name : flag.reportedBy || 'Student';
+        flagTitle = sender ? sender.name : flag.reportedBy || this.translate('student_label_default', 'Student');
         flagSubtitle = `<span style="font-size: 0.75rem; font-weight: normal; color: var(--text-muted);">Match ID: ${match ? match.id : 'N/A'}</span>`;
-        flagReasonText = `Reason: ${flag.reason || msg?.flagReason || 'Triggered Keyword alert'}`;
+        flagReasonText = `${this.translate('safeguarding_reason_label', 'Reason:')} ${flag.reason || msg?.flagReason || this.translate('triggered_keyword_alert', 'Triggered Keyword alert')}`;
         flagDetailsText = msg ? msg.text : 'N/A';
       }
 
@@ -3760,10 +3760,10 @@ class App {
         <td>${statusBadgeHtml}</td>
         <td>
           ${myResolution.status !== 'Resolved'
-            ? `<button class="btn btn-danger btn-small" onclick="app.openResolveFlagModal('${flag.id}')">Review & Take Action</button>`
+            ? `<button class="btn btn-danger btn-small" onclick="app.openResolveFlagModal('${flag.id}')">${this.translate('review_take_action_btn', 'Review & ${this.translate('take_action_tab', '${this.translate('take_action_tab', 'Take Action')}')}')}</button>`
             : `<div style="display: flex; flex-direction: column; gap: 0.35rem;">
-                 <span style="font-size: 0.75rem; color: var(--text-muted);">Resolved by:<br>${myResolution.reviewedBy}<br>Action: ${myResolution.actionTaken}</span>
-                 <button class="btn btn-secondary btn-small" style="font-size: 0.7rem; padding: 0.2rem 0.4rem;" onclick="app.openResolveFlagModal('${flag.id}')">View Details</button>
+                 <span style="font-size: 0.75rem; color: var(--text-muted);">${this.translate('resolved_by_label', 'Resolved by')}:<br>${myResolution.reviewedBy}<br>${this.translate('action_label', 'Action')}: ${myResolution.actionTaken}</span>
+                 <button class="btn btn-secondary btn-small" style="font-size: 0.7rem; padding: 0.2rem 0.4rem;" onclick="app.openResolveFlagModal('${flag.id}')">${this.translate('view_details', '${this.translate('view_details', 'View Details')}')}</button>
                </div>`}
         </td>
       `;
@@ -3817,10 +3817,10 @@ class App {
         // Prepare project chat history
         const projMsgs = window.db.getMessages().filter(m => m.projectId === flag.projectId);
         if (projMsgs.length === 0) {
-          projectChatMarkup = `<p style="font-size: 0.75rem; color: var(--text-muted); font-style: italic;">No messages in group chat yet.</p>`;
+          projectChatMarkup = `<p style="font-size: 0.75rem; color: var(--text-muted); font-style: italic;">${this.translate('no_group_messages_yet', 'No messages in group chat yet.')}</p>`;
         } else {
           projectChatMarkup = projMsgs.map(m => {
-            const senderName = window.db.getStudent(m.senderId)?.name || m.senderName || 'Student';
+            const senderName = window.db.getStudent(m.senderId)?.name || m.senderName || this.translate('student_label_default', 'Student');
             const country = window.db.getStudent(m.senderId) ? window.db.getSchool(window.db.getStudent(m.senderId).schoolId)?.country : '';
             const flagSvg = country ? app.getSchoolFlag(country) : '';
             return `
@@ -3862,7 +3862,7 @@ class App {
 
         chatContextMarkup = contextMsgs.map(m => {
           const isFlagged = m.id === msg.id;
-          const senderName = window.db.getStudent(m.senderId)?.name || 'Student';
+          const senderName = window.db.getStudent(m.senderId)?.name || this.translate('student_label_default', 'Student');
           return `
             <div style="padding: 0.5rem 0.75rem; margin-bottom: 0.5rem; border-radius: 8px; font-size: 0.85rem; 
                         background: ${isFlagged ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.03)'};
@@ -3893,16 +3893,16 @@ class App {
         partnerSchoolStatusMarkup = `
           <div class="panel" style="padding: 0.75rem; background: rgba(255,255,255,0.02); border-color: var(--panel-border); margin-bottom: 0.75rem;">
             <h5 style="font-size: 0.8rem; font-weight: 700; color: var(--success); margin: 0 0 0.25rem 0; display: flex; align-items: center; gap: 0.3rem;">
-              ${otherFlagImg} Partner School (${otherSchool.name}) Resolution:
+              ${otherFlagImg} ${this.translate('partner_school_label', 'Partner School')} (${otherSchool.name}) ${this.translate('resolution_label_lowercase', 'resolution')}:
             </h5>
             <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0 0 0.25rem 0;">
-              Status: <strong>Resolved</strong> by <strong>${otherResolution.reviewedBy}</strong> on <strong>${new Date(otherResolution.reviewedAt).toLocaleString()}</strong>
+              ${this.translate('status_label', 'Status')}: <strong>${this.translate('resolved_status', 'Resolved')}</strong> ${this.translate('by_author_lowercase', 'by')} <strong>${otherResolution.reviewedBy}</strong> ${this.translate('on_label', 'on')} <strong>${new Date(otherResolution.reviewedAt).toLocaleString()}</strong>
             </p>
             <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0 0 0.25rem 0;">
-              Action Taken: <span class="badge badge-success" style="font-size: 0.65rem; padding: 0.05rem 0.25rem;">${otherResolution.actionTaken}</span>
+              ${this.translate('action_taken_label', 'Action Taken')}: <span class="badge badge-success" style="font-size: 0.65rem; padding: 0.05rem 0.25rem;">${otherResolution.actionTaken}</span>
             </p>
             <p style="font-size: 0.75rem; color: var(--text-primary); background: rgba(0,0,0,0.15); padding: 0.4rem; border-radius: 4px; margin: 0.25rem 0 0 0; font-style: italic;">
-              Comment: "${otherResolution.resolutionNotes || 'No comment'}"
+              Comment: "${otherResolution.resolutionNotes || this.translate('safeguarding_no_comment', 'No comment')}"
             </p>
           </div>
         `;
@@ -3910,10 +3910,10 @@ class App {
         partnerSchoolStatusMarkup = `
           <div class="panel" style="padding: 0.75rem; background: rgba(255,255,255,0.01); border-color: var(--panel-border); margin-bottom: 0.75rem;">
             <h5 style="font-size: 0.8rem; font-weight: 700; color: var(--warning); margin: 0 0 0.25rem 0; display: flex; align-items: center; gap: 0.3rem;">
-              ${otherFlagImg} Partner School (${otherSchool.name}) Resolution:
+              ${otherFlagImg} ${this.translate('partner_school_label', 'Partner School')} (${otherSchool.name}) ${this.translate('resolution_label_lowercase', 'resolution')}:
             </h5>
             <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">
-              Status: <strong>Pending review / Unresolved by partner school</strong>
+              ${this.translate('status_label', 'Status')}: <strong>${this.translate('pending_partner_review', 'Pending review / Unresolved by partner school')}</strong>
             </p>
           </div>
         `;
@@ -3924,20 +3924,20 @@ class App {
     if (myResolution.status === 'Resolved') {
       actionsMarkup = `
         <div class="panel" style="padding: 1rem; border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.02); margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem;">
-          <h4 style="font-size: 0.85rem; color: var(--success); font-weight: bold; margin: 0; display: flex; align-items: center; gap: 0.35rem;">✔ Safeguarding Violation Resolved by Your School</h4>
+          <h4 style="font-size: 0.85rem; color: var(--success); font-weight: bold; margin: 0; display: flex; align-items: center; gap: 0.35rem;">${this.translate('safeguarding_resolved_you_school', '${this.translate('safeguarding_resolved_you_school', '✔ Safeguarding Violation Resolved by Your School')}')}</h4>
           <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">
-            Resolved by <strong>${myResolution.reviewedBy}</strong> on <strong>${new Date(myResolution.reviewedAt).toLocaleString()}</strong>.
+            ${this.translate('resolved_by_label', 'Resolved by')} <strong>${myResolution.reviewedBy}</strong> ${this.translate('on_label', 'on')} <strong>${new Date(myResolution.reviewedAt).toLocaleString()}</strong>.
           </p>
           <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">
-            Action Taken: <span class="badge badge-success" style="font-size: 0.65rem; padding: 0.05rem 0.25rem;">${myResolution.actionTaken}</span>
+            ${this.translate('action_taken_label', 'Action Taken')}: <span class="badge badge-success" style="font-size: 0.65rem; padding: 0.05rem 0.25rem;">${myResolution.actionTaken}</span>
           </p>
           <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">
-            Notes: <span style="font-style: italic; color: var(--text-primary);">"${myResolution.resolutionNotes || ''}"</span>
+            ${this.translate('notes_label', 'Notes')}: <span style="font-style: italic; color: var(--text-primary);">"${myResolution.resolutionNotes || ''}"</span>
           </p>
         </div>
         ${partnerSchoolStatusMarkup}
         <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem;">
-          <button class="btn btn-secondary btn-small" onclick="app.closeModal('resolve-flag-modal')">Close</button>
+          <button class="btn btn-secondary btn-small" onclick="app.closeModal('resolve-flag-modal')">${this.translate('close_btn', 'Close')}</button>
         </div>
       `;
     } else {
@@ -3947,51 +3947,51 @@ class App {
           <!-- Project-specific messaging forms if it is a project flag -->
           ${isProjectFlag ? `
             <div class="panel" style="padding: 1rem; border-color: var(--panel-border); background: rgba(255, 255, 255, 0.01); margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 0.75rem;">
-              <h4 style="font-size: 0.85rem; font-weight: bold; margin: 0; color: var(--text-primary);">Teacher Action Desk</h4>
+              <h4 style="font-size: 0.85rem; font-weight: bold; margin: 0; color: var(--text-primary);">${this.translate('teacher_action_desk_header', 'Teacher Action Desk')}</h4>
               
               <!-- 1. Send Message to Project Group Chat -->
               <div style="display: flex; flex-direction: column; gap: 0.35rem;">
-                <label style="font-size: 0.8rem; font-weight: bold; color: var(--text-secondary);">Send Warning Message to Project Group Chat:</label>
+                <label style="font-size: 0.8rem; font-weight: bold; color: var(--text-secondary);">${this.translate('send_project_warning_label', 'Send Warning Message to Project Group Chat:')}</label>
                 <div style="display: flex; gap: 0.5rem;">
-                  <input type="text" id="flag-project-group-msg-input" class="form-control" style="font-size: 0.8rem; padding: 0.35rem;" placeholder="Type message to the whole project team...">
-                  <button type="button" class="btn btn-primary" onclick="app.sendProjectFlagGroupMessage('${flag.id}')" style="font-size: 0.8rem; padding: 0 1rem;">Send</button>
+                  <input type="text" id="flag-project-group-msg-input" class="form-control" style="font-size: 0.8rem; padding: 0.35rem;" placeholder="${this.translate('project_warning_placeholder', 'Type message to the whole project team...')}">
+                  <button type="button" class="btn btn-primary" onclick="app.sendProjectFlagGroupMessage('${flag.id}')" style="font-size: 0.8rem; padding: 0 1rem;">${this.translate('send_btn', 'Send')}</button>
                 </div>
               </div>
 
               <!-- 2. Send Message to Individual Students -->
               <div style="display: flex; flex-direction: column; gap: 0.35rem; border-top: 1px dashed var(--panel-border); padding-top: 0.75rem;">
-                <label style="font-size: 0.8rem; font-weight: bold; color: var(--text-secondary);">Send Warning Notice to Individual Students:</label>
+                <label style="font-size: 0.8rem; font-weight: bold; color: var(--text-secondary);">${this.translate('send_individual_warning_label', 'Send Warning Notice to Individual Students:')}</label>
                 <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.25rem;">
                   ${participantsMarkup}
                 </div>
-                <textarea id="flag-project-individual-msg-text" class="form-control" style="height: 50px; font-size: 0.8rem; resize: none;" placeholder="Type warning notice text..."></textarea>
+                <textarea id="flag-project-individual-msg-text" class="form-control" style="height: 50px; font-size: 0.8rem; resize: none;" placeholder="${this.translate('individual_warning_placeholder', 'Type warning notice text...')}"></textarea>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.2rem;">
                   <label style="display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; cursor: pointer; color: var(--text-primary);">
                     <input type="checkbox" id="flag-project-individual-msg-agree">
-                    <span>Require student agreement & confirmation</span>
+                    <span>${this.translate('require_agreement_label', 'Require student agreement & confirmation')}</span>
                   </label>
-                  <button type="button" class="btn btn-secondary btn-small" onclick="app.sendProjectFlagIndividualMessage('${flag.id}')" style="margin-left: auto;">Send Notices</button>
+                  <button type="button" class="btn btn-secondary btn-small" onclick="app.sendProjectFlagIndividualMessage('${flag.id}')" style="margin-left: auto;">${this.translate('send_notices_btn', 'Send Notices')}</button>
                 </div>
               </div>
             </div>
           ` : ''}
 
           <div class="form-group" style="margin-bottom: 1.25rem;">
-            <label for="flag-resolution-notes" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; display: block; color: var(--text-primary);">Action Taken / Resolution Notes (Your School):</label>
-            <textarea class="form-control" id="flag-resolution-notes" style="height: 75px; font-size: 0.85rem; resize: vertical;" placeholder="Describe the action taken (e.g. discussed with student, monitored future messages)..." required></textarea>
+            <label for="flag-resolution-notes" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; display: block; color: var(--text-primary);">${this.translate('resolution_notes_label', 'Action Taken / Resolution Notes (Your School):')}</label>
+            <textarea class="form-control" id="flag-resolution-notes" style="height: 75px; font-size: 0.85rem; resize: vertical;" placeholder="${this.translate('resolution_notes_placeholder', 'Describe the action taken (e.g. discussed with student, monitored future messages)...')}" required></textarea>
           </div>
-          <h4 style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; margin-bottom: 0.75rem;">Select Resolution Action:</h4>
+          <h4 style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; margin-bottom: 0.75rem;">${this.translate('select_resolution_action', 'Select Resolution Action:')}</h4>
           <div style="display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap;">
-            <button class="btn btn-secondary btn-small" onclick="app.closeModal('resolve-flag-modal')">Close</button>
+            <button class="btn btn-secondary btn-small" onclick="app.closeModal('resolve-flag-modal')">${this.translate('close_btn', 'Close')}</button>
             ${isProjectFlag ? `
-              <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2);" onclick="app.submitFlagResolution('${flag.id}', 'Cancel Project')">Cancel Project</button>
-              <button class="btn btn-secondary btn-small" style="color: var(--warning); border-color: rgba(245, 158, 11, 0.2);" onclick="app.submitFlagResolution('${flag.id}', 'Suspend Project')">Suspend Project</button>
+              <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2);" onclick="app.submitFlagResolution('${flag.id}', 'Cancel Project')">${this.translate('cancel_project_btn', 'Cancel Project')}</button>
+              <button class="btn btn-secondary btn-small" style="color: var(--warning); border-color: rgba(245, 158, 11, 0.2);" onclick="app.submitFlagResolution('${flag.id}', 'Suspend Project')">${this.translate('suspend_project_btn', 'Suspend Project')}</button>
             ` : `
-              <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2);" onclick="app.submitFlagResolution('${flag.id}', 'Cancel Link')">Cancel Student Link</button>
-              <button class="btn btn-secondary btn-small" style="color: var(--warning); border-color: rgba(245, 158, 11, 0.2);" onclick="app.submitFlagResolution('${flag.id}', 'Suspend Chat')">Suspend Chat</button>
+              <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2);" onclick="app.submitFlagResolution('${flag.id}', 'Cancel Link')">${this.translate('cancel_student_link_btn', 'Cancel Student Link')}</button>
+              <button class="btn btn-secondary btn-small" style="color: var(--warning); border-color: rgba(245, 158, 11, 0.2);" onclick="app.submitFlagResolution('${flag.id}', 'Suspend Chat')">${this.translate('suspend_chat_btn', 'Suspend Chat')}</button>
             `}
-            <button class="btn btn-primary btn-small" onclick="app.submitFlagResolution('${flag.id}', 'Mark as Resolved')">Mark as Resolved</button>
-            <button class="btn btn-secondary btn-small" style="border-color: var(--success); color: var(--success);" onclick="app.submitFlagResolution('${flag.id}', 'Dismissed')">Dismiss / Safe</button>
+            <button class="btn btn-primary btn-small" onclick="app.submitFlagResolution('${flag.id}', 'Mark as Resolved')">	ext{${this.translate('mark_resolved_btn', 'Mark as Resolved')}}</button>
+            <button class="btn btn-secondary btn-small" style="border-color: var(--success); color: var(--success);" onclick="app.submitFlagResolution('${flag.id}', 'Dismissed')">	ext{${this.translate('dismiss_safe_btn', 'Dismiss / Safe')}}</button>
           </div>
         </div>
       `;
@@ -4001,12 +4001,12 @@ class App {
     if (isProjectFlag) {
       detailContentHtml = `
         <div>
-          <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-primary);">Project Slide Outline:</h4>
+          <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-primary);">${this.translate('project_slide_outline_header', 'Project Slide Outline:')}</h4>
           <div style="max-height: 180px; overflow-y: auto; padding-right: 0.25rem; margin-bottom: 0.75rem;">
-            ${slidesMarkup || '<p style="font-size: 0.8rem; color: var(--text-muted);">No slides found.</p>'}
+            ${slidesMarkup || `<p style="font-size: 0.8rem; color: var(--text-muted);">${this.translate('no_slides_found', 'No slides found.')}</p>`}
           </div>
           
-          <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-primary);">Project Group Chat History:</h4>
+          <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-primary);">${this.translate('project_chat_history_header', 'Project Group Chat History:')}</h4>
           <div style="max-height: 120px; overflow-y: auto; padding: 0.5rem; border: 1px solid var(--panel-border); border-radius: 6px; background: rgba(0,0,0,0.1); padding-right: 0.25rem;">
             ${projectChatMarkup}
           </div>
@@ -4015,9 +4015,9 @@ class App {
     } else {
       detailContentHtml = `
         <div>
-          <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-primary);">Recent Chat History context:</h4>
+          <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-primary);">${this.translate('recent_chat_history_header', 'Recent Chat History context:')}</h4>
           <div style="max-height: 200px; overflow-y: auto; padding-right: 0.25rem;">
-            ${chatContextMarkup || '<p style="font-size: 0.8rem; color: var(--text-muted);">No chat context loaded.</p>'}
+            ${chatContextMarkup || `<p style="font-size: 0.8rem; color: var(--text-muted);">${this.translate('no_chat_context_loaded', 'No chat context loaded.')}</p>`}
           </div>
         </div>
       `;
@@ -4034,7 +4034,7 @@ class App {
                        color: ${activeTab === 'details' ? 'var(--text-primary)' : 'var(--text-secondary)'}; 
                        font-weight: 600; font-size: 0.8rem; cursor: pointer; padding: 0.4rem 0.85rem; border-radius: 8px; transition: all 0.2s; outline: none;"
                 onclick="app.openResolveFlagModal('${flag.id}', 'details')">
-          🛡️ Alert Details
+          🛡️ ${this.translate('alert_details_tab', '${this.translate('alert_details_tab', 'Alert Details')}')}
         </button>
         <button type="button" 
                 style="background: ${activeTab === 'content' ? 'rgba(var(--primary-rgb), 0.12)' : 'none'}; 
@@ -4042,7 +4042,7 @@ class App {
                        color: ${activeTab === 'content' ? 'var(--text-primary)' : 'var(--text-secondary)'}; 
                        font-weight: 600; font-size: 0.8rem; cursor: pointer; padding: 0.4rem 0.85rem; border-radius: 8px; transition: all 0.2s; outline: none;"
                 onclick="app.openResolveFlagModal('${flag.id}', 'content')">
-          📁 Flagged Content
+          📁 ${this.translate('flagged_content_tab', '${this.translate('flagged_content_tab', 'Flagged Content')}')}
         </button>
         <button type="button" 
                 style="background: ${activeTab === 'actions' ? 'rgba(var(--primary-rgb), 0.12)' : 'none'}; 
@@ -4059,15 +4059,15 @@ class App {
     if (activeTab === 'details') {
       activeBodyMarkup = `
         <div style="font-size: 0.8rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.35rem;">
-          <div>Alert Type: <strong>${isProjectFlag ? 'Project Safeguarding Concern' : 'Chat Sensitive Keyword Alert'}</strong></div>
-          <div>Alert Timestamp: <strong>${new Date(flag.flaggedAt).toLocaleString()}</strong></div>
-          <div>Reporter: <strong>${flag.reportedBy || (sender ? sender.name : 'System Safeguard')}</strong></div>
+          <div>${this.translate('alert_type_label', 'Alert Type')}: <strong>${isProjectFlag ? this.translate('project_concern_label', 'Project Safeguarding Concern') : this.translate('chat_keyword_alert', 'Chat Sensitive Keyword Alert')}</strong></div>
+          <div>${this.translate('alert_timestamp_label', 'Alert Timestamp')}: <strong>${new Date(flag.flaggedAt).toLocaleString()}</strong></div>
+          <div>${this.translate('reporter_label', 'Reporter')}: <strong>${flag.reportedBy || (sender ? sender.name : this.translate('system_safeguard_reporter', 'System Safeguard'))}</strong></div>
         </div>
         
         <div class="panel" style="padding: 1rem; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.02); margin-top: 0.5rem;">
-          <h4 style="font-size: 0.9rem; color: var(--danger); font-weight: bold; margin-bottom: 0.5rem; margin-top: 0;">Flagged Violation Reason:</h4>
-          <p style="font-size: 0.85rem; font-weight: 500; color: var(--text-primary); margin: 0;">${flag.reason || 'Sensitive Keyword alert'}</p>
-          ${flag.details ? `<p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem; background: rgba(0,0,0,0.1); padding: 0.5rem; border-radius: 6px; margin-bottom: 0;">Details: ${flag.details}</p>` : ''}
+          <h4 style="font-size: 0.9rem; color: var(--danger); font-weight: bold; margin-bottom: 0.5rem; margin-top: 0;">${this.translate('flagged_violation_reason_header', 'Flagged Violation Reason:')}</h4>
+          <p style="font-size: 0.85rem; font-weight: 500; color: var(--text-primary); margin: 0;">${flag.reason || this.translate('sensitive_keyword_alert_default', 'Sensitive Keyword alert')}</p>
+          ${flag.details ? `<p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem; background: rgba(0,0,0,0.1); padding: 0.5rem; border-radius: 6px; margin-bottom: 0;">${this.translate('details_prefix', 'Details:')} ${flag.details}</p>` : ''}
         </div>
 
         <div style="margin-top: 0.5rem;">
@@ -4098,7 +4098,7 @@ class App {
     const notesInput = document.getElementById('flag-resolution-notes');
     const notes = notesInput ? notesInput.value.trim() : '';
     if (notes.length < 5) {
-      alert('Please enter the action taken / resolution notes (minimum 5 characters) before resolving this flag.');
+      alert(this.translate('validation_resolution_notes', 'Please enter the action taken / resolution notes (minimum 5 characters) before resolving this flag.'));
       return;
     }
     this.executeFlagAction(flagId, action, notes);
@@ -4111,7 +4111,7 @@ class App {
     const input = document.getElementById('flag-project-group-msg-input');
     const text = input ? input.value.trim() : '';
     if (!text) {
-      alert('Please enter a message.');
+      alert(this.translate('validation_enter_message', 'Please enter a message.'));
       return;
     }
 
@@ -4122,7 +4122,7 @@ class App {
     window.db.addProjectMessage(flag.projectId, senderId, senderName, text);
     
     if (input) input.value = '';
-    alert('Warning message sent to project group chat.');
+    alert(this.translate('msg_project_chat_sent', 'Warning message sent to project group chat.'));
   }
 
   sendProjectFlagIndividualMessage(flagId) {
@@ -4133,14 +4133,14 @@ class App {
     const recipientIds = Array.from(checkboxes).map(cb => cb.value);
     
     if (recipientIds.length === 0) {
-      alert('Please select at least one student recipient.');
+      alert(this.translate('validation_select_recipient', 'Please select at least one student recipient.'));
       return;
     }
 
     const textarea = document.getElementById('flag-project-individual-msg-text');
     const text = textarea ? textarea.value.trim() : '';
     if (!text) {
-      alert('Please enter warning notice text.');
+      alert(this.translate('validation_enter_warning_text', 'Please enter warning notice text.'));
       return;
     }
 
@@ -4175,7 +4175,7 @@ class App {
 
     if (textarea) textarea.value = '';
     if (agreeCheckbox) agreeCheckbox.checked = false;
-    alert('Warning notices sent to selected students successfully.');
+    alert(this.translate('msg_individual_notices_sent', 'Warning notices sent to selected students successfully.'));
   }
 
   // Teacher submits safeguarding resolution
@@ -4212,7 +4212,7 @@ class App {
 
       this.closeModal('resolve-flag-modal');
       this.refreshUI();
-      alert(`Safeguarding issue resolved. Action registered: ${action}`);
+      alert(this.translate('msg_issue_resolved', 'Safeguarding issue resolved. Action registered: {action}').replace('{action}', action));
     }
   }
 
@@ -4231,7 +4231,7 @@ class App {
         <!-- Left Column: Articles Review -->
         <div style="display: flex; flex-direction: column; gap: 1.25rem;">
           <h3 style="font-size: 1.1rem; font-weight: 700; border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-            📰 Student Articles Review
+            📰 ${this.translate('student_articles_review_header', 'Student Articles Review')}
           </h3>
           <div id="editor-articles-sublist" style="display: flex; flex-direction: column; gap: 1rem;">
             <!-- Loaded below -->
@@ -4241,7 +4241,7 @@ class App {
         <!-- Right Column: Biographies Review -->
         <div style="display: flex; flex-direction: column; gap: 1.25rem;">
           <h3 style="font-size: 1.1rem; font-weight: 700; border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-            👤 Biography Approvals
+            👤 ${this.translate('biography_approvals_header', 'Biography Approvals')}
             ${pendingBiogs.length > 0 ? `<span class="badge badge-warning" style="font-size: 0.7rem; padding: 0.15rem 0.45rem; margin-left: 0.25rem;">${pendingBiogs.length} Pending</span>` : ''}
           </h3>
           <div id="editor-biogs-sublist" style="display: flex; flex-direction: column; gap: 1rem;">
@@ -4256,7 +4256,7 @@ class App {
 
     // 1. Populate Articles
     if (articles.length === 0) {
-      articlesContainer.innerHTML = `<p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; padding: 1.5rem;">No articles in database.</p>`;
+      articlesContainer.innerHTML = `<p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; padding: 1.5rem;">${this.translate('no_articles_in_database', 'No articles in database.')}</p>`;
     } else {
       // Sort: Pending first, then by date descending
       const sortedArticles = [...articles].sort((a, b) => {
@@ -4270,9 +4270,9 @@ class App {
         const school = window.db.getSchool(art.schoolId);
 
         let statusBadge = '';
-        if (art.status === 'Approved') statusBadge = '<span class="badge badge-success">Approved</span>';
-        else if (art.status === 'Pending') statusBadge = '<span class="badge badge-warning">Awaiting Approval</span>';
-        else statusBadge = '<span class="badge badge-danger">Rejected</span>';
+        if (art.status === 'Approved') statusBadge = `<span class="badge badge-success">${this.translate('approved_status', 'Approved')}</span>`;
+        else if (art.status === 'Pending') statusBadge = `<span class="badge badge-warning">${this.translate('awaiting_approval_status', 'Awaiting Approval')}</span>`;
+        else statusBadge = `<span class="badge badge-danger">${this.translate('rejected_status', 'Rejected')}</span>`;
 
         const card = document.createElement('div');
         card.className = 'panel';
@@ -4289,14 +4289,14 @@ class App {
         if (art.status === 'Pending') {
           reviewActionsRow = `
             <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--panel-border);">
-              <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: var(--danger);" onclick="event.stopPropagation(); app.executeArticleReview('${art.id}', 'Rejected')">Reject</button>
-              <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); app.executeArticleReview('${art.id}', 'Approved')">Approve & Publish</button>
+              <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: var(--danger);" onclick="event.stopPropagation(); app.executeArticleReview('${art.id}', 'Rejected')">${this.translate('reject_btn', 'Reject')}</button>
+              <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); app.executeArticleReview('${art.id}', 'Approved')">${this.translate('approve_publish_btn', 'Approve & Publish')}</button>
             </div>
           `;
         } else {
           reviewActionsRow = `
             <div style="font-size: 0.75rem; text-align: right; color: var(--text-muted); margin-top: 1rem; border-top: 1px dashed var(--panel-border); padding-top: 0.5rem;">
-              Reviewed by: ${art.reviewedBy} on ${new Date(art.reviewedAt).toLocaleDateString()}
+              ${this.translate('reviewed_by_label', 'Reviewed by')}: ${art.reviewedBy} ${this.translate('on_label', 'on')} ${new Date(art.reviewedAt).toLocaleDateString()}
             </div>
           `;
         }
@@ -4309,7 +4309,7 @@ class App {
           <div class="panel-header" style="margin-bottom: 0.5rem; align-items: flex-start;">
             <div>
               <h4 style="font-weight: 700; font-size: 0.95rem; margin: 0;">${art.title}</h4>
-              <span style="font-size: 0.7rem; color: var(--text-secondary);">By ${author?.name || 'Student'} • ${school?.name} (${art.language.toUpperCase()})</span>
+              <span style="font-size: 0.7rem; color: var(--text-secondary);">${this.translate('by_author', 'By')} ${author?.name || this.translate('student_label_default', 'Student')} • ${school?.name} (${art.language.toUpperCase()})</span>
             </div>
             <div>${statusBadge}</div>
           </div>
@@ -4325,7 +4325,7 @@ class App {
 
     // 2. Populate Biographies Review
     if (pendingBiogs.length === 0) {
-      biogsContainer.innerHTML = `<p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; padding: 1.5rem;">No student biographies awaiting review.</p>`;
+      biogsContainer.innerHTML = `<p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; padding: 1.5rem;">${this.translate('no_biographies_awaiting_review', 'No student biographies awaiting review.')}</p>`;
     } else {
       pendingBiogs.forEach(stud => {
         const school = window.db.getSchool(stud.schoolId);
@@ -4337,27 +4337,27 @@ class App {
         card.style.padding = '1.25rem';
 
         const approvedBiogHtml = stud.personalBiog 
-          ? `<div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;"><strong>Current Approved Biography:</strong><br>"${stud.personalBiog}"</div>` 
+          ? `<div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;"><strong>${this.translate('current_approved_biography', 'Current Approved Biography:')}</strong><br>"${stud.personalBiog}"</div>` 
           : '';
 
         card.innerHTML = `
           <div class="panel-header" style="margin-bottom: 0.5rem;">
             <div>
               <h4 style="font-weight: 700; font-size: 0.95rem; margin: 0;">${stud.name}</h4>
-              <span style="font-size: 0.7rem; color: var(--text-secondary);">${stud.yearGroup} • ${school ? school.name : 'Unknown School'}</span>
+              <span style="font-size: 0.7rem; color: var(--text-secondary);">${stud.yearGroup} • ${school ? school.name : this.translate('unknown_school', 'Unknown School')}</span>
             </div>
-            <span class="badge badge-warning">Pending Review</span>
+            <span class="badge badge-warning">${this.translate('pending_review_status', 'Pending Review')}</span>
           </div>
           <div style="background: rgba(0,0,0,0.05); padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem;">
             ${approvedBiogHtml}
             <div style="font-size: 0.8rem; line-height: 1.5; color: var(--text-primary);">
-              <strong>Submitted Biography:</strong><br>
+              <strong>${this.translate('submitted_biography', 'Submitted Biography:')}</strong><br>
               "${stud.pendingBiog}"
             </div>
           </div>
           <div style="display: flex; gap: 0.5rem; justify-content: flex-end; border-top: 1px solid var(--panel-border); padding-top: 0.75rem;">
-            <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: var(--danger);" onclick="app.executeBiographyReview('${stud.id}', 'Rejected')">Reject</button>
-            <button class="btn btn-primary btn-small" onclick="app.executeBiographyReview('${stud.id}', 'Approved')">Approve</button>
+            <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: var(--danger);" onclick="app.executeBiographyReview('${stud.id}', 'Rejected')">${this.translate('reject_btn', 'Reject')}</button>
+            <button class="btn btn-primary btn-small" onclick="app.executeBiographyReview('${stud.id}', 'Approved')">${this.translate('approve_btn', 'Approve')}</button>
           </div>
         `;
         biogsContainer.appendChild(card);
@@ -5113,7 +5113,7 @@ class App {
         <td>${statusBadge}</td>
         <td>
           ${flag.status === 'Pending' 
-            ? `<button class="btn btn-danger btn-small" onclick="app.openResolveFlagModal('${flag.id}')">Review & Take Action</button>`
+            ? `<button class="btn btn-danger btn-small" onclick="app.openResolveFlagModal('${flag.id}')">${this.translate('review_take_action_btn', 'Review & Take Action')}</button>`
             : `<div style="display: flex; flex-direction: column; gap: 0.35rem;">
                  <span style="font-size: 0.75rem; color: var(--text-muted);">Resolved by:<br>${flag.reviewedBy}<br>Action: ${flag.actionTaken}</span>
                  <button class="btn btn-secondary btn-small" style="font-size: 0.7rem; padding: 0.2rem 0.4rem;" onclick="app.openResolveFlagModal('${flag.id}')">View Details</button>
@@ -5217,7 +5217,7 @@ class App {
                 if (s.matchStatus === 'matched') {
                   const myActiveMatches = window.db.getMatches().filter(m => m.active && m.studentIds.includes(s.id));
                   const count = myActiveMatches.length;
-                  matchStatusText = `${count} ${count === 1 ? 'Match' : 'Matches'}`;
+                  matchStatusText = `${count} ${count === 1 ? this.translate('match_label', 'Match') : this.translate('matches_label', 'Matches')}`;
                   
                   const partnerNamesList = myActiveMatches.map(m => {
                     const partnerId = m.studentIds.find(id => id !== s.id);
@@ -5239,7 +5239,7 @@ class App {
                     return `${emojiFlag} ${firstName}`;
                   }).filter(name => name !== '');
                   if (partnerNamesList.length > 0) {
-                    tooltipAttr = `title="Matched with: ${partnerNamesList.join(', ')}" style="cursor: help;"`;
+                    tooltipAttr = `title="${this.translate('matched_status_badge', 'Matched')} with: ${partnerNamesList.join(', ')}" style="cursor: help;"`;
                   }
                 }
                 const displayName = isOwnSchool ? s.name : s.name.split(' ')[0];
@@ -5814,7 +5814,7 @@ class App {
 
     let statusBadge = '';
     if (art.status === 'Approved') statusBadge = '<span class="badge badge-success">Approved</span>';
-    else if (art.status === 'Pending') statusBadge = '<span class="badge badge-warning">Pending Review</span>';
+    else if (art.status === 'Pending') statusBadge = '<span class="badge badge-warning">${this.translate('pending_review_status', 'Pending Review')}</span>';
     else statusBadge = '<span class="badge badge-danger">Rejected</span>';
 
     const photoHtml = art.photoUrl
@@ -6049,7 +6049,7 @@ class App {
     chatListContainer.innerHTML = '';
     
     if (otherCoordinators.length === 0) {
-      chatListContainer.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-muted); padding: 1rem; text-align: center;">No other coordinators found.</p>`;
+      chatListContainer.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-muted); padding: 1rem; text-align: center;">${this.translate('no_coordinators_found', 'No other coordinators found.')}</p>`;
       chatEmptyState.style.display = 'flex';
       chatActiveState.style.display = 'none';
       return;
@@ -6077,9 +6077,9 @@ class App {
         </div>
         <div class="chat-item-meta">
           <div class="chat-item-name">
-            <span>${coord.name} (${school?.code || 'Staff'})</span>
+            <span>${coord.name} (${school?.code || this.translate('staff_label', 'Staff')})</span>
           </div>
-          <div class="chat-item-preview">${lastMsg ? lastMsg.text : 'Start chatting...'}</div>
+          <div class="chat-item-preview">${lastMsg ? lastMsg.text : this.translate('start_chatting_placeholder', 'Start chatting...')}</div>
         </div>
       `;
 
@@ -7105,7 +7105,7 @@ class App {
       launchStudentsList.innerHTML = '';
       const localStudents = window.db.getStudents().filter(s => s.schoolId === schoolId);
       if (localStudents.length === 0) {
-        launchStudentsList.innerHTML = `<span style="font-size: 0.8rem; color: var(--text-muted); padding: 0.5rem; display: block;">No students registered for your school.</span>`;
+        launchStudentsList.innerHTML = `<span style="font-size: 0.8rem; color: var(--text-muted); padding: 0.5rem; display: block;">${this.translate('no_students_registered_for_school', 'No students registered for your school.')}</span>`;
       } else {
         localStudents.forEach(s => {
           const div = document.createElement('div');
@@ -7116,7 +7116,7 @@ class App {
           div.innerHTML = `
             <input type="checkbox" name="launch-student" value="${s.id}" id="chk-launch-${s.id}" style="cursor: pointer;">
             <label for="chk-launch-${s.id}" style="font-size: 0.8rem; cursor: pointer; color: var(--text-primary); margin: 0;">
-              ${s.name} (${s.age} y/o)
+              ${s.name} (${s.age} ${this.translate('years_old_suffix', 'y/o')})
             </label>
           `;
           launchStudentsList.appendChild(div);
@@ -7134,7 +7134,7 @@ class App {
         proposalsTbody.innerHTML = `
           <tr>
             <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
-              No pending project proposals from partner schools.
+              ${this.translate('no_pending_project_proposals', '${this.translate('no_pending_project_proposals', 'No pending project proposals from partner schools.')}')}
             </td>
           </tr>
         `;
@@ -7146,7 +7146,7 @@ class App {
           const localStudents = window.db.getStudents().filter(s => s.schoolId === schoolId);
           let checkboxesHTML = '';
           if (localStudents.length === 0) {
-            checkboxesHTML = `<span style="font-size: 0.75rem; color: var(--text-muted);">No local students available</span>`;
+            checkboxesHTML = `<span style="font-size: 0.75rem; color: var(--text-muted);">${this.translate('no_local_students_available', 'No local students available')}</span>`;
           } else {
             localStudents.forEach(s => {
               checkboxesHTML += `
@@ -7172,7 +7172,7 @@ class App {
             <td style="padding: 0.75rem; vertical-align: top;">
               <div style="font-weight: 600; color: var(--secondary); font-size: 0.8rem;">${creatorSchool?.name || 'Partner School'}</div>
               <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.15rem;">
-                Students: ${creatorStudents}
+                ${this.translate('students_label', 'Students')}: ${creatorStudents}
               </div>
             </td>
             <td style="padding: 0.75rem; vertical-align: top;">
@@ -7182,7 +7182,7 @@ class App {
             </td>
             <td style="padding: 0.75rem; vertical-align: middle;">
               <button class="btn btn-primary btn-small" onclick="app.acceptProject('${p.id}')" style="padding: 0.4rem 0.85rem; font-weight: 600; font-size: 0.75rem;">
-                Accept Proposal
+                ${this.translate('accept_proposal_btn', 'Accept Proposal')}
               </button>
             </td>
           `;
@@ -7262,9 +7262,9 @@ class App {
 
       if (countEl) {
         if (this.broadcastTarget === 'all') {
-          countEl.textContent = 'All projects targeted';
+          countEl.textContent = this.translate('all_projects_targeted', 'All projects targeted');
         } else {
-          countEl.textContent = `${this.selectedProjectBroadcastIds.length} selected`;
+          countEl.textContent = `${this.selectedProjectBroadcastIds.length} ${this.translate('selected_suffix', 'selected')}`;
         }
       }
 
@@ -7274,8 +7274,8 @@ class App {
         btnSelectAll.style.cursor = (this.broadcastTarget === 'all') ? 'not-allowed' : 'pointer';
         
         btnSelectAll.textContent = (this.selectedProjectBroadcastIds.length === activeProjects.length && this.selectedProjectBroadcastIds.length > 0)
-          ? "Deselect All"
-          : "Select All";
+          ? this.translate('deselect_all_btn', 'Deselect All')
+          : this.translate('select_all_btn', 'Select All');
       }
 
       if (btnSubmit) {
@@ -7284,13 +7284,13 @@ class App {
         btnSubmit.disabled = isMsgEmpty || noSelection;
         btnSubmit.style.opacity = (isMsgEmpty || noSelection) ? 0.5 : 1;
         btnSubmit.style.cursor = (isMsgEmpty || noSelection) ? 'not-allowed' : 'pointer';
-        btnSubmit.textContent = (this.broadcastTarget === 'all') ? "Send Broadcast to All" : "Send Broadcast to Selected";
+        btnSubmit.textContent = (this.broadcastTarget === 'all') ? this.translate('send_broadcast_to_all_btn', 'Send Broadcast to All') : this.translate('send_broadcast_to_selected_btn', 'Send Broadcast to Selected');
       }
 
       if (activeProjects.length === 0) {
         galleryGrid.innerHTML = `
           <div style="grid-column: span 3; text-align: center; color: var(--text-muted); padding: 2rem; font-style: italic;">
-            No active shared projects found.
+            ${this.translate('no_active_shared_projects', '${this.translate('no_active_shared_projects', 'No active shared projects found.')}')}
           </div>
         `;
       } else {
@@ -7325,7 +7325,7 @@ class App {
 
             <div style="padding-right: 1.5rem;">
               <h4 style="font-size: 0.95rem; font-weight: 800; margin: 0; color: var(--text-primary);">${p.title}</h4>
-              <span style="font-size: 0.75rem; color: var(--text-muted);">Partner: ${partnerSchool ? partnerSchool.name : 'Unknown School'}</span>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">${this.translate('partner_label', 'Partner')}: ${partnerSchool ? partnerSchool.name : this.translate('unknown_school', 'Unknown School')}</span>
             </div>
 
             <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0; height: 3.6em; line-height: 1.2em; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
@@ -7333,28 +7333,28 @@ class App {
             </p>
 
             <div style="display: flex; flex-direction: column; gap: 0.35rem; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 0.5rem; font-size: 0.75rem; color: var(--text-secondary);">
-              <div><strong>Your Students:</strong> ${localStudentNames || 'None'}</div>
-              <div><strong>Partner Students:</strong> ${partnerStudentNames || 'None'}</div>
+              <div><strong>${this.translate('your_students_label', 'Your Students:')}</strong> ${localStudentNames || 'None'}</div>
+              <div><strong>${this.translate('partner_students_label', 'Partner Students:')}</strong> ${partnerStudentNames || 'None'}</div>
             </div>
 
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 0.5rem; margin-top: auto;">
               ${p.paused ? `
-                <span class="badge badge-warning" style="font-size: 0.7rem; padding: 0.15rem 0.4rem; font-weight: 700; color: #fbbf24; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25);">🔒 Suspended</span>
+                <span class="badge badge-warning" style="font-size: 0.7rem; padding: 0.15rem 0.4rem; font-weight: 700; color: #fbbf24; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25);">🔒 ${this.translate('suspended_status', 'Suspended')}</span>
               ` : `
-                <span class="badge badge-success" style="font-size: 0.7rem; padding: 0.15rem 0.4rem; font-weight: 700; color: #34d399; background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.25);">✓ Active</span>
+                <span class="badge badge-success" style="font-size: 0.7rem; padding: 0.15rem 0.4rem; font-weight: 700; color: #34d399; background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.25);">✓ ${this.translate('active_status', 'Active')}</span>
               `}
-              <span style="font-size: 0.7rem; color: var(--text-muted);">Cards: ${p.slides ? p.slides.length : 0}</span>
+              <span style="font-size: 0.7rem; color: var(--text-muted);">${this.translate('cards_count_label', 'Cards:')} ${p.slides ? p.slides.length : 0}</span>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin-top: 0.25rem;">
               <button class="btn btn-secondary btn-small" onclick="app.toggleSuspendProject('${p.id}', ${!!p.paused})" style="font-size: 0.7rem; color: ${p.paused ? 'var(--text-primary)' : '#f59e0b'}; border-color: ${p.paused ? 'rgba(59,130,246,0.2)' : 'rgba(245,158,11,0.2)'};">
-                ${p.paused ? '🔓 Unsuspend' : '🔒 Suspend'}
+                ${p.paused ? this.translate('unsuspend_btn', 'Unsuspend') : this.translate('suspend_btn', 'Suspend')}
               </button>
               <button class="btn btn-secondary btn-small" onclick="app.cancelProject('${p.id}')" style="font-size: 0.7rem; color: var(--danger); border-color: rgba(239,68,68,0.2);">
-                🚫 Cancel
+                🚫 ${this.translate('cancel_btn', 'Cancel')}
               </button>
               <button class="btn btn-primary btn-small" onclick="app.openProjectModerationChat('${p.id}')" style="grid-column: span 2; font-size: 0.7rem; justify-content: center; display: flex;">
-                💬 Moderate Chat & Cards
+                💬 ${this.translate('moderate_chat_cards_btn', '${this.translate('moderate_chat_cards_btn', 'Moderate Chat & Cards')}')}
               </button>
             </div>
           `;
@@ -7373,7 +7373,7 @@ class App {
       if (cancelledProjects.length === 0) {
         cancelledList.innerHTML = `
           <div style="text-align: center; color: var(--text-muted); padding: 2rem; font-style: italic; background: rgba(255,255,255,0.01); border: 1px dashed var(--panel-border); border-radius: 8px;">
-            No cancelled projects in desk.
+            ${this.translate('no_cancelled_projects', '${this.translate('no_cancelled_projects', 'No cancelled projects in desk.')}')}
           </div>
         `;
       } else {
@@ -7394,15 +7394,15 @@ class App {
           item.innerHTML = `
             <div>
               <h4 style="font-size: 0.9rem; font-weight: 800; margin: 0; color: var(--text-primary);">${p.title}</h4>
-              <span style="font-size: 0.75rem; color: var(--text-muted);">Partner: ${partnerSchool ? partnerSchool.name : 'Unknown School'}</span>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">${this.translate('partner_label', 'Partner')}: ${partnerSchool ? partnerSchool.name : this.translate('unknown_school', 'Unknown School')}</span>
               <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0.2rem 0 0 0;">${p.brief}</p>
             </div>
             <div style="display: flex; gap: 0.5rem;">
               <button class="btn btn-secondary btn-small" onclick="app.reinstateProject('${p.id}')" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
-                🔄 Reinstate
+                🔄 ${this.translate('reinstate_btn', 'Reinstate')}
               </button>
               <button class="btn btn-secondary btn-small" onclick="app.deleteProjectPermanently('${p.id}')" style="font-size: 0.75rem; color: var(--danger); border-color: rgba(239,68,68,0.25); padding: 0.3rem 0.6rem;">
-                🗑️ Delete Permanently
+                🗑️ ${this.translate('delete_permanently_btn', 'Delete Permanently')}
               </button>
             </div>
           `;
@@ -7429,7 +7429,7 @@ class App {
     // Update count display
     const countEl = document.getElementById('broadcast-selected-count');
     if (countEl) {
-      countEl.textContent = `${this.selectedProjectBroadcastIds.length} selected`;
+      countEl.textContent = `${this.selectedProjectBroadcastIds.length} ${this.translate('selected_suffix', 'selected')}`;
     }
   }
 
