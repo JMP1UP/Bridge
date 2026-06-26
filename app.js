@@ -107,6 +107,15 @@ class App {
     return defaultText;
   }
 
+  formatTeacherName(name) {
+    if (!name) return '';
+    if (name.startsWith('Teacher ')) {
+      const bareName = name.substring(8);
+      return `${this.translate('teacher_label', 'Teacher')} ${bareName}`;
+    }
+    return name;
+  }
+
   getStudentDisplayName(stud) {
     if (!stud) return 'Unknown';
     let viewerSchoolId = 'school_1';
@@ -217,12 +226,14 @@ class App {
     document.getElementById('dev-reset-db-btn').addEventListener('click', () => {
       window.db.reset();
       this.init();
-      alert('Local Storage Database has been reset to defaults.');
+      alert(this.translate('db_reset_success', 'Local Storage Database has been reset to defaults.'));
     });
 
     // Article submit listener
     const artForm = document.getElementById('article-submission-form');
-    artForm.addEventListener('submit', (e) => this.handleArticleSubmit(e));
+    if (artForm) {
+      artForm.addEventListener('submit', (e) => this.handleArticleSubmit(e));
+    }
 
     // Connection Request form submission
     const connForm = document.getElementById('connect-request-form');
@@ -243,11 +254,11 @@ class App {
         });
 
         // Add audit log
-        const name = teacher ? teacher.name : 'Teacher';
+        const name = teacher ? teacher.name : this.translate('teacher_label', 'Teacher');
         const targetSchool = window.db.getSchool(targetSchoolId);
         window.db.addLog('Connection Requested', `Sent connection request to ${targetSchool ? targetSchool.name : 'another school'}.`, name);
 
-        alert('Connection request sent successfully!');
+        alert(this.translate('connection_request_sent_success', 'Connection request sent successfully!'));
         this.closeModal('connect-request-modal');
         this.refreshUI();
         this.renderSchoolConnections();
@@ -342,7 +353,7 @@ class App {
         const file = e.target.files[0];
         if (file) {
           if (file.size > 1.5 * 1024 * 1024) {
-            alert('Image file is too large. Please select an image smaller than 1.5MB.');
+            alert(this.translate('image_too_large_alert', 'Image file is too large. Please select an image smaller than 1.5MB.'));
             logoUploadInput.value = '';
             return;
           }
@@ -381,7 +392,7 @@ class App {
         const file = e.target.files[0];
         if (file) {
           if (file.size > 1.5 * 1024 * 1024) {
-            alert('Image file is too large. Please select an image smaller than 1.5MB.');
+            alert(this.translate('image_too_large_alert', 'Image file is too large. Please select an image smaller than 1.5MB.'));
             photoUploadInput.value = '';
             return;
           }
@@ -420,7 +431,7 @@ class App {
         const file = e.target.files[0];
         if (file) {
           if (file.size > 1.5 * 1024 * 1024) {
-            alert('Image file is too large. Please select an image smaller than 1.5MB.');
+            alert(this.translate('image_too_large_alert', 'Image file is too large. Please select an image smaller than 1.5MB.'));
             coordUploadInput.value = '';
             return;
           }
@@ -461,7 +472,7 @@ class App {
       const file = e.target.files[0];
       if (file) {
         if (file.size > 1.5 * 1024 * 1024) {
-          alert('Image file is too large. Please select an image smaller than 1.5MB.');
+          alert(this.translate('image_too_large_alert', 'Image file is too large. Please select an image smaller than 1.5MB.'));
           artPhotoInput.value = '';
           this.currentArticlePhotoDataUrl = '';
           artPhotoPreview.style.display = 'none';
@@ -571,7 +582,7 @@ class App {
         const file = e.target.files[0];
         if (file) {
           if (file.size > 1.5 * 1024 * 1024) {
-            alert('Image file is too large. Please select an image smaller than 1.5MB.');
+            alert(this.translate('image_too_large_alert', 'Image file is too large. Please select an image smaller than 1.5MB.'));
             projArtPhotoInput.value = '';
             this.currentProjArticlePhotoDataUrl = '';
             projArtPhotoPreview.style.display = 'none';
@@ -676,15 +687,15 @@ class App {
       const isAdmin = coord ? coord.isSchoolAdmin : false;
       const school = coord ? window.db.getSchool(coord.schoolId) : null;
       nameEl.textContent = coord ? coord.name : 'Mrs. Smith';
-      roleEl.textContent = `Languages Coordinator ${isAdmin ? '• School Admin' : ''} (${school ? school.code : ''})`;
+      roleEl.textContent = `${this.translate('languages_coordinator_label', 'Languages Coordinator')} ${isAdmin ? '• ' + this.translate('school_admin_label', 'School Admin') : ''} (${school ? school.code : ''})`;
       avatarEl.textContent = coord ? coord.name.split(' ').map(n => n[0]).join('') : 'MS';
     } else if (this.currentRole === 'admin') {
-      nameEl.textContent = 'System Admin';
-      roleEl.textContent = 'Platform Administrator';
+      nameEl.textContent = this.translate('system_admin_label', 'System Admin');
+      roleEl.textContent = this.translate('platform_administrator_label', 'Platform Administrator');
       avatarEl.textContent = 'AD';
     } else if (this.currentRole === 'new-coordinator') {
-      nameEl.textContent = 'Unregistered Teacher';
-      roleEl.textContent = 'Awaiting School Connect';
+      nameEl.textContent = this.translate('unregistered_teacher_label', 'Unregistered Teacher');
+      roleEl.textContent = this.translate('awaiting_school_connect_label', 'Awaiting School Connect');
       avatarEl.textContent = 'UT';
     }
 
@@ -802,18 +813,27 @@ class App {
     document.querySelectorAll('[data-localize]').forEach(el => {
       const key = el.getAttribute('data-localize');
       if (window.translator.UI_TRANSLATIONS[lang] && window.translator.UI_TRANSLATIONS[lang][key]) {
-        if (el.tagName === 'A' && el.querySelector('span')) {
-          el.querySelector('span').textContent = window.translator.UI_TRANSLATIONS[lang][key];
+        const translatedText = window.translator.UI_TRANSLATIONS[lang][key];
+        
+        if (el.hasAttribute('placeholder')) {
+          el.setAttribute('placeholder', translatedText);
+        } else if (el.tagName === 'INPUT' && (el.type === 'button' || el.type === 'submit')) {
+          el.value = translatedText;
+        } else if (el.tagName === 'A' && el.querySelector('span')) {
+          el.querySelector('span').textContent = translatedText;
         } else {
-          el.textContent = window.translator.UI_TRANSLATIONS[lang][key];
+          el.textContent = translatedText;
         }
       }
     });
 
     // Update headings/labels
-    this.switchTab(document.querySelector('.nav-link.active').getAttribute('data-tab'));
-    
-    this.refreshUI();
+    const activeLink = document.querySelector('.nav-link.active');
+    if (activeLink) {
+      this.switchTab(activeLink.getAttribute('data-tab'));
+    } else {
+      this.refreshUI();
+    }
   }
 
   // Developer switches roles
@@ -1072,7 +1092,7 @@ class App {
         <h4 style="font-weight: 700; font-size: 1rem; margin-bottom: 0.25rem;">${item.title}</h4>
         <p style="font-size: 0.85rem; color: var(--text-secondary);">${item.content}</p>
         <div class="news-card-meta">
-          <span>${byAuthorText}: ${item.postedBy}</span>
+          <span>${byAuthorText}: ${this.formatTeacherName(item.postedBy)}</span>
           <span>${new Date(item.timestamp).toLocaleDateString()}</span>
         </div>
       `;
@@ -1241,7 +1261,7 @@ class App {
 
           item.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; border-bottom: 1px dashed var(--panel-border); padding-bottom: 0.25rem;">
-              <strong style="color: var(--secondary); font-size: 0.8rem;">${translations.from_label || 'From'}: ${translations.teacher_label || 'Teacher'} ${notice.senderName}</strong>
+              <strong style="color: var(--secondary); font-size: 0.8rem;">${translations.from_label || 'From'}: ${this.formatTeacherName(notice.senderName)}</strong>
               <span style="font-size: 0.7rem; color: var(--text-muted);">${new Date(notice.timestamp).toLocaleString()}</span>
             </div>
             <p style="margin: 0.25rem 0; line-height: 1.4; color: var(--text-secondary); text-align: justify;">${notice.text}</p>
@@ -1359,7 +1379,7 @@ class App {
     const text = biogInput.value.trim();
     
     window.db.submitStudentBiog(this.currentStudentId, text);
-    alert('Biography submitted successfully for teacher review.');
+    alert(this.translate('bio_submitted_alert', 'Biography submitted successfully for teacher review.'));
     this.refreshUI();
   }
 
@@ -1864,7 +1884,7 @@ class App {
     this.closeModal('report-concern-modal');
     document.getElementById('report-concern-form').reset();
     
-    alert('Thank you for reporting this concern. Your teachers have been notified and the chat is paused until review.');
+    alert(this.translate('chat_paused_report_alert', 'Thank you for reporting this concern. Your teachers have been notified and the chat is paused until review.'));
     
     this.refreshUI();
   }
@@ -1901,7 +1921,7 @@ class App {
     this.closeModal('report-project-concern-modal');
     document.getElementById('report-project-concern-form').reset();
     
-    alert('Thank you for reporting this concern. Your teachers have been notified and the project workspace is suspended until review.');
+    alert(this.translate('project_suspended_report_alert', 'Thank you for reporting this concern. Your teachers have been notified and the project workspace is suspended until review.'));
     
     this.refreshUI();
   }
@@ -1995,7 +2015,7 @@ class App {
       photoUrl
     });
 
-    alert('Your article has been submitted for teacher review! Once approved, it will appear on the school news feeds.');
+    alert(this.translate('article_submitted_alert', 'Your article has been submitted for teacher review! Once approved, it will appear on the school news feeds.'));
     document.getElementById('article-submission-form').reset();
     this.currentArticlePhotoDataUrl = '';
     
@@ -2115,7 +2135,7 @@ class App {
       : '';
     const photoHtml = school.photoUrl 
       ? `<img src="${school.photoUrl}" alt="${school.name} campus" style="width: 100%; height: 150px; object-fit: cover; border-radius: 12px; margin-bottom: 0.75rem;">` 
-      : '<div style="height: 150px; background: rgba(0,0,0,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">${this.translate('no_campus_photo', '${this.translate('no_campus_photo', 'No campus photo added')}')}</div>';
+      : `<div style="height: 150px; background: rgba(0,0,0,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">${this.translate('no_campus_photo', 'No campus photo added')}</div>`;
 
     const leftCol = `
       <div style="display: flex; flex-direction: column;">
@@ -2365,7 +2385,7 @@ class App {
     input.select();
     input.setSelectionRange(0, 99999);
     navigator.clipboard.writeText(input.value);
-    alert('Copied secure sign-up link: ' + input.value);
+    alert(this.translate('copied_signup_link_alert', 'Copied secure sign-up link: ') + input.value);
   }
 
   // Process bulk invite upload paste lists
@@ -2428,7 +2448,7 @@ class App {
   // Archive / Delete student account
   removeStudentAccount(studentId) {
     const stud = window.db.getStudent(studentId);
-    if (stud && confirm(`Are you sure you want to archive student account: ${stud.name}?`)) {
+    if (stud && confirm(this.translate('archive_student_confirm_prompt', 'Are you sure you want to archive student account: {name}?').replace('{name}', stud.name))) {
       window.db.updateStudent(studentId, { active: false, invitationStatus: 'Archived', matchStatus: 'unmatched' });
       
       // Cleanup matches
@@ -2815,7 +2835,7 @@ class App {
     }
 
     const teacher = this.getLoggedTeacher();
-    const teacherName = teacher ? `Teacher ${teacher.name}` : 'Teacher Mrs. Smith';
+    const teacherName = teacher ? `${this.translate('teacher_label', 'Teacher')} ${teacher.name}` : `${this.translate('teacher_label', 'Teacher')} Mrs. Smith`;
 
     window.db.confirmMatch(matchId, assignedStudentId, teacherName);
     delete this.tempAssignments[matchId];
@@ -2824,9 +2844,9 @@ class App {
   }
 
   declineProposal(matchId) {
-    if (confirm('Are you sure you want to decline/withdraw this match suggestion?')) {
+    if (confirm(this.translate('decline_match_confirm_prompt', 'Are you sure you want to decline/withdraw this match suggestion?'))) {
       const teacher = this.getLoggedTeacher();
-      const teacherName = teacher ? `Teacher ${teacher.name}` : 'Teacher Mrs. Smith';
+      const teacherName = teacher ? `${this.translate('teacher_label', 'Teacher')} ${teacher.name}` : `${this.translate('teacher_label', 'Teacher')} Mrs. Smith`;
       window.db.declineMatch(matchId, teacherName);
       if (this.tempAssignments[matchId]) {
         delete this.tempAssignments[matchId];
@@ -3249,11 +3269,11 @@ class App {
   disbandSelectedMatches() {
     const selected = document.querySelectorAll('.match-select-checkbox:checked');
     if (selected.length === 0) return;
-    if (confirm(`Are you sure you want to disband the ${selected.length} selected matches? This will unlink the student pairs.`)) {
+    if (confirm(this.translate('disband_selected_confirm_prompt', 'Are you sure you want to disband the {count} selected matches? This will unlink the student pairs.').replace('{count}', selected.length))) {
       selected.forEach(cb => {
         window.db.deleteMatch(cb.value);
       });
-      alert('Selected matches disbanded successfully.');
+      alert(this.translate('selected_matches_disbanded_success', 'Selected matches disbanded successfully.'));
       this.refreshUI();
     }
   }
@@ -3268,15 +3288,15 @@ class App {
     );
 
     if (activeMatches.length === 0) {
-      alert('No active matches to disband.');
+      alert(this.translate('no_matches_to_disband', 'No active matches to disband.'));
       return;
     }
 
-    if (confirm(`⚠️ END OF YEAR WARNING: Are you sure you want to disband ALL ${activeMatches.length} active matches for your school? This will unlink all student pairs and reset them for the new school year.`)) {
+    if (confirm(this.translate('disband_all_confirm_prompt', '⚠️ END OF YEAR WARNING: Are you sure you want to disband ALL {count} active matches for your school? This will unlink all student pairs and reset them for the new school year.').replace('{count}', activeMatches.length))) {
       activeMatches.forEach(match => {
         window.db.deleteMatch(match.id);
       });
-      alert('All active matches disbanded successfully.');
+      alert(this.translate('all_matches_disbanded_success', 'All active matches disbanded successfully.'));
       this.refreshUI();
     }
   }
@@ -3497,11 +3517,11 @@ class App {
     });
 
     // Add audit log
-    const name = teacher ? teacher.name : 'Teacher';
+    const name = teacher ? teacher.name : this.translate('teacher_label', 'Teacher');
     const targetSchool = window.db.getSchool(targetSchoolId);
     window.db.addLog('Connection Requested', `Sent connection request to ${targetSchool ? targetSchool.name : 'another school'}.`, name);
 
-    alert('Connection request sent successfully!');
+    alert(this.translate('connection_request_sent_success', 'Connection request sent successfully!'));
     msgEl.value = '';
     this.refreshUI();
   }
@@ -3530,11 +3550,11 @@ class App {
     // Add audit log
     const conn = window.db.getSchoolConnections().find(c => c.id === requestId);
     const teacher = this.getLoggedTeacher();
-    const name = teacher ? teacher.name : 'Teacher';
+    const name = teacher ? teacher.name : this.translate('teacher_label', 'Teacher');
     const otherSchool = window.db.getSchool(conn ? conn.fromSchoolId : '');
     window.db.addLog('School Connected', `Accepted connection request from ${otherSchool ? otherSchool.name : 'another school'}.`, name);
 
-    alert('Connection accepted successfully! You can now pair students with this school.');
+    alert(this.translate('connection_accepted_success', 'Connection accepted successfully! You can now pair students with this school.'));
     this.refreshUI();
     this.renderSchoolConnections();
   }
@@ -3542,7 +3562,7 @@ class App {
   // Declines / Cancels a request
   declineConnectionRequest(requestId) {
     window.db.deleteSchoolConnection(requestId);
-    alert('Connection request removed.');
+    alert(this.translate('connection_request_removed', 'Connection request removed.'));
     this.refreshUI();
     this.renderSchoolConnections();
   }
@@ -3570,15 +3590,15 @@ class App {
       })
     );
 
-    let msg = `Are you sure you want to disconnect from ${partnerName}? You will no longer be able to propose new match suggestions.`;
+    let msg = this.translate('disconnect_confirm_base', 'Are you sure you want to disconnect from {partnerName}? You will no longer be able to propose new match suggestions.').replace('{partnerName}', partnerName);
     if (matches.length > 0) {
-      msg += `\n\nThere are currently ${matches.length} active penpal matches between your schools.`;
+      msg += '\n\n' + this.translate('disconnect_confirm_matches_count', 'There are currently {count} active penpal matches between your schools.').replace('{count}', matches.length);
     }
 
     if (confirm(msg)) {
       let disbandMatches = false;
       if (matches.length > 0) {
-        disbandMatches = confirm(`Do you also want to immediately DISBAND the ${matches.length} active student matches with ${partnerName}?\n\n- Click OK to disconnect and end all matches.\n- Click Cancel to disconnect but keep existing matches active.`);
+        disbandMatches = confirm(this.translate('disconnect_confirm_disband_option', 'Do you also want to immediately DISBAND the {count} active student matches with {partnerName}?\n\n- Click OK to disconnect and end all matches.\n- Click Cancel to disconnect but keep existing matches active.').replace('{count}', matches.length).replace('{partnerName}', partnerName));
       }
 
       if (disbandMatches) {
@@ -3589,10 +3609,10 @@ class App {
 
       window.db.deleteSchoolConnection(connectionId);
       
-      const name = teacher ? teacher.name : 'Teacher';
+      const name = teacher ? teacher.name : this.translate('teacher_label', 'Teacher');
       window.db.addLog('School Disconnected', `Removed school connection with ${partnerName}. Disbanded matches: ${disbandMatches ? 'Yes' : 'No'}`, name);
 
-      alert(`Successfully disconnected from ${partnerName}.${disbandMatches ? ' All student matches were disbanded.' : ''}`);
+      alert(this.translate('disconnect_success', 'Successfully disconnected from {partnerName}.{disband_info}').replace('{partnerName}', partnerName).replace('{disband_info}', disbandMatches ? ' ' + this.translate('disconnect_disband_info', 'All student matches were disbanded.') : ''));
       this.refreshUI();
       this.renderSchoolConnections();
     }
@@ -3760,10 +3780,10 @@ class App {
         <td>${statusBadgeHtml}</td>
         <td>
           ${myResolution.status !== 'Resolved'
-            ? `<button class="btn btn-danger btn-small" onclick="app.openResolveFlagModal('${flag.id}')">${this.translate('review_take_action_btn', 'Review & ${this.translate('take_action_tab', '${this.translate('take_action_tab', 'Take Action')}')}')}</button>`
+            ? `<button class="btn btn-danger btn-small" onclick="app.openResolveFlagModal('${flag.id}')">${this.translate('review_take_action_btn', 'Review & Take Action')}</button>`
             : `<div style="display: flex; flex-direction: column; gap: 0.35rem;">
                  <span style="font-size: 0.75rem; color: var(--text-muted);">${this.translate('resolved_by_label', 'Resolved by')}:<br>${myResolution.reviewedBy}<br>${this.translate('action_label', 'Action')}: ${myResolution.actionTaken}</span>
-                 <button class="btn btn-secondary btn-small" style="font-size: 0.7rem; padding: 0.2rem 0.4rem;" onclick="app.openResolveFlagModal('${flag.id}')">${this.translate('view_details', '${this.translate('view_details', 'View Details')}')}</button>
+                 <button class="btn btn-secondary btn-small" style="font-size: 0.7rem; padding: 0.2rem 0.4rem;" onclick="app.openResolveFlagModal('${flag.id}')">${this.translate('view_details', 'View Details')}</button>
                </div>`}
         </td>
       `;
@@ -3924,7 +3944,7 @@ class App {
     if (myResolution.status === 'Resolved') {
       actionsMarkup = `
         <div class="panel" style="padding: 1rem; border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.02); margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem;">
-          <h4 style="font-size: 0.85rem; color: var(--success); font-weight: bold; margin: 0; display: flex; align-items: center; gap: 0.35rem;">${this.translate('safeguarding_resolved_you_school', '${this.translate('safeguarding_resolved_you_school', '✔ Safeguarding Violation Resolved by Your School')}')}</h4>
+          <h4 style="font-size: 0.85rem; color: var(--success); font-weight: bold; margin: 0; display: flex; align-items: center; gap: 0.35rem;">${this.translate('safeguarding_resolved_you_school', '✔ Safeguarding Violation Resolved by Your School')}</h4>
           <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">
             ${this.translate('resolved_by_label', 'Resolved by')} <strong>${myResolution.reviewedBy}</strong> ${this.translate('on_label', 'on')} <strong>${new Date(myResolution.reviewedAt).toLocaleString()}</strong>.
           </p>
@@ -4034,7 +4054,7 @@ class App {
                        color: ${activeTab === 'details' ? 'var(--text-primary)' : 'var(--text-secondary)'}; 
                        font-weight: 600; font-size: 0.8rem; cursor: pointer; padding: 0.4rem 0.85rem; border-radius: 8px; transition: all 0.2s; outline: none;"
                 onclick="app.openResolveFlagModal('${flag.id}', 'details')">
-          🛡️ ${this.translate('alert_details_tab', '${this.translate('alert_details_tab', 'Alert Details')}')}
+          🛡️ ${this.translate('alert_details_tab', 'Alert Details')}
         </button>
         <button type="button" 
                 style="background: ${activeTab === 'content' ? 'rgba(var(--primary-rgb), 0.12)' : 'none'}; 
@@ -4042,7 +4062,7 @@ class App {
                        color: ${activeTab === 'content' ? 'var(--text-primary)' : 'var(--text-secondary)'}; 
                        font-weight: 600; font-size: 0.8rem; cursor: pointer; padding: 0.4rem 0.85rem; border-radius: 8px; transition: all 0.2s; outline: none;"
                 onclick="app.openResolveFlagModal('${flag.id}', 'content')">
-          📁 ${this.translate('flagged_content_tab', '${this.translate('flagged_content_tab', 'Flagged Content')}')}
+          📁 ${this.translate('flagged_content_tab', 'Flagged Content')}
         </button>
         <button type="button" 
                 style="background: ${activeTab === 'actions' ? 'rgba(var(--primary-rgb), 0.12)' : 'none'}; 
@@ -4050,7 +4070,7 @@ class App {
                        color: ${activeTab === 'actions' ? 'var(--text-primary)' : 'var(--text-secondary)'}; 
                        font-weight: 600; font-size: 0.8rem; cursor: pointer; padding: 0.4rem 0.85rem; border-radius: 8px; transition: all 0.2s; outline: none;"
                 onclick="app.openResolveFlagModal('${flag.id}', 'actions')">
-          ⚡ Take Action
+          ⚡ ${this.translate('take_action_tab', 'Take Action')}
         </button>
       </div>
     `;
@@ -4117,7 +4137,7 @@ class App {
 
     const teacher = this.getLoggedTeacher();
     const senderId = teacher ? teacher.id : 'coord_1';
-    const senderName = teacher ? teacher.name : 'Teacher';
+    const senderName = teacher ? teacher.name : this.translate('teacher_label', 'Teacher');
 
     window.db.addProjectMessage(flag.projectId, senderId, senderName, text);
     
@@ -4149,7 +4169,7 @@ class App {
 
     const teacher = this.getLoggedTeacher();
     const senderId = teacher ? teacher.id : 'coord_1';
-    const senderName = teacher ? teacher.name : 'Teacher';
+    const senderName = teacher ? teacher.name : this.translate('teacher_label', 'Teacher');
 
     const list = window.db.getStaffStudentMessages();
     recipientIds.forEach(sid => {
@@ -4181,7 +4201,7 @@ class App {
   // Teacher submits safeguarding resolution
   executeFlagAction(flagId, action, notes = '') {
     const teacher = this.getLoggedTeacher();
-    const reviewer = teacher ? `Teacher ${teacher.name}` : 'System Admin';
+    const reviewer = teacher ? `${this.translate('teacher_label', 'Teacher')} ${teacher.name}` : 'System Admin';
     const schoolId = teacher ? teacher.schoolId : 'school_1';
     
     const flag = window.db.getFlags().find(f => f.id === flagId);
@@ -4367,7 +4387,7 @@ class App {
 
   // Teacher submits biography review approval/rejection
   executeBiographyReview(studentId, status) {
-    const reviewer = 'Teacher Mrs. Smith';
+    const reviewer = `${this.translate('teacher_label', 'Teacher')} Mrs. Smith`;
     if (status === 'Approved') {
       window.db.approveStudentBiog(studentId, reviewer);
     } else {
@@ -4375,12 +4395,12 @@ class App {
     }
 
     this.refreshUI();
-    alert(`Biography review submitted: ${status}`);
+    alert(this.translate('bio_review_submitted', 'Biography review submitted: {status}').replace('{status}', this.translate(status.toLowerCase() + '_status', status)));
   }
 
   // Teacher submits article review approval/rejection
   executeArticleReview(id, status) {
-    const reviewer = 'Teacher Mrs. Smith';
+    const reviewer = `${this.translate('teacher_label', 'Teacher')} Mrs. Smith`;
     window.db.reviewArticle(id, status, reviewer);
     
     // If approved, dynamically create a news announcement to students
@@ -4397,7 +4417,7 @@ class App {
     }
 
     this.refreshUI();
-    alert(`Article reviewed: ${status}`);
+    alert(this.translate('article_reviewed', 'Article reviewed: {status}').replace('{status}', this.translate(status.toLowerCase() + '_status', status)));
   }
 
   // Load teacher settings form
@@ -4491,7 +4511,7 @@ class App {
       translationEnabled: translation
     });
 
-    alert('Settings updated successfully! SafeGuard configuration updated.');
+    alert(this.translate('safeguard_settings_updated', 'Settings updated successfully! SafeGuard configuration updated.'));
     this.refreshUI();
   }
 
@@ -4532,7 +4552,7 @@ class App {
     const nameInput = document.getElementById('coordinator-name-input');
     const name = nameInput ? nameInput.value.trim() : '';
     if (!name) {
-      alert("Please provide your name.");
+      alert(this.translate('provide_name_warning', 'Please provide your name.'));
       return;
     }
 
@@ -4545,7 +4565,7 @@ class App {
       window.db.updateCoordinator(teacher.id, { name, bio, photoUrl: coordPhotoUrl });
     }
 
-    alert('School profile updated successfully! Matches and exchange partner students will see the updated spotlight.');
+    alert(this.translate('school_profile_updated', 'School profile updated successfully! Matches and exchange partner students will see the updated spotlight.'));
     this.refreshUI();
   }
 
@@ -4686,7 +4706,7 @@ class App {
   toggleStaffAdminInsideSettings(staffId) {
     const teacher = this.getLoggedTeacher();
     if (staffId === teacher?.id) {
-      alert("You cannot change your own admin rights.");
+      alert(this.translate('cannot_change_own_admin_warning', 'You cannot change your own admin rights.'));
       return;
     }
     const currentCoords = window.db.getCoordinators();
@@ -4697,33 +4717,33 @@ class App {
       window.db.addLog(
         'Coordinator Admin Toggled',
         `Toggled Admin rights for staff ${currentCoords[idx].name} to ${currentCoords[idx].isSchoolAdmin ? 'Granted' : 'Revoked'}.`,
-        `Teacher ${teacher.name}`
+        `${this.translate('teacher_label', 'Teacher')} ${teacher.name}`
       );
       this.populateTeacherStaffDirectory();
-      alert(`Admin status updated for ${currentCoords[idx].name}.`);
+      alert(this.translate('admin_status_updated', 'Admin status updated for {name}.').replace('{name}', currentCoords[idx].name));
     }
   }
 
   deleteStaffInsideSettings(staffId) {
     const teacher = this.getLoggedTeacher();
     if (staffId === teacher?.id) {
-      alert("You cannot remove yourself from the school staff roster.");
+      alert(this.translate('cannot_remove_self_warning', 'You cannot remove yourself from the school staff roster.'));
       return;
     }
     const currentCoords = window.db.getCoordinators();
     const staff = currentCoords.find(c => c.id === staffId);
     if (!staff) return;
 
-    if (confirm(`Are you sure you want to remove coordinator "${staff.name}" (${staff.email})? They will no longer have access to this school's portal.`)) {
+    if (confirm(this.translate('remove_coordinator_confirm_prompt', 'Are you sure you want to remove coordinator "{name}" ({email})? They will no longer have access to this school\'s portal.').replace('{name}', staff.name).replace('{email}', staff.email))) {
       const filtered = currentCoords.filter(c => c.id !== staffId);
       window.db.saveTable('coordinators', filtered);
       window.db.addLog(
         'Coordinator Removed',
         `Removed staff member ${staff.name} (${staff.email}) from school staff roster.`,
-        `Teacher ${teacher.name}`
+        `${this.translate('teacher_label', 'Teacher')} ${teacher.name}`
       );
       this.populateTeacherStaffDirectory();
-      alert(`Staff member "${staff.name}" has been removed.`);
+      alert(this.translate('staff_member_removed', 'Staff member "{name}" has been removed.').replace('{name}', staff.name));
     }
   }
 
@@ -4736,13 +4756,13 @@ class App {
     const isSchoolAdmin = document.getElementById('new-staff-admin-input').checked;
 
     if (!name || !email) {
-      alert("Please provide both name and email.");
+      alert(this.translate('provide_name_email_warning', 'Please provide both name and email.'));
       return;
     }
 
     const currentCoords = window.db.getCoordinators();
     if (currentCoords.some(c => c.email.toLowerCase() === email.toLowerCase())) {
-      alert("A coordinator with this email is already registered.");
+      alert(this.translate('coordinator_already_registered_warning', 'A coordinator with this email is already registered.'));
       return;
     }
 
@@ -4760,11 +4780,11 @@ class App {
     window.db.addLog(
       'Coordinator Added',
       `Added staff member ${newStaff.name} (${newStaff.email}) as ${newStaff.isSchoolAdmin ? 'Admin' : 'Staff'}.`,
-      `Teacher ${teacher.name}`
+      `${this.translate('teacher_label', 'Teacher')} ${teacher.name}`
     );
 
     this.populateTeacherStaffDirectory();
-    alert(`Staff member ${name} added successfully!`);
+    alert(this.translate('staff_member_added', 'Staff member {name} added successfully!').replace('{name}', name));
   }
 
 
@@ -4839,7 +4859,7 @@ class App {
     
     // Check if code exists
     if (schools.some(s => s.code === code)) {
-      alert(`A school with code ${code} is already registered!`);
+      alert(this.translate('school_code_registered_warning', 'A school with code {code} is already registered!').replace('{code}', code));
       return;
     }
 
@@ -4861,7 +4881,7 @@ class App {
     this.closeModal('add-school-modal');
     document.getElementById('add-school-form').reset();
     
-    alert('Partner school registered successfully! Ready to invite teachers and students.');
+    alert(this.translate('school_registered_success', 'Partner school registered successfully! Ready to invite teachers and students.'));
     
     this.refreshUI();
   }
@@ -4959,19 +4979,19 @@ class App {
 
     const schools = window.db.getSchools();
     if (schools.some(s => s.code === req.code)) {
-      alert(`A school with code ${req.code} already exists on the platform. Please check the code or contact support.`);
+      alert(this.translate('school_exists_warning', 'A school with code {code} already exists on the platform. Please check the code or contact support.').replace('{code}', req.code));
       return;
     }
 
     const requests = window.db.getSchoolRequests();
     if (requests.some(r => r.code === req.code && r.status === 'Pending')) {
-      alert(`A registration request for school code ${req.code} is already pending review.`);
+      alert(this.translate('registration_pending_warning', 'A registration request for school code {code} is already pending review.').replace('{code}', req.code));
       return;
     }
 
     window.db.addSchoolRequest(req);
     document.getElementById('request-school-registration-form').reset();
-    alert('Your school registration request has been submitted successfully! The System Admin will review it shortly.');
+    alert(this.translate('registration_submitted_success', 'Your school registration request has been submitted successfully! The System Admin will review it shortly.'));
     this.refreshUI();
   }
 
@@ -5024,11 +5044,11 @@ class App {
     if (action === 'approve') {
       const newSchool = window.db.approveSchoolRequest(requestId, reviewer);
       if (newSchool) {
-        alert(`School Registration Approved! ${newSchool.name} is now registered. The requesting coordinator has been granted School Admin rights.`);
+        alert(this.translate('registration_approved_success', 'School Registration Approved! {name} is now registered. The requesting coordinator has been granted School Admin rights.').replace('{name}', newSchool.name));
       }
     } else if (action === 'decline') {
       window.db.declineSchoolRequest(requestId, reviewer);
-      alert('School Registration Request declined.');
+      alert(this.translate('registration_declined_success', 'School Registration Request declined.'));
     }
     this.refreshUI();
   }
@@ -5745,7 +5765,7 @@ class App {
     const textInput = document.getElementById('new-staff-student-msg-text');
     const text = textInput ? textInput.value.trim() : '';
     if (!text) {
-      alert('Please type a message before sending.');
+      alert(this.translate('type_message_warning', 'Please type a message before sending.'));
       return;
     }
     
@@ -5754,7 +5774,7 @@ class App {
     
     const teacher = this.getLoggedTeacher();
     const senderId = teacher ? teacher.id : 'coord_1';
-    const senderName = teacher ? teacher.name : 'Teacher';
+    const senderName = teacher ? teacher.name : this.translate('teacher_label', 'Teacher');
     
     const newMsg = {
       id: 'ssm_' + Date.now(),
@@ -5781,7 +5801,7 @@ class App {
     if (textInput) textInput.value = '';
     if (agreeCheckbox) agreeCheckbox.checked = false;
     
-    alert('Message sent to student successfully.');
+    alert(this.translate('message_sent_success', 'Message sent to student successfully.'));
     
     // Re-render list and refresh UI
     this.renderStaffStudentMessagesList(studentId);
@@ -5813,9 +5833,9 @@ class App {
     if (!container) return;
 
     let statusBadge = '';
-    if (art.status === 'Approved') statusBadge = '<span class="badge badge-success">Approved</span>';
-    else if (art.status === 'Pending') statusBadge = '<span class="badge badge-warning">${this.translate('pending_review_status', 'Pending Review')}</span>';
-    else statusBadge = '<span class="badge badge-danger">Rejected</span>';
+    if (art.status === 'Approved') statusBadge = `<span class="badge badge-success">${this.translate('approved_status', 'Approved')}</span>`;
+    else if (art.status === 'Pending') statusBadge = `<span class="badge badge-warning">${this.translate('pending_review_status', 'Pending Review')}</span>`;
+    else statusBadge = `<span class="badge badge-danger">${this.translate('rejected_status', 'Rejected')}</span>`;
 
     const photoHtml = art.photoUrl
       ? `<img src="${art.photoUrl}" alt="${art.title} photo" style="width: 100%; height: 200px; object-fit: cover; border-radius: 12px; margin-bottom: 0.5rem;">`
@@ -5864,13 +5884,13 @@ class App {
     const isSchoolAdmin = document.getElementById('new-modal-coord-admin').checked;
 
     if (!name || !email) {
-      alert('Please fill out all fields.');
+      alert(this.translate('fill_all_fields_warning', 'Please fill out all fields.'));
       return;
     }
 
     const coordinators = window.db.getCoordinators();
     if (coordinators.some(c => c.email === email)) {
-      alert('A coordinator with this email address is already registered on the platform.');
+      alert(this.translate('coordinator_email_exists_warning', 'A coordinator with this email address is already registered on the platform.'));
       return;
     }
 
@@ -5886,7 +5906,7 @@ class App {
     window.db.saveTable('coordinators', coordinators);
     window.db.addLog('Coordinator Added', `Added coordinator ${name} (${email}) to school ${window.db.getSchool(schoolId)?.name}.`, 'System Admin');
 
-    alert(`Coordinator ${name} added successfully!`);
+    alert(this.translate('coordinator_added_success', 'Coordinator {name} added successfully!').replace('{name}', name));
     this.refreshUI();
     this.openSchoolDetail(schoolId);
   }
@@ -6461,7 +6481,7 @@ class App {
         // Update progress bar
         const progressEl = document.getElementById('proj-viewer-progress');
         if (progressEl) {
-          progressEl.textContent = `Card ${this.activeSlideIndex + 1} of ${activeProject.slides.length}`;
+          progressEl.textContent = this.translate('card_progress_label', 'Card {current} of {total}').replace('{current}', this.activeSlideIndex + 1).replace('{total}', activeProject.slides.length);
         }
 
       } else {
@@ -6717,7 +6737,7 @@ class App {
     const lang = langSelect ? langSelect.value.toUpperCase() : 'EN';
     
     if (!title || !content) {
-      alert('Please enter a title and content before previewing.');
+      alert(this.translate('title_content_preview_warning', 'Please enter a title and content before previewing.'));
       return;
     }
 
@@ -6827,7 +6847,7 @@ class App {
     }
 
     if (progressEl) {
-      progressEl.textContent = `Card ${this.previewSlideIndex + 1} of ${slides.length}`;
+      progressEl.textContent = this.translate('card_progress_label', 'Card {current} of {total}').replace('{current}', this.previewSlideIndex + 1).replace('{total}', slides.length);
     }
   }
 
@@ -6940,7 +6960,7 @@ class App {
     const project = window.db.getProject(this.activeProjectId);
     if (!project || project.slides.length <= 1) return;
 
-    if (!confirm('Are you sure you want to delete this slide? This action cannot be undone.')) {
+    if (!confirm(this.translate('delete_slide_confirm_prompt', 'Are you sure you want to delete this slide? This action cannot be undone.'))) {
       return;
     }
 
@@ -7017,7 +7037,7 @@ class App {
     };
 
     window.db.updateProject(this.activeProjectId, updates);
-    alert('Draft saved successfully!');
+    alert(this.translate('draft_saved_success', 'Draft saved successfully!'));
     this.renderStudentProjects();
   }
 
@@ -7030,11 +7050,11 @@ class App {
 
     const incomplete = project.slides.some(s => !s.title.trim() || !s.content.trim());
     if (incomplete) {
-      alert('Please fill out the title and content for all slides before publishing.');
+      alert(this.translate('fill_slides_before_publishing_warning', 'Please fill out the title and content for all slides before publishing.'));
       return;
     }
 
-    if (!confirm('Are you sure you want to publish this project? This will submit the Story Deck to both coordinators for review.')) {
+    if (!confirm(this.translate('publish_project_confirm_prompt', 'Are you sure you want to publish this project? This will submit the Story Deck to both coordinators for review.'))) {
       return;
     }
 
@@ -7057,7 +7077,7 @@ class App {
       `${student ? student.name : 'A student'} submitted the project Story Deck for coordinator authorization.`
     );
 
-    alert('Project submitted for authorization! Coordinators from both schools must approve before publication.');
+    alert(this.translate('project_submitted_auth_success', 'Project submitted for authorization! Coordinators from both schools must approve before publication.'));
     this.activeSlideIndex = 0;
     this.renderStudentProjects();
   }
@@ -7066,7 +7086,7 @@ class App {
     if (!this.activeProjectId) return;
     const project = window.db.getProject(this.activeProjectId);
     if (project?.paused) {
-      alert('This project is suspended for safeguarding review.');
+      alert(this.translate('project_suspended_safeguarding_warning', 'This project is suspended for safeguarding review.'));
       return;
     }
     const textarea = document.getElementById('proj-chat-textarea');
@@ -7134,7 +7154,7 @@ class App {
         proposalsTbody.innerHTML = `
           <tr>
             <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
-              ${this.translate('no_pending_project_proposals', '${this.translate('no_pending_project_proposals', 'No pending project proposals from partner schools.')}')}
+              ${this.translate('no_pending_project_proposals', 'No pending project proposals from partner schools.')}
             </td>
           </tr>
         `;
@@ -7290,7 +7310,7 @@ class App {
       if (activeProjects.length === 0) {
         galleryGrid.innerHTML = `
           <div style="grid-column: span 3; text-align: center; color: var(--text-muted); padding: 2rem; font-style: italic;">
-            ${this.translate('no_active_shared_projects', '${this.translate('no_active_shared_projects', 'No active shared projects found.')}')}
+            ${this.translate('no_active_shared_projects', 'No active shared projects found.')}
           </div>
         `;
       } else {
@@ -7354,7 +7374,7 @@ class App {
                 🚫 ${this.translate('cancel_btn', 'Cancel')}
               </button>
               <button class="btn btn-primary btn-small" onclick="app.openProjectModerationChat('${p.id}')" style="grid-column: span 2; font-size: 0.7rem; justify-content: center; display: flex;">
-                💬 ${this.translate('moderate_chat_cards_btn', '${this.translate('moderate_chat_cards_btn', 'Moderate Chat & Cards')}')}
+                💬 ${this.translate('moderate_chat_cards_btn', 'Moderate Chat & Cards')}
               </button>
             </div>
           `;
@@ -7373,7 +7393,7 @@ class App {
       if (cancelledProjects.length === 0) {
         cancelledList.innerHTML = `
           <div style="text-align: center; color: var(--text-muted); padding: 2rem; font-style: italic; background: rgba(255,255,255,0.01); border: 1px dashed var(--panel-border); border-radius: 8px;">
-            ${this.translate('no_cancelled_projects', '${this.translate('no_cancelled_projects', 'No cancelled projects in desk.')}')}
+            ${this.translate('no_cancelled_projects', 'No cancelled projects in desk.')}
           </div>
         `;
       } else {
@@ -7473,7 +7493,7 @@ class App {
     if (!textEl) return;
     const text = textEl.value.trim();
     if (!text) {
-      alert('Please type a message to broadcast.');
+      alert(this.translate('type_broadcast_warning', 'Please type a message to broadcast.'));
       return;
     }
 
@@ -7489,11 +7509,11 @@ class App {
       : this.selectedProjectBroadcastIds;
 
     if (targetProjectIds.length === 0) {
-      alert('Please select at least one project.');
+      alert(this.translate('select_project_warning', 'Please select at least one project.'));
       return;
     }
 
-    const teacherName = `Teacher ${teacher.name}`;
+    const teacherName = `${this.translate('teacher_label', 'Teacher')} ${teacher.name}`;
 
     targetProjectIds.forEach(pid => {
       window.db.addProjectMessage(pid, teacher.id, teacherName, text);
@@ -7505,7 +7525,7 @@ class App {
       teacherName
     );
 
-    alert(`Broadcast message sent successfully to ${targetProjectIds.length} projects.`);
+    alert(this.translate('broadcast_sent_success', 'Broadcast message sent successfully to {count} projects.').replace('{count}', targetProjectIds.length));
     textEl.value = '';
     this.selectedProjectBroadcastIds = [];
     this.broadcastTarget = 'selected';
@@ -7514,7 +7534,7 @@ class App {
 
   toggleSuspendProject(projectId, currentPaused) {
     const teacher = this.getLoggedTeacher();
-    const teacherName = teacher ? `Teacher ${teacher.name}` : 'Teacher';
+    const teacherName = teacher ? `${this.translate('teacher_label', 'Teacher')} ${teacher.name}` : 'Teacher';
     const project = window.db.getProject(projectId);
     if (!project) return;
 
@@ -7531,7 +7551,7 @@ class App {
 
   cancelProject(projectId) {
     const teacher = this.getLoggedTeacher();
-    const teacherName = teacher ? `Teacher ${teacher.name}` : 'Teacher';
+    const teacherName = teacher ? `${this.translate('teacher_label', 'Teacher')} ${teacher.name}` : 'Teacher';
     const project = window.db.getProject(projectId);
     if (!project) return;
 
@@ -7548,7 +7568,7 @@ class App {
 
   reinstateProject(projectId) {
     const teacher = this.getLoggedTeacher();
-    const teacherName = teacher ? `Teacher ${teacher.name}` : 'Teacher';
+    const teacherName = teacher ? `${this.translate('teacher_label', 'Teacher')} ${teacher.name}` : 'Teacher';
     const project = window.db.getProject(projectId);
     if (!project) return;
 
@@ -7565,11 +7585,11 @@ class App {
 
   deleteProjectPermanently(projectId) {
     const teacher = this.getLoggedTeacher();
-    const teacherName = teacher ? `Teacher ${teacher.name}` : 'Teacher';
+    const teacherName = teacher ? `${this.translate('teacher_label', 'Teacher')} ${teacher.name}` : 'Teacher';
     const project = window.db.getProject(projectId);
     if (!project) return;
 
-    if (confirm(`Are you sure you want to permanently delete the project "${project.title}"? This will delete all project cards, slides, and group messages. This action cannot be undone.`)) {
+    if (confirm(this.translate('delete_project_confirm_prompt', 'Are you sure you want to permanently delete the project "{title}"? This will delete all project cards, slides, and group messages. This action cannot be undone.').replace('{title}', project.title))) {
       window.db.deleteProject(projectId);
       
       window.db.addLog(
@@ -7680,7 +7700,7 @@ class App {
 
     const teacher = this.getLoggedTeacher();
     const senderId = teacher ? teacher.id : 'coord_1';
-    const senderName = teacher ? `Teacher ${teacher.name}` : 'Teacher';
+    const senderName = teacher ? `${this.translate('teacher_label', 'Teacher')} ${teacher.name}` : 'Teacher';
 
     window.db.addProjectMessage(projectId, senderId, senderName, text);
     input.value = '';
@@ -7706,7 +7726,7 @@ class App {
     const selectedStudentIds = Array.from(selectedCheckboxes).map(cb => cb.value);
 
     if (selectedStudentIds.length === 0) {
-      alert('Please select at least one local student to launch the project.');
+      alert(this.translate('select_student_launch_project_warning', 'Please select at least one local student to launch the project.'));
       return;
     }
 
@@ -7725,7 +7745,7 @@ class App {
     // Reset form
     document.getElementById('launch-project-form').reset();
     
-    alert('Project proposal launched successfully! Sent to target partner school for review.');
+    alert(this.translate('project_proposal_launched_success', 'Project proposal launched successfully! Sent to target partner school for review.'));
     this.refreshUI();
   }
 
@@ -7737,7 +7757,7 @@ class App {
     const selectedStudentIds = Array.from(selectedCheckboxes).map(cb => cb.value);
 
     if (selectedStudentIds.length === 0) {
-      alert('Please select at least one local student to join the project.');
+      alert(this.translate('select_student_join_project_warning', 'Please select at least one local student to join the project.'));
       return;
     }
 
@@ -7757,7 +7777,7 @@ class App {
       `Project accepted by coordinator ${teacher.name}. Added student(s): ${selectedStudentIds.map(sid => window.db.getStudent(sid)?.name || '').filter(Boolean).join(', ')}.`
     );
 
-    alert('Proposal accepted! The project is now active for students of both schools.');
+    alert(this.translate('proposal_accepted_success', 'Proposal accepted! The project is now active for students of both schools.'));
     this.refreshUI();
   }
 
@@ -7986,7 +8006,7 @@ class App {
 
     window.db.authorizeProject(projectId, teacher.id, approve);
     this.closeModal('review-project-modal');
-    alert('Project authorized successfully!');
+    alert(this.translate('project_authorized_success', 'Project authorized successfully!'));
     this.refreshUI();
   }
 
@@ -8112,7 +8132,7 @@ class App {
     window.db.saveTable('projects', projects);
     
     const teacher = this.getLoggedTeacher();
-    const teacherName = teacher ? teacher.name : 'Teacher';
+    const teacherName = teacher ? teacher.name : this.translate('teacher_label', 'Teacher');
     window.db.addAuditLog("Project Content Moderated", `Teacher ${teacherName} edited slide "${slide.title}" in project "${proj.title}" to moderate content.`, teacherName);
     
     // Refresh modal
@@ -8139,7 +8159,7 @@ class App {
     if (matchedMyStudents.length === 0) {
       listContainer.innerHTML = `
         <div style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.85rem; font-style: italic;">
-          No currently matched students in your school.
+          ${this.translate('no_currently_matched_students', 'No currently matched students in your school.')}
         </div>
       `;
       const submitBtn = document.getElementById('break-links-submit-btn');
@@ -8147,7 +8167,7 @@ class App {
         submitBtn.disabled = true;
         submitBtn.style.opacity = '0.5';
         submitBtn.style.cursor = 'not-allowed';
-        submitBtn.textContent = 'Break Selected Links (0)';
+        submitBtn.textContent = this.translate('break_selected_links_btn', 'Break Selected Links ({count})').replace('{count}', 0);
       }
       this.openModal('break-student-links-modal');
       return;
@@ -8198,7 +8218,7 @@ class App {
       submitBtn.disabled = checked.length === 0;
       submitBtn.style.opacity = checked.length === 0 ? '0.5' : '1';
       submitBtn.style.cursor = checked.length === 0 ? 'not-allowed' : 'pointer';
-      submitBtn.textContent = `Break Selected Links (${checked.length})`;
+      submitBtn.textContent = this.translate('break_selected_links_btn', 'Break Selected Links ({count})').replace('{count}', checked.length);
     }
   }
 
@@ -8214,9 +8234,9 @@ class App {
     const checked = document.querySelectorAll('.break-link-checkbox:checked');
     if (checked.length === 0) return;
     
-    if (confirm(`Are you sure you want to end active pen pal links for the ${checked.length} selected student(s)? This will unlink them and reset them to Unmatched status.`)) {
+    if (confirm(this.translate('break_selected_links_confirm_prompt', 'Are you sure you want to end active pen pal links for the {count} selected student(s)? This will unlink them and reset them to Unmatched status.').replace('{count}', checked.length))) {
       const teacher = this.getLoggedTeacher();
-      const teacherName = teacher ? teacher.name : 'Teacher';
+      const teacherName = teacher ? teacher.name : this.translate('teacher_label', 'Teacher');
       const selectedIds = Array.from(checked).map(cb => cb.value);
       
       let count = 0;
@@ -8230,7 +8250,7 @@ class App {
       
       if (count > 0) {
         window.db.addLog('Selective Links Terminated', `Ended match links for ${count} student(s) at end of school year.`, `Teacher ${teacherName}`);
-        alert(`Successfully ended ${count} student link(s).`);
+        alert(this.translate('links_ended_success', 'Successfully ended {count} student link(s).').replace('{count}', count));
         this.closeModal('break-student-links-modal');
         this.refreshUI();
       }
@@ -8255,11 +8275,11 @@ class App {
     const ownSchoolId = teacher ? teacher.schoolId : 'school_1';
 
     if (!title || !content) {
-      alert('Please enter both title and content.');
+      alert(this.translate('enter_title_content_warning', 'Please enter both title and content.'));
       return;
     }
 
-    const postedBy = `Teacher ${teacher ? teacher.name : 'Unknown'}`;
+    const postedBy = `${this.translate('teacher_label', 'Teacher')} ${teacher ? teacher.name : this.translate('unknown_label', 'Unknown')}`;
     window.db.addNews({
       title,
       content,
@@ -8269,18 +8289,18 @@ class App {
     });
 
     window.db.addLog('Announcement Posted', `Posted school announcement: "${title}".`, postedBy);
-    alert('Announcement posted successfully.');
+    alert(this.translate('announcement_posted_success', 'Announcement posted successfully.'));
     this.closeModal('post-announcement-modal');
     this.refreshUI();
   }
 
   deleteAnnouncement(id) {
-    if (confirm('Are you sure you want to delete this announcement?')) {
+    if (confirm(this.translate('delete_announcement_confirm_prompt', 'Are you sure you want to delete this announcement?'))) {
       const teacher = this.getLoggedTeacher();
-      const teacherName = teacher ? teacher.name : 'Teacher';
+      const teacherName = teacher ? teacher.name : this.translate('teacher_label', 'Teacher');
       window.db.deleteNews(id);
       window.db.addLog('Announcement Deleted', `Deleted school announcement ID: ${id}.`, `Teacher ${teacherName}`);
-      alert('Announcement deleted successfully.');
+      alert(this.translate('announcement_deleted_success', 'Announcement deleted successfully.'));
       this.refreshUI();
     }
   }

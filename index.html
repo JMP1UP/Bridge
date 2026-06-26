@@ -1270,8 +1270,8 @@
               <!-- Chat Input compose area -->
               <div class="chat-input-area" id="teacher-chat-compose-area">
                 <div class="chat-input-row">
-                  <textarea class="chat-input" id="teacher-chat-textarea" placeholder="Type your message here..."></textarea>
-                  <button class="btn btn-primary" id="teacher-chat-send-btn">Send</button>
+                  <textarea class="chat-input" id="teacher-chat-textarea" placeholder="Type your message here..." data-localize="type_message_placeholder"></textarea>
+                  <button class="btn btn-primary" id="teacher-chat-send-btn" data-localize="send">Send</button>
                 </div>
               </div>
             </div>
@@ -1373,7 +1373,7 @@
                     <button type="button" class="btn btn-secondary btn-small" id="broadcast-select-all-btn" onclick="app.toggleSelectAllBroadcast()" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;" data-localize="select_all_btn">Select All</button>
                     <span id="broadcast-selected-count" style="font-size: 0.75rem; color: var(--text-secondary);">0 <span data-localize="selected_suffix">selected</span></span>
                   </div>
-                  <button type="button" class="btn btn-primary btn-small" id="broadcast-submit-btn" onclick="app.sendBulkBroadcast()" style="font-size: 0.75rem; padding: 0.3rem 0.75rem;">Send Broadcast</button>
+                  <button type="button" class="btn btn-primary btn-small" id="broadcast-submit-btn" onclick="app.sendBulkBroadcast()" style="font-size: 0.75rem; padding: 0.3rem 0.75rem;" data-localize="send_broadcast_btn">Send Broadcast</button>
                 </div>
               </div>
 
@@ -1738,29 +1738,29 @@
   <div class="modal-overlay" id="report-concern-modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="panel-title">🚨 Report a Safety Concern</h3>
+        <h3 class="panel-title" data-localize="safety_report_title">🚨 Report a Safety Concern</h3>
         <button class="modal-close" onclick="app.closeModal('report-concern-modal')">&times;</button>
       </div>
-      <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+      <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem;" data-localize="safety_report_desc">
         If you feel uncomfortable, or if your pen pal sent something concerning, report it below. Your teacher will review the chat history immediately and the conversation will be paused for safety.
       </p>
       <form id="report-concern-form">
         <div class="form-group">
-          <label for="report-reason">Select a Reason</label>
+          <label for="report-reason" data-localize="select_reason_label">Select a Reason</label>
           <select id="report-reason" class="form-control">
-            <option value="Personal Details Request">They asked for my address/phone number/social media</option>
-            <option value="Inappropriate Language">Inappropriate or rude words</option>
-            <option value="Meeting Up Request">They suggested meeting up in person</option>
-            <option value="Other">Other concern</option>
+            <option value="Personal Details Request" data-localize="reason_personal_details">They asked for my address/phone number/social media</option>
+            <option value="Inappropriate Language" data-localize="reason_inappropriate_lang">Inappropriate or rude words</option>
+            <option value="Meeting Up Request" data-localize="reason_meeting_up">They suggested meeting up in person</option>
+            <option value="Other" data-localize="reason_other">Other concern</option>
           </select>
         </div>
         <div class="form-group">
-          <label for="report-details">Provide more details (Optional)</label>
-          <textarea id="report-details" class="form-control" style="height: 100px; resize: vertical;" placeholder="Help teachers understand what happened..."></textarea>
+          <label for="report-details" data-localize="more_details_optional">Provide more details (Optional)</label>
+          <textarea id="report-details" class="form-control" style="height: 100px; resize: vertical;" placeholder="Help teachers understand what happened..." data-localize="placeholder_help_teachers"></textarea>
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
-          <button type="button" class="btn btn-secondary" onclick="app.closeModal('report-concern-modal')">Cancel</button>
-          <button type="submit" class="btn btn-danger">Submit Safety Report</button>
+          <button type="button" class="btn btn-secondary" onclick="app.closeModal('report-concern-modal')" data-localize="cancel_btn">Cancel</button>
+          <button type="submit" class="btn btn-danger" data-localize="submit_safety_report_btn">Submit Safety Report</button>
         </div>
       </form>
     </div>
@@ -1770,29 +1770,29 @@
   <div class="modal-overlay" id="report-project-concern-modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="panel-title">🚨 Report Project Safety Concern</h3>
+        <h3 class="panel-title" data-localize="project_safety_report_title">🚨 Report Project Safety Concern</h3>
         <button class="modal-close" onclick="app.closeModal('report-project-concern-modal')">&times;</button>
       </div>
-      <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+      <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem;" data-localize="project_safety_report_desc">
         If you feel uncomfortable with something in this project (slides or group chat comments), report it below. Your teacher will review the project immediately and the project may be suspended for safety.
       </p>
       <form id="report-project-concern-form">
         <div class="form-group">
-          <label for="report-project-reason">Select a Reason</label>
+          <label for="report-project-reason" data-localize="select_reason_label">Select a Reason</label>
           <select id="report-project-reason" class="form-control">
-            <option value="Inappropriate Content">Inappropriate content or pictures in slides</option>
-            <option value="Rude Behavior">Inappropriate or rude words in slides or chat</option>
-            <option value="Personal Details Request">They asked for my address/phone number/social media</option>
-            <option value="Other">Other concern</option>
+            <option value="Inappropriate Content" data-localize="reason_inappropriate_content">Inappropriate content or pictures in slides</option>
+            <option value="Rude Behavior" data-localize="reason_rude_behavior">Inappropriate or rude words in slides or chat</option>
+            <option value="Personal Details Request" data-localize="reason_personal_details">They asked for my address/phone number/social media</option>
+            <option value="Other" data-localize="reason_other">Other concern</option>
           </select>
         </div>
         <div class="form-group">
-          <label for="report-project-details">Provide more details (Required, min 5 characters)</label>
-          <textarea id="report-project-details" class="form-control" style="height: 100px; resize: vertical;" placeholder="Help teachers understand what happened..." required></textarea>
+          <label for="report-project-details" data-localize="more_details_required">Provide more details (Required, min 5 characters)</label>
+          <textarea id="report-project-details" class="form-control" style="height: 100px; resize: vertical;" placeholder="Help teachers understand what happened..." required data-localize="placeholder_help_teachers"></textarea>
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
-          <button type="button" class="btn btn-secondary" onclick="app.closeModal('report-project-concern-modal')">Cancel</button>
-          <button type="submit" class="btn btn-danger">Submit Safety Report</button>
+          <button type="button" class="btn btn-secondary" onclick="app.closeModal('report-project-concern-modal')" data-localize="cancel_btn">Cancel</button>
+          <button type="submit" class="btn btn-danger" data-localize="submit_safety_report_btn">Submit Safety Report</button>
         </div>
       </form>
     </div>
@@ -1802,7 +1802,7 @@
   <div class="modal-overlay" id="connect-request-modal">
     <div class="modal-content" style="max-width: 600px;">
       <div class="modal-header">
-        <h3 class="panel-title">🔗 Request School Connection</h3>
+        <h3 class="panel-title" data-localize="request_school_connection">🔗 Request School Connection</h3>
         <button class="modal-close" onclick="app.closeModal('connect-request-modal')">&times;</button>
       </div>
       <form id="connect-request-form">
@@ -1813,18 +1813,18 @@
         </div>
         
         <div class="form-group">
-          <label for="connect-requestor-bio">Your Biography & Introduction</label>
-          <textarea id="connect-requestor-bio" class="form-control" style="height: 100px; resize: vertical;" placeholder="Introduce yourself to the partner school coordinator..." required></textarea>
+          <label for="connect-requestor-bio" data-localize="your_bio_intro">Your Biography & Introduction</label>
+          <textarea id="connect-requestor-bio" class="form-control" style="height: 100px; resize: vertical;" placeholder="Introduce yourself to the partner school coordinator..." required data-localize="placeholder_intro_partner"></textarea>
         </div>
         
         <div class="form-group">
-          <label for="connect-personalised-msg">Personalised Message (Optional)</label>
-          <textarea id="connect-personalised-msg" class="form-control" style="height: 80px; resize: vertical;" placeholder="e.g. Hello, we would love to connect our year 9 German class with your English class!"></textarea>
+          <label for="connect-personalised-msg" data-localize="personalised_msg_label">Personalised Message (Optional)</label>
+          <textarea id="connect-personalised-msg" class="form-control" style="height: 80px; resize: vertical;" placeholder="e.g. Hello, we would love to connect our year 9 German class with your English class!" data-localize="placeholder_personalised_msg"></textarea>
         </div>
         
         <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
-          <button type="button" class="btn btn-secondary" onclick="app.closeModal('connect-request-modal')">Cancel</button>
-          <button type="submit" class="btn btn-primary">Send Connection Request</button>
+          <button type="button" class="btn btn-secondary" onclick="app.closeModal('connect-request-modal')" data-localize="cancel_btn">Cancel</button>
+          <button type="submit" class="btn btn-primary" data-localize="send_connection_request_btn">Send Connection Request</button>
         </div>
       </form>
     </div>
@@ -1834,39 +1834,39 @@
   <div class="modal-overlay" id="invite-student-modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="panel-title">Invite New Student</h3>
+        <h3 class="panel-title" data-localize="invite_new_student_title">Invite New Student</h3>
         <button class="modal-close" onclick="app.closeModal('invite-student-modal')">&times;</button>
       </div>
       <form id="invite-student-form">
         <div class="form-group">
-          <label for="new-student-name">Full Name</label>
-          <input type="text" id="new-student-name" class="form-control" required placeholder="e.g. Tabitha Brown">
+          <label for="new-student-name" data-localize="full_name_label">Full Name</label>
+          <input type="text" id="new-student-name" class="form-control" required placeholder="e.g. Tabitha Brown" data-localize="placeholder_full_name">
         </div>
         <div class="form-group">
-          <label for="new-student-email">Email Address</label>
-          <input type="email" id="new-student-email" class="form-control" required placeholder="e.g. tabitha@leicesterhigh.edu">
+          <label for="new-student-email" data-localize="email_address_label">Email Address</label>
+          <input type="email" id="new-student-email" class="form-control" required placeholder="e.g. tabitha@leicesterhigh.edu" data-localize="placeholder_email">
         </div>
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
           <div>
-            <label for="new-student-age">Age</label>
+            <label for="new-student-age" data-localize="age_label">Age</label>
             <input type="number" id="new-student-age" class="form-control" min="10" max="18" value="14" required>
           </div>
           <div>
-            <label for="new-student-gender">Gender</label>
+            <label for="new-student-gender" data-localize="gender_label">Gender</label>
             <select id="new-student-gender" class="form-control">
-              <option value="Female">Female</option>
-              <option value="Male">Male</option>
-              <option value="Other">Other</option>
+              <option value="Female" data-localize="gender_female">Female</option>
+              <option value="Male" data-localize="gender_male">Male</option>
+              <option value="Other" data-localize="gender_other">Other</option>
             </select>
           </div>
         </div>
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
           <div>
-            <label for="new-student-year">Year Group</label>
+            <label for="new-student-year" data-localize="year_group_label">Year Group</label>
             <input type="text" id="new-student-year" class="form-control" value="Year 9" required>
           </div>
           <div>
-            <label for="new-student-school">Assign School</label>
+            <label for="new-student-school" data-localize="assign_school_label">Assign School</label>
             <select id="new-student-school" class="form-control">
               <!-- Schools options populated by JS -->
             </select>
@@ -1874,18 +1874,18 @@
         </div>
         
         <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
-          <button type="button" class="btn btn-secondary" onclick="app.closeModal('invite-student-modal')">Cancel</button>
-          <button type="submit" class="btn btn-primary">Generate Invitation</button>
+          <button type="button" class="btn btn-secondary" onclick="app.closeModal('invite-student-modal')" data-localize="cancel_btn">Cancel</button>
+          <button type="submit" class="btn btn-primary" data-localize="generate_invitation_btn">Generate Invitation</button>
         </div>
       </form>
 
       <!-- Invitation link generator result area (Initially hidden) -->
       <div id="invite-result-area" style="display: none; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px dashed var(--panel-border);">
-        <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--success);">✔ Welcome Invitation Generated!</h4>
-        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.75rem;">Copy and send this link to the student to allow onboarding sign-up.</p>
+        <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--success);" data-localize="invitation_generated_success">✔ Welcome Invitation Generated!</h4>
+        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.75rem;" data-localize="copy_invite_link_desc">Copy and send this link to the student to allow onboarding sign-up.</p>
         <div style="display: flex; gap: 0.5rem;">
           <input type="text" id="invite-link-input" class="form-control" style="flex-grow: 1; font-size: 0.75rem;" readonly>
-          <button class="btn btn-secondary btn-small" onclick="app.copyInviteLink()">Copy</button>
+          <button class="btn btn-secondary btn-small" onclick="app.copyInviteLink()" data-localize="copy_btn">Copy</button>
         </div>
       </div>
     </div>
@@ -1895,26 +1895,26 @@
   <div class="modal-overlay" id="bulk-upload-modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="panel-title">Bulk Student Invite Upload</h3>
+        <h3 class="panel-title" data-localize="bulk_invite_upload_title">Bulk Student Invite Upload</h3>
         <button class="modal-close" onclick="app.closeModal('bulk-upload-modal')">&times;</button>
       </div>
-      <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+      <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem;" data-localize="bulk_invite_upload_desc">
         Paste a list of student email addresses (comma or line separated) to generate bulk invitations.
       </p>
       <form id="bulk-upload-form">
         <div class="form-group">
-          <label for="bulk-emails">Student Emails</label>
-          <textarea id="bulk-emails" class="form-control" style="height: 120px;" placeholder="alice@school.edu&#10;bob@school.edu&#10;charlie@school.edu" required></textarea>
+          <label for="bulk-emails" data-localize="student_emails_label">Student Emails</label>
+          <textarea id="bulk-emails" class="form-control" style="height: 120px;" placeholder="alice@school.edu&#10;bob@school.edu&#10;charlie@school.edu" required data-localize="placeholder_bulk_emails"></textarea>
         </div>
         <div class="form-group">
-          <label for="bulk-school">Assign School to List</label>
+          <label for="bulk-school" data-localize="assign_school_to_list_label">Assign School to List</label>
           <select id="bulk-school" class="form-control">
             <!-- Schools populated by JS -->
           </select>
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
-          <button type="button" class="btn btn-secondary" onclick="app.closeModal('bulk-upload-modal')">Cancel</button>
-          <button type="submit" class="btn btn-primary">Process Bulk List</button>
+          <button type="button" class="btn btn-secondary" onclick="app.closeModal('bulk-upload-modal')" data-localize="cancel_btn">Cancel</button>
+          <button type="submit" class="btn btn-primary" data-localize="process_bulk_list_btn">Process Bulk List</button>
         </div>
       </form>
     </div>
@@ -1924,27 +1924,27 @@
   <div class="modal-overlay" id="add-school-modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="panel-title">Register New School</h3>
+        <h3 class="panel-title" data-localize="register_new_school_title">Register New School</h3>
         <button class="modal-close" onclick="app.closeModal('add-school-modal')">&times;</button>
       </div>
       <form id="add-school-form">
         <div class="form-group">
-          <label for="new-school-name">School Name</label>
+          <label for="new-school-name" data-localize="school_name_label">School Name</label>
           <input type="text" id="new-school-name" class="form-control" required placeholder="e.g. Lycée Saint-Exupéry">
         </div>
         <div class="form-group" style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 1rem;">
           <div>
-            <label for="new-school-country">Country</label>
+            <label for="new-school-country" data-localize="country_label">Country</label>
             <input type="text" id="new-school-country" class="form-control" required placeholder="e.g. France">
           </div>
           <div>
-            <label for="new-school-city">City</label>
+            <label for="new-school-city" data-localize="city_label">City</label>
             <input type="text" id="new-school-city" class="form-control" required placeholder="e.g. Lyon">
           </div>
         </div>
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 1rem;">
           <div>
-            <label for="new-school-lang">Primary Lang</label>
+            <label for="new-school-lang" data-localize="primary_lang_label">Primary Lang</label>
             <select id="new-school-lang" class="form-control">
               <option value="en">English (EN)</option>
               <option value="de">German (DE)</option>
@@ -1953,13 +1953,13 @@
             </select>
           </div>
           <div>
-            <label for="new-school-code">School Code ID</label>
+            <label for="new-school-code" data-localize="school_code_id_label">School Code ID</label>
             <input type="text" id="new-school-code" class="form-control" required placeholder="e.g. LYC-FR">
           </div>
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
-          <button type="button" class="btn btn-secondary" onclick="app.closeModal('add-school-modal')">Cancel</button>
-          <button type="submit" class="btn btn-primary">Register School</button>
+          <button type="button" class="btn btn-secondary" onclick="app.closeModal('add-school-modal')" data-localize="cancel_btn">Cancel</button>
+          <button type="submit" class="btn btn-primary" data-localize="register_school_btn">Register School</button>
         </div>
       </form>
     </div>
@@ -1969,7 +1969,7 @@
   <div class="modal-overlay" id="resolve-flag-modal">
     <div class="modal-content" style="max-width: 600px; max-height: 90vh; display: flex; flex-direction: column;">
       <div class="modal-header" style="flex-shrink: 0;">
-        <h3 class="panel-title">🛡️ Safeguarding Review Desk</h3>
+        <h3 class="panel-title" data-localize="safeguarding_review_desk">🛡️ Safeguarding Review Desk</h3>
         <button class="modal-close" onclick="app.closeModal('resolve-flag-modal')">&times;</button>
       </div>
       <div id="flag-detail-content" style="overflow-y: auto; flex-grow: 1; padding-right: 5px;">
@@ -1982,7 +1982,7 @@
   <div class="modal-overlay" id="assign-student-modal">
     <div class="modal-content" style="max-width: 600px;">
       <div class="modal-header">
-        <h3 class="panel-title">Assign Local Student to Pen Pal Proposal</h3>
+        <h3 class="panel-title" data-localize="assign_student_proposal_title">Assign Local Student to Pen Pal Proposal</h3>
         <button class="modal-close" onclick="app.closeModal('assign-student-modal')">&times;</button>
       </div>
       <div style="display: flex; flex-direction: column; gap: 1.25rem;">
@@ -1993,18 +1993,18 @@
 
         <!-- Local Students List -->
         <div>
-          <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.5rem;">Select Student from Your School</h4>
+          <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.5rem;" data-localize="select_student_your_school">Select Student from Your School</h4>
           <div id="assign-students-list" style="max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; padding-right: 0.5rem;">
             <!-- Populated dynamically by JS -->
           </div>
-          <div id="assign-disclaimer-warning" style="display: none; font-size: 0.75rem; color: #ffb020; margin-top: 0.75rem; font-weight: 600;">
+          <div id="assign-disclaimer-warning" style="display: none; font-size: 0.75rem; color: #ffb020; margin-top: 0.75rem; font-weight: 600;" data-localize="warning_already_matched">
             ⚠️ Note: This student is already matched. Confirming will pair them with an additional pen pal.
           </div>
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem;">
-          <button class="btn btn-secondary" onclick="app.closeModal('assign-student-modal')">Cancel</button>
-          <button class="btn btn-primary" id="confirm-assign-btn" disabled>Confirm Assignment</button>
+          <button class="btn btn-secondary" onclick="app.closeModal('assign-student-modal')" data-localize="cancel_btn">Cancel</button>
+          <button class="btn btn-primary" id="confirm-assign-btn" disabled data-localize="confirm_assignment_btn">Confirm Assignment</button>
         </div>
       </div>
     </div>
@@ -2014,7 +2014,7 @@
   <div class="modal-overlay" id="review-project-modal">
     <div class="modal-content" style="max-width: 650px;">
       <div class="modal-header">
-        <h3 class="panel-title">📁 Project Editorial & Authorization Desk</h3>
+        <h3 class="panel-title" data-localize="project_editorial_desk_title">📁 Project Editorial & Authorization Desk</h3>
         <button class="modal-close" onclick="app.closeModal('review-project-modal')">&times;</button>
       </div>
       <div id="project-review-content" style="display: flex; flex-direction: column; gap: 1.25rem;">
@@ -2027,7 +2027,7 @@
   <div class="modal-overlay" id="student-profile-modal">
     <div class="modal-content" style="max-width: 500px;">
       <div class="modal-header">
-        <h3 class="panel-title">👤 Student Profile</h3>
+        <h3 class="panel-title" data-localize="student_profile_title">👤 Student Profile</h3>
         <button class="modal-close" onclick="app.closeModal('student-profile-modal')">&times;</button>
       </div>
       <div id="student-profile-content" style="display: flex; flex-direction: column; gap: 1.25rem;">
@@ -2040,7 +2040,7 @@
   <div class="modal-overlay" id="article-detail-modal">
     <div class="modal-content" style="max-width: 550px;">
       <div class="modal-header">
-        <h3 class="panel-title">📖 Article Details</h3>
+        <h3 class="panel-title" data-localize="article_details_title">📖 Article Details</h3>
         <button class="modal-close" onclick="app.closeModal('article-detail-modal')">&times;</button>
       </div>
       <div id="article-detail-content" style="display: flex; flex-direction: column; gap: 1.25rem;">
@@ -2053,7 +2053,7 @@
   <div class="modal-overlay" id="school-detail-modal">
     <div class="modal-content" style="max-width: 600px;">
       <div class="modal-header">
-        <h3 class="panel-title">🏫 School Profile & Student List</h3>
+        <h3 class="panel-title" data-localize="school_profile_student_list_title">🏫 School Profile & Student List</h3>
         <button class="modal-close" onclick="app.closeModal('school-detail-modal')">&times;</button>
       </div>
       <div id="school-detail-content" style="display: flex; flex-direction: column; gap: 1.25rem;">
@@ -2066,14 +2066,14 @@
   <div class="modal-overlay" id="view-bio-modal">
     <div class="modal-content" style="max-width: 420px; border: 1px solid var(--panel-border); background: var(--panel-bg); box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-radius: 16px; padding: 1.5rem;">
       <div class="modal-header" style="border-bottom: 1px solid var(--panel-border); padding-bottom: 0.75rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
-        <h3 class="panel-title" id="bio-modal-title" style="margin: 0; font-size: 1.1rem; color: var(--text-primary); font-family: var(--font-title); font-weight: 700;">Student Biography</h3>
+        <h3 class="panel-title" id="bio-modal-title" style="margin: 0; font-size: 1.1rem; color: var(--text-primary); font-family: var(--font-title); font-weight: 700;" data-localize="student_biography_title">Student Biography</h3>
         <button class="modal-close" onclick="app.closeModal('view-bio-modal')" style="background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer;">&times;</button>
       </div>
       <div class="modal-body" id="bio-modal-body" style="font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary); white-space: pre-wrap; font-style: italic; background: rgba(0,0,0,0.15); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); min-height: 80px; max-height: 200px; overflow-y: auto;">
         <!-- Bio goes here -->
       </div>
       <div style="display: flex; justify-content: flex-end; margin-top: 1.25rem;">
-        <button class="btn btn-secondary btn-small" onclick="app.closeModal('view-bio-modal')" style="padding: 0.4rem 1rem; font-size: 0.8rem; font-weight: 600;">Close</button>
+        <button class="btn btn-secondary btn-small" onclick="app.closeModal('view-bio-modal')" style="padding: 0.4rem 1rem; font-size: 0.8rem; font-weight: 600;" data-localize="close_btn">Close</button>
       </div>
     </div>
   </div>
@@ -2082,7 +2082,7 @@
   <div class="modal-overlay" id="project-deck-preview-modal">
     <div class="modal-content" style="max-width: 600px; padding: 1.5rem;">
       <div class="modal-header">
-        <h3 class="panel-title">👁️ Story Deck Preview</h3>
+        <h3 class="panel-title" data-localize="story_deck_preview_title">👁️ Story Deck Preview</h3>
         <button class="modal-close" onclick="app.closeModal('project-deck-preview-modal')">&times;</button>
       </div>
       <div id="proj-preview-deck-viewer" style="display: flex; flex-direction: column; gap: 1rem; align-items: center; justify-content: center; padding: 1rem 0;">
@@ -2093,9 +2093,9 @@
         
         <!-- Navigation controls -->
         <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 320px; margin-top: 0.5rem;">
-          <button class="btn btn-secondary" onclick="app.prevPreviewProjectSlide()" style="padding: 0.45rem 1.15rem; font-weight: bold; border-radius: 8px; display: flex; align-items: center; gap: 0.35rem; outline: none;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg><span>Prev</span></button>
+          <button class="btn btn-secondary" onclick="app.prevPreviewProjectSlide()" style="padding: 0.45rem 1.15rem; font-weight: bold; border-radius: 8px; display: flex; align-items: center; gap: 0.35rem; outline: none;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg><span data-localize="prev_btn">Prev</span></button>
           <span id="proj-preview-viewer-progress" style="font-size: 0.9rem; font-weight: 700; color: var(--text-secondary);">Card 1 of 1</span>
-          <button class="btn btn-primary" onclick="app.nextPreviewProjectSlide()" style="padding: 0.45rem 1.15rem; font-weight: bold; border-radius: 8px; display: flex; align-items: center; gap: 0.35rem; outline: none;"><span>Next</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+          <button class="btn btn-primary" onclick="app.nextPreviewProjectSlide()" style="padding: 0.45rem 1.15rem; font-weight: bold; border-radius: 8px; display: flex; align-items: center; gap: 0.35rem; outline: none;"><span data-localize="next_btn">Next</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
         </div>
       </div>
     </div>
@@ -2105,14 +2105,14 @@
   <div class="modal-overlay" id="teacher-project-moderation-modal">
     <div class="modal-content" style="max-width: 850px; width: 95%; height: 80vh; display: flex; flex-direction: column; padding: 1.5rem;">
       <div class="modal-header">
-        <h3 class="panel-title" id="moderation-modal-title">💬 Moderating Project</h3>
+        <h3 class="panel-title" id="moderation-modal-title" data-localize="moderating_project_title">💬 Moderating Project</h3>
         <button class="modal-close" onclick="app.closeModal('teacher-project-moderation-modal')">&times;</button>
       </div>
       <div class="modal-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; flex: 1; overflow: hidden; padding: 0.5rem 0;">
         
         <!-- Left Side: Slides list -->
         <div style="display: flex; flex-direction: column; gap: 0.75rem; overflow-y: auto; border-right: 1px solid var(--panel-border); padding-right: 1rem;">
-          <h4 style="font-size: 0.9rem; font-weight: 700; margin: 0; color: var(--text-primary);">📄 Project Slides</h4>
+          <h4 style="font-size: 0.9rem; font-weight: 700; margin: 0; color: var(--text-primary);" data-localize="project_slides_title">📄 Project Slides</h4>
           <div id="moderation-slides-container" style="display: flex; flex-direction: column; gap: 0.75rem;">
             <!-- Populated dynamically -->
           </div>
@@ -2120,15 +2120,15 @@
 
         <!-- Right Side: Chat -->
         <div style="display: flex; flex-direction: column; height: 100%;">
-          <h4 style="font-size: 0.9rem; font-weight: 700; margin: 0 0 0.5rem 0; color: var(--text-primary);">💬 Project Team Chat</h4>
+          <h4 style="font-size: 0.9rem; font-weight: 700; margin: 0 0 0.5rem 0; color: var(--text-primary);" data-localize="project_team_chat_title">💬 Project Team Chat</h4>
           
           <div id="moderation-chat-history" style="flex: 1; overflow-y: auto; background: rgba(0,0,0,0.15); border: 1px solid var(--panel-border); border-radius: 8px; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
             <!-- Populated dynamically -->
           </div>
 
           <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
-            <textarea class="form-control" id="moderation-chat-input" placeholder="Type a message to project group chat..." style="flex: 1; height: 40px; font-size: 0.8rem; resize: none; padding: 0.35rem 0.5rem;"></textarea>
-            <button class="btn btn-primary" onclick="app.sendProjectModerationMessage()" style="padding: 0 1rem; font-size: 0.8rem;">Send</button>
+            <textarea class="form-control" id="moderation-chat-input" placeholder="Type a message to project group chat..." style="flex: 1; height: 40px; font-size: 0.8rem; resize: none; padding: 0.35rem 0.5rem;" data-localize="placeholder_moderation_chat_input"></textarea>
+            <button class="btn btn-primary" onclick="app.sendProjectModerationMessage()" style="padding: 0 1rem; font-size: 0.8rem;" data-localize="send_btn">Send</button>
           </div>
         </div>
 
@@ -2140,15 +2140,15 @@
   <div class="modal-overlay" id="break-student-links-modal">
     <div class="modal-content" style="max-width: 550px; width: 95%; max-height: 80vh; display: flex; flex-direction: column; padding: 1.5rem;">
       <div class="modal-header">
-        <h3 class="panel-title">⏳ Selective Student Link Breaking</h3>
+        <h3 class="panel-title" data-localize="selective_link_breaking_title">⏳ Selective Student Link Breaking</h3>
         <button class="modal-close" onclick="app.closeModal('break-student-links-modal')">&times;</button>
       </div>
-      <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0.75rem 0; line-height: 1.4;">
+      <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0.75rem 0; line-height: 1.4;" data-localize="selective_link_breaking_desc">
         Select the matched students whose pen pal pairings you want to end. Selective link breaking will deactivate their matches and return both students to Unmatched.
       </p>
       
       <div style="margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--panel-border);">
-        <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; font-size: 0.85rem; cursor: pointer; color: var(--text-primary);">
+        <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; font-size: 0.85rem; cursor: pointer; color: var(--text-primary);" data-localize="select_all_btn">
           <input type="checkbox" id="break-links-select-all" onclick="app.toggleSelectAllBreakLinks(this)">
           Select All
         </label>
@@ -2159,7 +2159,7 @@
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--panel-border); padding-top: 0.75rem;">
-        <button class="btn btn-secondary" onclick="app.closeModal('break-student-links-modal')">Cancel</button>
+        <button class="btn btn-secondary" onclick="app.closeModal('break-student-links-modal')" data-localize="cancel_btn">Cancel</button>
         <button class="btn btn-danger" id="break-links-submit-btn" onclick="app.submitBreakSelectedLinks()" disabled style="opacity: 0.5; cursor: not-allowed;">Break Selected Links (0)</button>
       </div>
     </div>
@@ -2169,21 +2169,21 @@
   <div class="modal-overlay" id="post-announcement-modal">
     <div class="modal-content" style="max-width: 500px; width: 95%;">
       <div class="modal-header">
-        <h3 class="panel-title">📢 Post New Announcement</h3>
+        <h3 class="panel-title" data-localize="post_new_announcement_title">📢 Post New Announcement</h3>
         <button class="modal-close" onclick="app.closeModal('post-announcement-modal')">&times;</button>
       </div>
       <form id="post-announcement-form" onsubmit="app.submitPostAnnouncement(event)" style="display: flex; flex-direction: column; gap: 1rem; margin-top: 0.75rem;">
         <div class="form-group">
-          <label for="announcement-title" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Announcement Title</label>
-          <input type="text" id="announcement-title" class="form-control" placeholder="e.g. Winter Holiday Pen Pal Party, New Writing Prompt..." required>
+          <label for="announcement-title" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.25rem;" data-localize="announcement_title_label">Announcement Title</label>
+          <input type="text" id="announcement-title" class="form-control" placeholder="e.g. Winter Holiday Pen Pal Party, New Writing Prompt..." required data-localize="placeholder_announcement_title">
         </div>
         <div class="form-group">
-          <label for="announcement-content" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Announcement Details</label>
-          <textarea id="announcement-content" class="form-control" style="height: 120px; font-size: 0.85rem; resize: vertical;" placeholder="Type the announcement details here..." required></textarea>
+          <label for="announcement-content" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.25rem;" data-localize="announcement_details_label">Announcement Details</label>
+          <textarea id="announcement-content" class="form-control" style="height: 120px; font-size: 0.85rem; resize: vertical;" placeholder="Type the announcement details here..." required data-localize="placeholder_announcement_details"></textarea>
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--panel-border); padding-top: 0.75rem;">
-          <button type="button" class="btn btn-secondary" onclick="app.closeModal('post-announcement-modal')">Cancel</button>
-          <button type="submit" class="btn btn-primary">Publish Announcement</button>
+          <button type="button" class="btn btn-secondary" onclick="app.closeModal('post-announcement-modal')" data-localize="cancel_btn">Cancel</button>
+          <button type="submit" class="btn btn-primary" data-localize="publish_announcement_btn">Publish Announcement</button>
         </div>
       </form>
     </div>
