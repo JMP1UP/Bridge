@@ -184,6 +184,7 @@ const defaultDatabase = {
 
 class LocalDB {
   constructor() {
+    this.cachedData = null;
     this.init();
   }
 
@@ -205,19 +206,27 @@ class LocalDB {
 
     if (!data || hasOldName || isMissingTables || isMissingPhotos || isMissingBiog || isMissingResolvedFlags || isOldProposedMatchSeed || isMissingCoordMessages || isMissingProjects || isMissingConnections) {
       localStorage.setItem(DB_KEY, JSON.stringify(defaultDatabase));
+      this.cachedData = defaultDatabase;
+    } else {
+      this.cachedData = data;
     }
   }
 
   get() {
-    return JSON.parse(localStorage.getItem(DB_KEY));
+    if (this.cachedData) return this.cachedData;
+    const raw = localStorage.getItem(DB_KEY);
+    this.cachedData = raw ? JSON.parse(raw) : defaultDatabase;
+    return this.cachedData;
   }
 
   save(data) {
+    this.cachedData = data;
     localStorage.setItem(DB_KEY, JSON.stringify(data));
   }
 
   reset() {
     localStorage.setItem(DB_KEY, JSON.stringify(defaultDatabase));
+    this.cachedData = defaultDatabase;
     return defaultDatabase;
   }
 
