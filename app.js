@@ -33,10 +33,10 @@
 
     content.innerHTML = `
       <div style="font-size: 2.75rem; margin-bottom: 1rem; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));">${icon}</div>
-      <h3 style="font-family: var(--font-title); font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">System Notification</h3>
+      <h3 style="font-family: var(--font-title); font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">${this.translate('system_notification', 'System Notification')}</h3>
       <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.75rem; font-family: var(--font-body);">${message}</p>
       <div style="display: flex; justify-content: center;">
-        <button class="btn btn-primary" style="padding: 0.65rem 2.5rem; min-width: 120px; border-radius: 10px; font-weight: 600;">Dismiss</button>
+        <button class="btn btn-primary" style="padding: 0.65rem 2.5rem; min-width: 120px; border-radius: 10px; font-weight: 600;">${this.translate('dismiss_btn', 'Dismiss')}</button>
       </div>
     `;
 
@@ -163,6 +163,18 @@ class App {
   init() {
     this.isLoggedIn = false;
 
+    // Populate interface language selector dynamically based on translator dictionaries
+    const langSelect = document.getElementById('ui-lang-selector');
+    if (langSelect && window.translator && window.translator.UI_TRANSLATIONS) {
+      langSelect.innerHTML = '';
+      Object.keys(window.translator.UI_TRANSLATIONS).forEach(lang => {
+        const option = document.createElement('option');
+        option.value = lang;
+        option.textContent = window.translator.UI_TRANSLATIONS[lang]["language_name"] || lang.toUpperCase();
+        langSelect.appendChild(option);
+      });
+    }
+
     // Populate login screen options
     this.populateLoginScreen();
 
@@ -192,10 +204,12 @@ class App {
     document.getElementById('theme-toggle-btn').addEventListener('click', () => this.toggleTheme());
     
     // Localization
-    const langSelect = document.getElementById('ui-lang-selector');
-    langSelect.addEventListener('change', (e) => {
-      this.setLanguage(e.target.value);
-    });
+    const uiLangSelector = document.getElementById('ui-lang-selector');
+    if (uiLangSelector) {
+      uiLangSelector.addEventListener('change', (e) => {
+        this.setLanguage(e.target.value);
+      });
+    }
 
     // Developer Panel role selectors
     document.querySelectorAll('.dev-role-btn').forEach(btn => {
@@ -215,10 +229,10 @@ class App {
     devToggle.addEventListener('click', () => {
       if (devBody.style.display === 'none') {
         devBody.style.display = 'flex';
-        devToggle.textContent = 'Collapse ▲';
+        devToggle.textContent = this.translate('collapse_btn', 'Collapse ▲');
       } else {
         devBody.style.display = 'none';
-        devToggle.textContent = 'Expand ▼';
+        devToggle.textContent = this.translate('expand_btn', 'Expand ▼');
       }
     });
 
@@ -825,6 +839,12 @@ class App {
   setLanguage(lang) {
     this.interfaceLang = lang;
     
+    // Ensure selector value stays in sync
+    const langSelect = document.getElementById('ui-lang-selector');
+    if (langSelect) {
+      langSelect.value = lang;
+    }
+    
     // Apply UI translation dictionary definitions
     document.querySelectorAll('[data-localize]').forEach(el => {
       const key = el.getAttribute('data-localize');
@@ -1162,9 +1182,9 @@ class App {
         item.addEventListener('click', () => this.openStudentArticleDetail(art.id));
         
         let statusBadge = '';
-        if (art.status === 'Approved') statusBadge = '<span class="badge badge-success">Approved</span>';
-        else if (art.status === 'Pending') statusBadge = '<span class="badge badge-warning">Pending</span>';
-        else statusBadge = '<span class="badge badge-danger">Rejected</span>';
+        if (art.status === 'Approved') statusBadge = `<span class="badge badge-success">${this.translate('approved_status', 'Approved')}</span>`;
+        else if (art.status === 'Pending') statusBadge = `<span class="badge badge-warning">${this.translate('pending_status', 'Pending')}</span>`;
+        else statusBadge = `<span class="badge badge-danger">${this.translate('rejected_status', 'Rejected')}</span>`;
 
         const photoHtml = art.photoUrl
           ? `<img src="${art.photoUrl}" alt="Article thumb" style="width: 36px; height: 36px; object-fit: cover; border-radius: 6px; margin-right: 0.75rem;">`
@@ -1319,7 +1339,7 @@ class App {
       const partnerSchools = window.db.getSchools().filter(s => s.id !== student.schoolId);
       partnerSchoolsContainer.innerHTML = '';
       if (partnerSchools.length === 0) {
-        partnerSchoolsContainer.innerHTML = '<p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1rem;">No partner schools connected yet.</p>';
+        partnerSchoolsContainer.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1rem;">${this.translate('no_partner_schools', 'No partner schools connected yet.')}</p>`;
       } else {
         partnerSchools.forEach(sch => {
           const item = document.createElement('div');
@@ -1389,7 +1409,7 @@ class App {
         statusBanner.style.background = 'rgba(245, 158, 11, 0.1)';
         statusBanner.style.border = '1px solid rgba(245, 158, 11, 0.2)';
         statusBanner.style.color = '#fbbf24';
-        statusBanner.textContent = '⏳ Biography pending teacher review. Partners will not see edits until approved.';
+        statusBanner.textContent = this.translate('biography_pending_review', '⏳ Biography pending teacher review. Partners will not see edits until approved.');
       } else if (student.personalBiogStatus === 'Approved') {
         statusBanner.style.display = 'block';
         statusBanner.style.padding = '0.5rem 0.75rem';
@@ -1397,7 +1417,7 @@ class App {
         statusBanner.style.background = 'rgba(16, 185, 129, 0.1)';
         statusBanner.style.border = '1px solid rgba(16, 185, 129, 0.2)';
         statusBanner.style.color = '#34d399';
-        statusBanner.textContent = '✅ Biography approved and visible to your pen pal.';
+        statusBanner.textContent = this.translate('biography_approved', '✅ Biography approved and visible to your pen pal.');
       } else if (student.personalBiogStatus === 'Rejected') {
         statusBanner.style.display = 'block';
         statusBanner.style.padding = '0.5rem 0.75rem';
@@ -1405,7 +1425,7 @@ class App {
         statusBanner.style.background = 'rgba(239, 68, 68, 0.1)';
         statusBanner.style.border = '1px solid rgba(239, 68, 68, 0.2)';
         statusBanner.style.color = '#f87171';
-        statusBanner.textContent = '❌ Biography declined by teacher. Please revise and resubmit.';
+        statusBanner.textContent = this.translate('biography_declined', '❌ Biography declined by teacher. Please revise and resubmit.');
       } else {
         statusBanner.style.display = 'none';
       }
@@ -1453,7 +1473,7 @@ class App {
       emptyNote.style.color = 'var(--text-muted)';
       emptyNote.style.padding = '1rem';
       emptyNote.style.textAlign = 'center';
-      emptyNote.textContent = 'No matched pen pals yet.';
+      emptyNote.textContent = this.translate('no_matched_pen_pals', 'No matched pen pals yet.');
       chatListContainer.appendChild(emptyNote);
     } else {
       activeMatches.forEach(match => {
@@ -1468,7 +1488,7 @@ class App {
         
         let badgeStatus = '';
         if (match.paused) {
-          badgeStatus = `<span class="badge badge-danger btn-small" style="font-size: 0.6rem; padding: 0.1rem 0.35rem;">Paused</span>`;
+          badgeStatus = `<span class="badge badge-danger btn-small" style="font-size: 0.6rem; padding: 0.1rem 0.35rem;">${this.translate('paused_status', 'Paused')}</span>`;
         }
 
         const partnerSchool = partner ? window.db.getSchool(partner.schoolId) : null;
@@ -1671,7 +1691,7 @@ class App {
                       <button class="btn btn-secondary btn-small" onclick="app.likeArticleFromBoard('${art.id}')" style="display: flex; align-items: center; gap: 0.2rem; padding: 0.2rem 0.4rem; font-size: 0.7rem; border-radius: 6px; font-weight: 600;">
                         ❤️ <span>${art.likes || 0}</span>
                       </button>
-                      <button class="btn btn-primary btn-small" onclick="app.openStudentArticleDetail('${art.id}')" style="padding: 0.2rem 0.45rem; font-size: 0.7rem; border-radius: 6px; font-weight: 600;">Read Full</button>
+                      <button class="btn btn-primary btn-small" onclick="app.openStudentArticleDetail('${art.id}')" style="padding: 0.2rem 0.45rem; font-size: 0.7rem; border-radius: 6px; font-weight: 600;">${this.translate('read_full_btn', 'Read Full')}</button>
                     </div>
                   </div>
                 </div>
@@ -1763,7 +1783,7 @@ class App {
                   
                   <!-- Cooperating Schools Section -->
                   <div style="display: flex; flex-direction: column; gap: 0.25rem; border-top: 1px dashed var(--panel-border); padding-top: 0.5rem; margin-top: 0.35rem;" onclick="event.stopPropagation()">
-                    <div style="font-size: 0.58rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.1rem;">Cooperating Schools</div>
+                    <div style="font-size: 0.58rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.1rem;">${this.translate('cooperating_schools', 'Cooperating Schools')}</div>
                     <div style="display: flex; flex-direction: column; gap: 0.15rem;">
                       ${creatorSchool ? `
                         <div style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.7rem; color: var(--text-secondary);">
@@ -2562,7 +2582,7 @@ class App {
         nameEl.innerHTML = `<span style="color: var(--danger);">${this.translate('no_connected_partner_schools', '⚠️ No Connected Partner Schools')}</span>`;
         metaEl.textContent = this.translate('action_required', 'Action Required');
         descEl.innerHTML = this.translate('no_connected_partner_schools_desc', 'You cannot suggest matches until you connect with a school. Please go to the <strong>School Partnerships</strong> tab to find partner schools and establish a connection.');
-        countEl.textContent = 'N/A';
+        countEl.textContent = this.translate('not_applicable', 'N/A');
       } else {
         nameEl.textContent = this.translate('no_school_selected', 'No School Selected');
         metaEl.textContent = '';
@@ -4669,32 +4689,30 @@ class App {
     let rowsHtml = '';
     coordinators.forEach(coord => {
       const isSelf = coord.id === teacher.id;
-      const roleBadge = coord.isSchoolAdmin 
-        ? `<span class="badge badge-success text-xs font-bold" style="padding: 0.15rem 0.4rem; border-radius: 4px;">Admin</span>`
-        : `<span class="badge badge-neutral text-xs" style="padding: 0.15rem 0.4rem; border-radius: 4px; border: 1px solid var(--panel-border); background: rgba(255,255,255,0.02);">Staff</span>`;
+      const roleBadge = coord.isSchoolAdmin ? `<span class="badge badge-success text-xs font-bold" style="padding: 0.15rem 0.4rem; border-radius: 4px;">${this.translate('admin_role', 'Admin')}</span>` : `<span class="badge badge-neutral text-xs" style="padding: 0.15rem 0.4rem; border-radius: 4px; border: 1px solid var(--panel-border); background: rgba(255,255,255,0.02);">${this.translate('staff_role', 'Staff')}</span>`;
 
       let actionsHtml = '';
       if (teacher.isSchoolAdmin) {
         if (!isSelf) {
           actionsHtml = `
             <button class="btn btn-secondary btn-small" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;" onclick="app.toggleStaffAdminInsideSettings('${coord.id}')">
-              ${coord.isSchoolAdmin ? 'Demote' : 'Promote'}
+              ${coord.isSchoolAdmin ? this.translate('demote_btn', 'Demote') : this.translate('promote_btn', 'Promote')}
             </button>
             <button class="btn btn-secondary btn-small" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; color: var(--danger); border-color: rgba(239,68,68,0.2);" onclick="app.deleteStaffInsideSettings('${coord.id}')">
-              Remove
+              ${this.translate('remove_btn', 'Remove')}
             </button>
           `;
         } else {
-          actionsHtml = `<span style="font-size: 0.75rem; color: var(--text-muted); font-style: italic;">No actions</span>`;
+          actionsHtml = `<span style="font-size: 0.75rem; color: var(--text-muted); font-style: italic;">${this.translate('no_actions', 'No actions')}</span>`;
         }
       } else {
-        actionsHtml = `<span style="font-size: 0.75rem; color: var(--text-muted);">Read-Only</span>`;
+        actionsHtml = `<span style="font-size: 0.75rem; color: var(--text-muted);">${this.translate('readonly_role', 'Read-Only')}</span>`;
       }
 
       rowsHtml += `
         <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
           <td style="padding: 0.75rem 0.5rem; font-size: 0.85rem; font-weight: 600;">
-            ${coord.name} ${isSelf ? '<span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">(You)</span>' : ''}
+            ${coord.name} ${isSelf ? '<span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">' + this.translate('you_label_suffix', '(You)') + '</span>' : ''}
           </td>
           <td style="padding: 0.75rem 0.5rem; font-size: 0.85rem; color: var(--text-secondary);"><a href="mailto:${coord.email}" style="color: var(--secondary); text-decoration: underline;">${coord.email}</a></td>
           <td style="padding: 0.75rem 0.5rem;">${roleBadge}</td>
@@ -4711,27 +4729,27 @@ class App {
     if (teacher.isSchoolAdmin) {
       addFormHtml = `
         <form id="add-staff-settings-form" style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; padding: 1.25rem; background: rgba(255,255,255,0.01); border: 1px solid var(--panel-border); border-radius: 8px;" onsubmit="app.addStaffInsideSettings(event)">
-          <h4 style="font-size: 0.9rem; font-weight: 700; margin: 0;">➕ Add New Coordinator</h4>
+          <h4 style="font-size: 0.9rem; font-weight: 700; margin: 0;">➕ ${this.translate('add_new_coordinator_title', 'Add New Coordinator')}</h4>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
             <div class="form-group" style="margin: 0;">
-              <label style="font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Full Name:</label>
+              <label style="font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">${this.translate('full_name_label', 'Full Name:')}</label>
               <input 
                 type="text" 
                 id="new-staff-name-input" 
                 class="form-control" 
                 style="font-size: 0.8rem; padding: 0.4rem 0.75rem;" 
-                placeholder="e.g. Dr. John Watson" 
+                placeholder="${this.translate('watson_placeholder', 'e.g. Dr. John Watson')}" 
                 required
               >
             </div>
             <div class="form-group" style="margin: 0;">
-              <label style="font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Email Address:</label>
+              <label style="font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">${this.translate('email_address_label', 'Email Address:')}</label>
               <input 
                 type="email" 
                 id="new-staff-email-input" 
                 class="form-control" 
                 style="font-size: 0.8rem; padding: 0.4rem 0.75rem;" 
-                placeholder="e.g. watson@leicesterhigh.edu" 
+                placeholder="${this.translate('watson_email_placeholder', 'e.g. watson@leicesterhigh.edu')}" 
                 required
               >
             </div>
@@ -4744,11 +4762,11 @@ class App {
                 style="width: 16px; height: 16px; cursor: pointer;"
               >
               <label for="new-staff-admin-input" style="font-size: 0.8rem; font-weight: 600; cursor: pointer;">
-                Grant Administrator Rights
+                ${this.translate('grant_admin_rights_label', 'Grant Administrator Rights')}
               </label>
             </div>
             <button type="submit" class="btn btn-primary btn-small" style="padding: 0.4rem 1rem;">
-              Register Staff Member
+              ${this.translate('register_staff_member_btn', 'Register Staff Member')}
             </button>
           </div>
         </form>
@@ -4756,27 +4774,27 @@ class App {
     } else {
       addFormHtml = `
         <div style="font-size: 0.8rem; color: var(--text-muted); font-style: italic; text-align: center; padding: 1rem; background: rgba(255,255,255,0.01); border: 1px dashed var(--panel-border); border-radius: 8px;">
-          🔒 Only school administrators can invite or manage other staff members.
+          🔒 ${this.translate('only_admins_manage_staff', 'Only school administrators can invite or manage other staff members.')}
         </div>
       `;
     }
 
     container.innerHTML = `
       <div class="panel-header" style="border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
-        <h2 class="panel-title" style="font-size: 1.1rem; font-weight: 700;">👥 School Staff Directory</h2>
+        <h2 class="panel-title" style="font-size: 1.1rem; font-weight: 700;">👥 ${this.translate('school_staff_directory_title', 'School Staff Directory')}</h2>
       </div>
       <span style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem; display: block;">
-        Invite and manage other coordinators for your school.
+        ${this.translate('invite_manage_coordinators_desc', 'Invite and manage other coordinators for your school.')}
       </span>
 
       <div style="overflow-x: auto; margin-bottom: 1.5rem;">
         <table style="width: 100%; text-align: left; border-collapse: collapse; min-width: 500px;">
           <thead>
             <tr style="border-bottom: 1px solid var(--panel-border);">
-              <th style="padding: 0.75rem 0.5rem; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Name</th>
-              <th style="padding: 0.75rem 0.5rem; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Email</th>
-              <th style="padding: 0.75rem 0.5rem; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Role</th>
-              <th style="padding: 0.75rem 0.5rem; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; text-align: right;">Actions</th>
+              <th style="padding: 0.75rem 0.5rem; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">${this.translate('th_name', 'Name')}</th>
+              <th style="padding: 0.75rem 0.5rem; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">${this.translate('th_email', 'Email')}</th>
+              <th style="padding: 0.75rem 0.5rem; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">${this.translate('th_role', 'Role')}</th>
+              <th style="padding: 0.75rem 0.5rem; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; text-align: right;">${this.translate('th_actions', 'Actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -5018,7 +5036,7 @@ class App {
     }
 
     if (displaySchools.length === 0) {
-      listEl.innerHTML = `<p style="font-size: 0.75rem; color: var(--text-muted); text-align: center; padding: 1rem 0;">No matching schools found.</p>`;
+      listEl.innerHTML = `<p style="font-size: 0.75rem; color: var(--text-muted); text-align: center; padding: 1rem 0;">${this.translate('no_matching_schools', 'No matching schools found.')}</p>`;
       return;
     }
 
@@ -5200,8 +5218,8 @@ class App {
       const school = sender ? window.db.getSchool(sender.schoolId) : null;
       
       let statusBadge = '';
-      if (flag.status === 'Pending') statusBadge = '<span class="badge badge-danger">Unresolved</span>';
-      else statusBadge = '<span class="badge badge-success">Resolved</span>';
+      if (flag.status === 'Pending') statusBadge = `<span class="badge badge-danger">${this.translate('unresolved_status', 'Unresolved')}</span>`;
+      else statusBadge = `<span class="badge badge-success">${this.translate('resolved_status', 'Resolved')}</span>`;
 
       const row = document.createElement('tr');
       row.innerHTML = `
@@ -5221,8 +5239,8 @@ class App {
           ${flag.status === 'Pending' 
             ? `<button class="btn btn-danger btn-small" onclick="app.openResolveFlagModal('${flag.id}')">${this.translate('review_take_action_btn', 'Review & Take Action')}</button>`
             : `<div style="display: flex; flex-direction: column; gap: 0.35rem;">
-                 <span style="font-size: 0.75rem; color: var(--text-muted);">Resolved by:<br>${flag.reviewedBy}<br>Action: ${flag.actionTaken}</span>
-                 <button class="btn btn-secondary btn-small" style="font-size: 0.7rem; padding: 0.2rem 0.4rem;" onclick="app.openResolveFlagModal('${flag.id}')">View Details</button>
+                 <span style="font-size: 0.75rem; color: var(--text-muted);">${this.translate('resolved_by_label', 'Resolved by:')}<br>${flag.reviewedBy}<br>${this.translate('action_taken_label', 'Action:')} ${flag.actionTaken}</span>
+                 <button class="btn btn-secondary btn-small" style="font-size: 0.7rem; padding: 0.2rem 0.4rem;" onclick="app.openResolveFlagModal('${flag.id}')">${this.translate('view_details_btn', 'View Details')}</button>
                </div>`}
         </td>
       `;
@@ -5243,40 +5261,40 @@ class App {
       : '';
     const photoHtml = school.photoUrl 
       ? `<img src="${school.photoUrl}" alt="${school.name} campus" style="width: 100%; height: 160px; object-fit: cover; border-radius: 12px; margin-bottom: 0.5rem;">` 
-      : '<div style="height: 160px; background: rgba(0,0,0,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.85rem; border: 1px dashed var(--panel-border);">No campus photograph added</div>';
+      : `<div style="height: 160px; background: rgba(0,0,0,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.85rem; border: 1px dashed var(--panel-border);">${this.translate('no_campus_photo_added', 'No campus photograph added')}</div>`;
 
     // Renders coordinators/staff list with toggle controls
     let coordinatorsHtml = '';
     if (schoolCoords.length === 0) {
-      coordinatorsHtml = '<p style="font-size: 0.8rem; color: var(--text-muted); font-style: italic; padding: 0.5rem 0;">No coordinators registered for this school.</p>';
+      coordinatorsHtml = `<p style="font-size: 0.8rem; color: var(--text-muted); font-style: italic; padding: 0.5rem 0;">${this.translate('no_coordinators_registered', 'No coordinators registered for this school.')}</p>`;
     } else {
       coordinatorsHtml = `
         <div class="table-container" style="max-height: 150px; overflow-y: auto; margin-top: 0.5rem; border: 1px solid var(--panel-border); border-radius: 8px;">
           <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
             <thead>
               <tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--panel-border);">
-                <th style="padding: 0.5rem; text-align: left;">Name</th>
-                <th style="padding: 0.5rem; text-align: left;">Email</th>
-                <th style="padding: 0.5rem; text-align: left;">Status</th>
-                <th style="padding: 0.5rem; text-align: left;">Actions</th>
+                <th style="padding: 0.5rem; text-align: left;">${this.translate('th_name', 'Name')}</th>
+                <th style="padding: 0.5rem; text-align: left;">${this.translate('th_email', 'Email')}</th>
+                <th style="padding: 0.5rem; text-align: left;">${this.translate('th_status', 'Status')}</th>
+                <th style="padding: 0.5rem; text-align: left;">${this.translate('th_actions', 'Actions')}</th>
               </tr>
             </thead>
             <tbody>
               ${schoolCoords.map(c => {
                 const adminBadge = c.isSchoolAdmin 
-                  ? '<span class="badge badge-success" style="font-size: 0.65rem; padding: 0.15rem 0.45rem;">Admin</span>' 
-                  : '<span class="badge badge-secondary" style="font-size: 0.65rem; padding: 0.15rem 0.45rem;">Staff</span>';
+                  ? `<span class="badge badge-success" style="font-size: 0.65rem; padding: 0.15rem 0.45rem;">${this.translate('admin_role', 'Admin')}</span>` 
+                  : `<span class="badge badge-secondary" style="font-size: 0.65rem; padding: 0.15rem 0.45rem;">${this.translate('staff_role', 'Staff')}</span>`;
                 
                 const isSystemAdmin = this.currentRole === 'admin';
                 const isOwnSchoolTeacher = this.currentRole === 'teacher' && schoolId === 'school_1';
                 
                 let actionsHtml = '';
                 if (isSystemAdmin || isOwnSchoolTeacher) {
-                  const btnLabel = c.isSchoolAdmin ? 'Revoke Admin' : 'Grant Admin';
+                  const btnLabel = c.isSchoolAdmin ? this.translate('revoke_admin_btn', 'Revoke Admin') : this.translate('grant_admin_btn', 'Grant Admin');
                   const btnClass = c.isSchoolAdmin ? 'btn-secondary' : 'btn-primary';
                   actionsHtml = `<button class="btn ${btnClass} btn-small" style="font-size: 0.65rem; padding: 0.2rem 0.5rem;" onclick="app.toggleCoordinatorAdminInsideModal('${c.id}', '${schoolId}')">${btnLabel}</button>`;
                 } else if (this.currentRole === 'teacher' && schoolId !== 'school_1') {
-                  actionsHtml = `<button class="btn btn-primary btn-small" style="font-size: 0.65rem; padding: 0.2rem 0.5rem;" onclick="app.startCoordinatorChat('${c.id}')">💬 Message</button>`;
+                  actionsHtml = `<button class="btn btn-primary btn-small" style="font-size: 0.65rem; padding: 0.2rem 0.5rem;" onclick="app.startCoordinatorChat('${c.id}')">💬 ${this.translate('message_btn', 'Message')}</button>`;
                 }
                 
                 return `
@@ -5302,17 +5320,17 @@ class App {
 
     let rosterHtml = '';
     if (students.length === 0) {
-      rosterHtml = '<p style="font-size: 0.8rem; color: var(--text-muted); font-style: italic; padding: 0.5rem 0;">No students registered for this school.</p>';
+      rosterHtml = `<p style="font-size: 0.8rem; color: var(--text-muted); font-style: italic; padding: 0.5rem 0;">${this.translate('no_students_registered_school', 'No students registered for this school.')}</p>`;
     } else {
       rosterHtml = `
         <div class="table-container" style="max-height: 150px; overflow-y: auto; margin-top: 0.5rem; border: 1px solid var(--panel-border); border-radius: 8px;">
           <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
             <thead>
               <tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--panel-border);">
-                <th style="padding: 0.5rem; text-align: left;">Name</th>
-                <th style="padding: 0.5rem; text-align: left;">Email</th>
-                <th style="padding: 0.5rem; text-align: left;">Age/Year</th>
-                <th style="padding: 0.5rem; text-align: left;">Match Status</th>
+                <th style="padding: 0.5rem; text-align: left;">${this.translate('th_name', 'Name')}</th>
+                <th style="padding: 0.5rem; text-align: left;">${this.translate('th_email', 'Email')}</th>
+                <th style="padding: 0.5rem; text-align: left;">${this.translate('th_age_year', 'Age/Year')}</th>
+                <th style="padding: 0.5rem; text-align: left;">${this.translate('th_match_status', 'Match Status')}</th>
               </tr>
             </thead>
             <tbody>
@@ -5371,7 +5389,7 @@ class App {
       if (schoolCoords.length > 0) {
         coordinatorsSection = `
           <div style="margin-top: 0.5rem; border-top: 1px dashed var(--panel-border); padding-top: 0.75rem;">
-            <h5 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">School Coordinator(s)</h5>
+            <h5 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">${this.translate('school_coordinators_title', 'School Coordinator(s)')}</h5>
             <div style="display: flex; flex-direction: column; gap: 0.75rem;">
               ${schoolCoords.map(coord => {
                 const photoMarkup = coord.photoUrl 
@@ -5403,27 +5421,27 @@ class App {
       coordinatorsSection = `
         <div style="margin-top: 0.5rem; border-top: 1px dashed var(--panel-border); padding-top: 0.75rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-            <h5 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin: 0;">Registered Coordinators (${schoolCoords.length})</h5>
-            <button class="btn btn-secondary btn-small" onclick="document.getElementById('add-modal-coord-form-container').style.display = 'block'">+ Add Coordinator</button>
+            <h5 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin: 0;">${this.translate('registered_coordinators_label', 'Registered Coordinators')} (${schoolCoords.length})</h5>
+            <button class="btn btn-secondary btn-small" onclick="document.getElementById('add-modal-coord-form-container').style.display = 'block'">+ ${this.translate('add_coordinator_btn', 'Add Coordinator')}</button>
           </div>
           
           <!-- Add Coordinator Form (Hidden by default) -->
           <div id="add-modal-coord-form-container" style="display: none; background: rgba(0,0,0,0.15); padding: 1rem; border-radius: 8px; margin-bottom: 0.75rem; border: 1px solid var(--panel-border);">
             <form onsubmit="app.addCoordinatorToSchool(event, '${school.id}')">
-              <h6 style="font-size: 0.8rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-primary);">Add Coordinator Info</h6>
+              <h6 style="font-size: 0.8rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-primary);">${this.translate('add_coordinator_info_btn', 'Add Coordinator Info')}</h6>
               <div class="form-group" style="margin-bottom: 0.5rem;">
-                <input type="text" id="new-modal-coord-name" class="form-control" style="font-size: 0.75rem; padding: 0.35rem 0.65rem;" placeholder="Full Name" required>
+                <input type="text" id="new-modal-coord-name" class="form-control" style="font-size: 0.75rem; padding: 0.35rem 0.65rem;" placeholder="${this.translate('full_name_label', 'Full Name')}" required>
               </div>
               <div class="form-group" style="margin-bottom: 0.5rem;">
-                <input type="email" id="new-modal-coord-email" class="form-control" style="font-size: 0.75rem; padding: 0.35rem 0.65rem;" placeholder="Email Address" required>
+                <input type="email" id="new-modal-coord-email" class="form-control" style="font-size: 0.75rem; padding: 0.35rem 0.65rem;" placeholder="${this.translate('email_address_label', 'Email Address')}" required>
               </div>
               <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
                 <label style="font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem;">
-                  <input type="checkbox" id="new-modal-coord-admin"> Grant School Admin Rights
+                  <input type="checkbox" id="new-modal-coord-admin"> ${this.translate('grant_admin_rights_label', 'Grant School Admin Rights')}
                 </label>
                 <div style="display: flex; gap: 0.5rem;">
-                  <button type="button" class="btn btn-secondary btn-small" onclick="document.getElementById('add-modal-coord-form-container').style.display = 'none'">Cancel</button>
-                  <button type="submit" class="btn btn-primary btn-small">Add</button>
+                  <button type="button" class="btn btn-secondary btn-small" onclick="document.getElementById('add-modal-coord-form-container').style.display = 'none'">${this.translate('cancel_btn', 'Cancel')}</button>
+                  <button type="submit" class="btn btn-primary btn-small">${this.translate('add_btn', 'Add')}</button>
                 </div>
               </div>
             </form>
@@ -5470,7 +5488,7 @@ class App {
       ${rosterSection}
 
       <div style="display: flex; justify-content: flex-end; margin-top: 1rem; border-top: 1px solid var(--panel-border); padding-top: 1rem;">
-        <button class="btn btn-secondary" onclick="app.closeModal('school-detail-modal')">Close Details</button>
+        <button class="btn btn-secondary" onclick="app.closeModal('school-detail-modal')">${this.translate('close_details_btn', 'Close Details')}</button>
       </div>
     `;
 
@@ -5508,7 +5526,7 @@ class App {
     const initials = displayName.split(' ').map(n => n[0]).join('');
     const biogToShow = student.personalBiogStatus === 'Approved' && student.personalBiog
       ? student.personalBiog
-      : '<em>No biography shared yet.</em>';
+      : `<em>${this.translate('no_biography_shared', 'No biography shared yet.')}</em>`;
 
     const modalContent = document.querySelector('#student-profile-modal .modal-content');
     if (modalContent) {
@@ -5525,12 +5543,12 @@ class App {
         </div>
         <div>
           <h4 style="font-weight: 700; font-size: 1.35rem; margin: 0; color: var(--text-primary);">${displayName}</h4>
-          <span class="badge badge-info" style="margin-top: 0.35rem;">Age ${student.age} • ${student.yearGroup}</span>
+          <span class="badge badge-info" style="margin-top: 0.35rem;">${this.translate('age_label', 'Age')} ${student.age} • ${student.yearGroup}</span>
         </div>
       </div>
 
       <div class="panel" style="padding: 1rem; background: var(--bg-color); border-color: var(--panel-border);">
-        <h5 style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">School Connection</h5>
+        <h5 style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">${this.translate('school_connection_title', 'School Connection')}</h5>
         <div style="display: flex; align-items: center; gap: 0.75rem;">
           <div style="font-size: 1.5rem;">${this.getSchoolFlag(school?.country)}</div>
           <div style="text-align: left;">
@@ -5545,14 +5563,14 @@ class App {
       </div>
 
       <div class="panel" style="padding: 1rem; background: var(--bg-color); border-color: var(--panel-border);">
-        <h5 style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Personal Biography</h5>
+        <h5 style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">${this.translate('personal_biography_title', 'Personal Biography')}</h5>
         <p style="font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary); margin: 0; text-align: justify; font-style: ${student.personalBiog ? 'normal' : 'italic'};">
           ${biogToShow}
         </p>
       </div>
 
       <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem; border-top: 1px solid var(--panel-border); padding-top: 1rem;">
-        <button class="btn btn-secondary" onclick="app.closeModal('student-profile-modal')">Close Profile</button>
+        <button class="btn btn-secondary" onclick="app.closeModal('student-profile-modal')">${this.translate('close_profile_btn', 'Close Profile')}</button>
       </div>
     `;
 
@@ -5599,30 +5617,30 @@ class App {
           
           <div style="display: flex; gap: 1rem; width: 100%; justify-content: space-around; padding: 0.75rem; border: 1px solid var(--panel-border); border-radius: 8px; background: rgba(255,255,255,0.01); font-size: 0.85rem; box-sizing: border-box;">
             <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
-              <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 500;">Age</span>
+              <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 500;">${this.translate('th_age', 'Age')}</span>
               <span style="font-weight: bold; color: var(--text-primary); margin-top: 0.15rem;">${student.age}</span>
             </div>
             <div style="border-right: 1px solid var(--panel-border);"></div>
             <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
-              <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 500;">Gender</span>
+              <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 500;">${this.translate('th_gender', 'Gender')}</span>
               <span style="font-weight: bold; color: var(--text-primary); margin-top: 0.15rem;">${student.gender}</span>
             </div>
             <div style="border-right: 1px solid var(--panel-border);"></div>
             <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
-              <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 500;">Year</span>
+              <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 500;">${this.translate('th_year', 'Year')}</span>
               <span style="font-weight: bold; color: var(--text-primary); margin-top: 0.15rem;">${student.yearGroup}</span>
             </div>
           </div>
           
           <div style="width: 100%; text-align: left;">
-            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: bold; text-transform: uppercase; display: block; margin-bottom: 0.25rem;">Biography</span>
+            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: bold; text-transform: uppercase; display: block; margin-bottom: 0.25rem;">${this.translate('th_biography', 'Biography')}</span>
             <p style="font-size: 0.85rem; line-height: 1.4; color: var(--text-secondary); margin: 0; padding: 0.75rem; border: 1px solid var(--panel-border); border-radius: 8px; background: var(--bg-color); font-style: italic;">
               "${biogText}"
             </p>
           </div>
         </div>
         <div style="display: flex; justify-content: flex-end; margin-top: 1rem; border-top: 1px solid var(--panel-border); padding-top: 0.75rem; width: 100%;">
-          <button class="btn btn-secondary" onclick="app.closeModal('student-profile-modal')">Close Profile</button>
+          <button class="btn btn-secondary" onclick="app.closeModal('student-profile-modal')">${this.translate('close_profile_btn', 'Close Profile')}</button>
         </div>
       `;
       this.openModal('student-profile-modal');
@@ -5635,7 +5653,7 @@ class App {
     if (matches.length === 0) {
       matchesHtml = `
         <div style="font-size: 0.85rem; color: var(--text-muted); padding: 0.5rem 0; font-style: italic;">
-          No active penpal matches.
+          ${this.translate('no_matched_pen_pals', 'No matched pen pals yet.')}
         </div>
       `;
     } else {
@@ -5655,7 +5673,7 @@ class App {
                 <strong style="color: var(--secondary); font-size: 0.9rem;">${partnerFirstName}</strong>
                 <span style="font-size: 0.75rem; color: var(--text-secondary);">(${partner.gender} • ${partner.age} y/o)</span>
               </div>
-              <span class="badge badge-success" style="font-size: 0.65rem; padding: 0.1rem 0.35rem; border-radius: 4px; font-weight: 700;">Active Match</span>
+              <span class="badge badge-success" style="font-size: 0.65rem; padding: 0.1rem 0.35rem; border-radius: 4px; font-weight: 700;">${this.translate('active_match_status', 'Active Match')}</span>
             </div>
             <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">School: ${partnerSchool ? partnerSchool.name : 'Unknown School'}</div>
             <div style="font-size: 0.8rem; font-style: italic; color: var(--text-secondary); background: rgba(0,0,0,0.1); padding: 0.5rem; border-radius: 4px;">
@@ -5672,7 +5690,7 @@ class App {
     if (articles.length === 0) {
       articlesHtml = `
         <div style="font-size: 0.85rem; color: var(--text-muted); padding: 0.5rem 0; font-style: italic;">
-          No articles written by this student.
+          ${this.translate('no_articles_submitted', 'No articles submitted yet.')}
         </div>
       `;
     } else {
@@ -5686,7 +5704,7 @@ class App {
                   <strong style="font-size: 0.85rem; color: var(--text-primary);">${art.title}</strong>
                   <span class="badge ${badgeClass}" style="font-size: 0.6rem; padding: 0.05rem 0.25rem; margin-left: 0.35rem;">${art.status}</span>
                 </div>
-                <button class="btn btn-secondary btn-small" onclick="app.loadArticleFromProfile('${art.id}')" style="padding: 0.2rem 0.45rem; font-size: 0.7rem; font-weight: 600; border-radius: 4px;">Load</button>
+                <button class="btn btn-secondary btn-small" onclick="app.loadArticleFromProfile('${art.id}')" style="padding: 0.2rem 0.45rem; font-size: 0.7rem; font-weight: 600; border-radius: 4px;">${this.translate('load_btn', 'Load')}</button>
               </div>
             `;
           }).join('')}
@@ -5700,7 +5718,7 @@ class App {
     if (projects.length === 0) {
       projectsHtml = `
         <div style="font-size: 0.85rem; color: var(--text-muted); padding: 0.5rem 0; font-style: italic;">
-          No projects assigned to this student.
+          ${this.translate('no_projects_found', 'No projects found.')}
         </div>
       `;
     } else {
@@ -5713,7 +5731,7 @@ class App {
                   <strong style="font-size: 0.85rem; color: var(--text-primary);">${proj.title}</strong>
                   <span class="badge badge-info" style="font-size: 0.6rem; padding: 0.05rem 0.25rem; margin-left: 0.35rem;">${proj.status}</span>
                 </div>
-                <button class="btn btn-secondary btn-small" onclick="app.loadProjectFromProfile('${proj.id}')" style="padding: 0.2rem 0.45rem; font-size: 0.7rem; font-weight: 600; border-radius: 4px;">Load</button>
+                <button class="btn btn-secondary btn-small" onclick="app.loadProjectFromProfile('${proj.id}')" style="padding: 0.2rem 0.45rem; font-size: 0.7rem; font-weight: 600; border-radius: 4px;">${this.translate('load_btn', 'Load')}</button>
               </div>
             `;
           }).join('')}
@@ -5738,7 +5756,7 @@ class App {
 
       <!-- Biography Section -->
       <div class="panel" style="padding: 0.85rem; background: rgba(255,255,255,0.01); border-color: var(--panel-border); margin-top: 0.5rem;">
-        <h5 style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; margin-top: 0;">Student Biography</h5>
+        <h5 style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; margin-top: 0;">${this.translate('student_biography_title', 'Student Biography')}</h5>
         <p style="font-size: 0.85rem; line-height: 1.4; color: var(--text-secondary); margin: 0; text-align: justify; font-style: ${student.personalBiog ? 'normal' : 'italic'};">
           "${biogText}"
         </p>
@@ -5747,25 +5765,25 @@ class App {
       ${isStaff ? `
       <!-- Matched Pen Pals Section -->
       <div style="margin-top: 0.5rem;">
-        <h5 style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem;">Matched Pen Pals (${matches.length})</h5>
+        <h5 style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem;">${this.translate('matched_pen_pals_label', 'Matched Pen Pals')} (${matches.length})</h5>
         ${matchesHtml}
       </div>
 
       <!-- Two Column Layout for Articles and Projects -->
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 0.75rem; border-top: 1px dashed var(--panel-border); padding-top: 0.75rem;">
         <div>
-          <h5 style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; margin-top: 0;">Articles</h5>
+          <h5 style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; margin-top: 0;">${this.translate('articles_title', 'Articles')}</h5>
           ${articlesHtml}
         </div>
         <div>
-          <h5 style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; margin-top: 0;">Projects</h5>
+          <h5 style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; margin-top: 0;">${this.translate('projects_title', 'Projects')}</h5>
           ${projectsHtml}
         </div>
       </div>
 
       <!-- Staff Notices & Messages Section -->
       <div style="margin-top: 0.75rem; border-top: 1px dashed var(--panel-border); padding-top: 0.75rem;">
-        <h5 style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem;">Direct Notices & Messages to Student</h5>
+        <h5 style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem;">${this.translate('direct_notices_messages_title', 'Direct Notices & Messages to Student')}</h5>
         
         <!-- List of past notices sent to this student -->
         <div id="staff-student-messages-list-${studentId}" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 180px; overflow-y: auto; margin-bottom: 0.75rem; padding-right: 0.25rem;">
@@ -5774,15 +5792,15 @@ class App {
 
         <!-- Compose new notice -->
         <div class="panel" style="padding: 0.75rem; background: rgba(255,255,255,0.01); border-color: var(--panel-border);">
-          <h6 style="font-size: 0.8rem; font-weight: 700; margin: 0 0 0.4rem 0; color: var(--text-primary);">Send Direct Message / Notice:</h6>
+          <h6 style="font-size: 0.8rem; font-weight: 700; margin: 0 0 0.4rem 0; color: var(--text-primary);">${this.translate('send_direct_message_label', 'Send Direct Message / Notice:')}</h6>
           <div style="display: flex; flex-direction: column; gap: 0.5rem;">
             <textarea id="new-staff-student-msg-text" class="form-control" style="height: 60px; font-size: 0.8rem; resize: vertical;" placeholder="Type message or guidance for student here..." required></textarea>
             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
               <label style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; color: var(--text-secondary);">
                 <input type="checkbox" id="new-staff-student-msg-agree" style="width: 15px; height: 15px; cursor: pointer;">
-                Require 'Read & Agree' confirmation
+                ${this.translate('require_read_agree_label', "Require 'Read & Agree' confirmation")}
               </label>
-              <button class="btn btn-primary btn-small" onclick="app.sendStaffStudentMessage('${studentId}')" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; font-weight: 600; border-radius: 4px;">Send Message</button>
+              <button class="btn btn-primary btn-small" onclick="app.sendStaffStudentMessage('${studentId}')" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; font-weight: 600; border-radius: 4px;">${this.translate('send_message_btn', 'Send Message')}</button>
             </div>
           </div>
         </div>
@@ -5790,7 +5808,7 @@ class App {
       ` : ''}
 
       <div style="display: flex; justify-content: flex-end; margin-top: 1rem; border-top: 1px solid var(--panel-border); padding-top: 0.75rem;">
-        <button class="btn btn-secondary" onclick="app.closeModal('student-profile-modal')">Close Profile</button>
+        <button class="btn btn-secondary" onclick="app.closeModal('student-profile-modal')">${this.translate('close_profile_btn', 'Close Profile')}</button>
       </div>
     `;
 
@@ -5808,7 +5826,7 @@ class App {
     listContainer.innerHTML = '';
     
     if (messages.length === 0) {
-      listContainer.innerHTML = `<div style="font-size: 0.8rem; color: var(--text-muted); font-style: italic; padding: 0.25rem 0;">No previous direct messages sent.</div>`;
+      listContainer.innerHTML = `<div style="font-size: 0.8rem; color: var(--text-muted); font-style: italic; padding: 0.25rem 0;">${this.translate('no_previous_direct_messages', 'No previous direct messages sent.')}</div>`;
       return;
     }
     
@@ -5825,12 +5843,12 @@ class App {
       let statusHtml = '';
       if (msg.requireAgreement) {
         if (msg.status === 'Agreed') {
-          statusHtml = `<span class="badge badge-success" style="font-size: 0.75rem; padding: 0.1rem 0.3rem; font-weight: 700; margin-left: auto;">Read & Agreed (at ${new Date(msg.agreedAt).toLocaleString()})</span>`;
+          statusHtml = `<span class="badge badge-success" style="font-size: 0.75rem; padding: 0.1rem 0.3rem; font-weight: 700; margin-left: auto;">${this.translate('agreed_badge', 'Read & Agreed')} (${this.translate('at_time_label', 'at')} ${new Date(msg.agreedAt).toLocaleString()})</span>`;
         } else {
-          statusHtml = `<span class="badge badge-warning" style="font-size: 0.75rem; padding: 0.1rem 0.3rem; font-weight: 700; margin-left: auto;">Awaiting Agreement</span>`;
+          statusHtml = `<span class="badge badge-warning" style="font-size: 0.75rem; padding: 0.1rem 0.3rem; font-weight: 700; margin-left: auto;">${this.translate('awaiting_agreement_status', 'Awaiting Agreement')}</span>`;
         }
       } else {
-        statusHtml = `<span class="badge badge-info" style="font-size: 0.75rem; padding: 0.1rem 0.3rem; font-weight: 700; margin-left: auto;">Sent / Notice</span>`;
+        statusHtml = `<span class="badge badge-info" style="font-size: 0.75rem; padding: 0.1rem 0.3rem; font-weight: 700; margin-left: auto;">${this.translate('sent_notice_status', 'Sent / Notice')}</span>`;
       }
       
       item.innerHTML = `
@@ -5947,7 +5965,7 @@ class App {
 
       <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; border-top: 1px solid var(--panel-border); padding-top: 1rem;">
         <span style="font-size: 0.75rem; color: var(--text-muted);">Submitted on: ${new Date(art.submittedAt).toLocaleDateString()}</span>
-        <button class="btn btn-secondary" onclick="app.closeModal('article-detail-modal')">Close Details</button>
+        <button class="btn btn-secondary" onclick="app.closeModal('article-detail-modal')">${this.translate('close_details_btn', 'Close Details')}</button>
       </div>
     `;
 
@@ -6271,7 +6289,7 @@ class App {
     );
 
     if (projects.length === 0) {
-      chatListContainer.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-muted); padding: 1rem; text-align: center;">No projects found.</p>`;
+      chatListContainer.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-muted); padding: 1rem; text-align: center;">${this.translate('no_projects_found', 'No projects found.')}</p>`;
       projectEmptyState.style.display = 'flex';
       projectActiveState.style.display = 'none';
       return;
@@ -6300,7 +6318,7 @@ class App {
 
       let badgeStatus = `<span class="badge ${badgeClass}" style="font-size: 0.75rem; padding: 0.15rem 0.4rem;">${statusText}</span>`;
       if (project.paused) {
-        badgeStatus += ` <span class="badge badge-warning" style="font-size: 0.75rem; padding: 0.15rem 0.4rem; color: #fbbf24; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25);">Suspended</span>`;
+        badgeStatus += ` <span class="badge badge-warning" style="font-size: 0.75rem; padding: 0.15rem 0.4rem; color: #fbbf24; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25);">${this.translate('suspended_status', 'Suspended')}</span>`;
       }
 
       item.innerHTML = `
@@ -6381,7 +6399,7 @@ class App {
         teamLabel.style.fontSize = '0.75rem';
         teamLabel.style.color = 'var(--text-muted)';
         teamLabel.style.marginRight = '0.25rem';
-        teamLabel.textContent = 'Team:';
+        teamLabel.textContent = this.translate('team_label', 'Team:');
         chatParticipantsList.appendChild(teamLabel);
 
         allStudentIds.forEach(sid => {
@@ -6402,7 +6420,7 @@ class App {
           chip.style.borderRadius = '6px';
           chip.style.border = '1px solid var(--panel-border)';
           chip.style.fontSize = '0.75rem';
-          chip.innerHTML = `${flag} <span style="${isMe ? 'font-weight: bold; color: var(--primary);' : 'font-weight: normal; color: var(--text-primary);'}">${displayName}${isMe ? ' (You)' : ''}</span>`;
+          chip.innerHTML = `${flag} <span style="${isMe ? 'font-weight: bold; color: var(--primary);' : 'font-weight: normal; color: var(--text-primary);'}">${displayName}${isMe ? ' ' + this.translate('you_label_suffix', '(You)') : ''}</span>`;
           chatParticipantsList.appendChild(chip);
         });
       }
@@ -6544,12 +6562,12 @@ class App {
             viewerCard.innerHTML = `
               <div style="display: grid; grid-template-columns: 1fr 1fr; height: 100%; width: 100%;">
                 <div style="background: rgba(0,0,0,0.1); border-right: 1px solid var(--panel-border); height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-                  ${activeSlide.photoUrl ? `<img src="${activeSlide.photoUrl}" style="width: 100%; height: 100%; object-fit: cover;">` : `<span style="font-size: 0.85rem; color: var(--text-muted);">No image uploaded</span>`}
+                  ${activeSlide.photoUrl ? `<img src="${activeSlide.photoUrl}" style="width: 100%; height: 100%; object-fit: cover;">` : `<span style="font-size: 0.85rem; color: var(--text-muted);">${this.translate('no_image_uploaded', 'No image uploaded')}</span>`}
                 </div>
                 <div style="padding: 1.5rem; display: flex; flex-direction: column; overflow-y: auto; justify-content: center;">
                   <h4 class="viewer-card-title" style="font-size: 1.15rem;">${activeSlide.title || 'Untitled Slide'}</h4>
                   <p style="font-size: 0.95rem; line-height: 1.6; color: var(--text-secondary); margin: 0; white-space: pre-wrap;">${activeSlide.content || 'No content written yet.'}</p>
-                  ${activeSlide.author ? `<span style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 1rem; font-style: italic; display: flex; align-items: center; gap: 0.25rem;">By ${flagHtml} ${activeSlide.author}</span>` : ''}
+                  ${activeSlide.author ? `<span style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 1rem; font-style: italic; display: flex; align-items: center; gap: 0.25rem;">${this.translate('by_author', 'By')} ${flagHtml} ${activeSlide.author}</span>` : ''}
                 </div>
               </div>
             `;
@@ -6602,7 +6620,7 @@ class App {
           addBtn.style.gap = '0.25rem';
           addBtn.innerHTML = `
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            <span>Add Card</span>
+            <span>${this.translate('add_card_btn', 'Add Card')}</span>
           `;
           addBtn.addEventListener('click', () => {
             this.addProjectSlide();
@@ -6730,9 +6748,9 @@ class App {
         if (activeProject.articleLastUpdatedAt) {
           const timeStr = new Date(activeProject.articleLastUpdatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           const dateStr = new Date(activeProject.articleLastUpdatedAt).toLocaleDateString();
-          lastUpdatedEl.textContent = `Last updated by ${activeProject.articleLastUpdatedBy || 'system'} on ${dateStr} at ${timeStr}`;
+          lastUpdatedEl.textContent = this.translate('last_updated_by_on_at', 'Last updated by {name} on {date} at {time}').replace('{name}', activeProject.articleLastUpdatedBy || 'system').replace('{date}', dateStr).replace('{time}', timeStr);
         } else {
-          lastUpdatedEl.textContent = 'Last updated: Not saved yet';
+          lastUpdatedEl.textContent = this.translate('last_updated_not_saved', 'Last updated: Not saved yet');
         }
       }
 
@@ -6783,7 +6801,7 @@ class App {
           banner = document.createElement('div');
           banner.id = 'project-suspended-banner';
           banner.style.cssText = 'background: rgba(239, 68, 68, 0.15); border-bottom: 1px solid rgba(239, 68, 68, 0.3); color: var(--danger); padding: 0.75rem 1.25rem; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; justify-content: center;';
-          banner.innerHTML = '<span>⚠️ This project has been suspended for safeguarding review. Slide editing and messaging are locked.</span>';
+          banner.innerHTML = `<span>⚠️ ${this.translate('project_suspended_notice', 'This project has been suspended for safeguarding review. Slide editing and messaging are locked.')}</span>`;
           projectActiveState.insertBefore(banner, projectActiveState.firstChild);
         }
       } else {
@@ -6798,12 +6816,12 @@ class App {
       if (chatTextarea && chatSendBtn) {
         if (activeProject.paused) {
           chatTextarea.disabled = true;
-          chatTextarea.placeholder = 'Chat is locked during suspension...';
+          chatTextarea.placeholder = this.translate('chat_locked_during_suspension', 'Chat is locked during suspension...');
           chatSendBtn.disabled = true;
           chatSendBtn.style.opacity = '0.4';
         } else {
           chatTextarea.disabled = false;
-          chatTextarea.placeholder = 'Type a message to your project team...';
+          chatTextarea.placeholder = this.translate('type_message_project_team', 'Type a message to your project team...');
           chatSendBtn.disabled = false;
           chatSendBtn.style.opacity = '1';
         }
@@ -6848,7 +6866,7 @@ class App {
             By ${authorName} • ${schoolName} (${lang})
           </span>
         </div>
-        <div><span class="badge badge-warning">Draft Preview</span></div>
+        <div><span class="badge badge-warning">${this.translate('draft_preview_title', 'Draft Preview')}</span></div>
       </div>
 
       <div class="panel" style="padding: 1rem; background: rgba(255,255,255,0.01); border-color: var(--panel-border); margin-top: 0.5rem;">
@@ -6858,8 +6876,8 @@ class App {
       </div>
 
       <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; border-top: 1px solid var(--panel-border); padding-top: 1rem;">
-        <span style="font-size: 0.75rem; color: var(--text-muted);">Preview Mode</span>
-        <button class="btn btn-secondary" onclick="app.closeModal('article-detail-modal')">Close Preview</button>
+        <span style="font-size: 0.75rem; color: var(--text-muted);">${this.translate('preview_mode_label', 'Preview Mode')}</span>
+        <button class="btn btn-secondary" onclick="app.closeModal('article-detail-modal')">${this.translate('close_preview_btn', 'Close Preview')}</button>
       </div>
     `;
 
@@ -6912,21 +6930,21 @@ class App {
         viewerCard.innerHTML = `
           <div style="display: grid; grid-template-columns: 1fr 1fr; height: 100%; width: 100%;">
             <div style="background: rgba(0,0,0,0.1); border-right: 1px solid var(--panel-border); height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-              ${slide.photoUrl ? `<img src="${slide.photoUrl}" style="width: 100%; height: 100%; object-fit: cover;">` : `<span style="font-size: 0.85rem; color: var(--text-muted);">No image uploaded</span>`}
+              ${slide.photoUrl ? `<img src="${slide.photoUrl}" style="width: 100%; height: 100%; object-fit: cover;">` : `<span style="font-size: 0.85rem; color: var(--text-muted);">${this.translate('no_image_uploaded', 'No image uploaded')}</span>`}
             </div>
             <div style="padding: 1.5rem; display: flex; flex-direction: column; overflow-y: auto; justify-content: center;">
-              <h4 class="viewer-card-title" style="font-size: 1.15rem;">${slide.title || 'Untitled Slide'}</h4>
-              <p style="font-size: 0.95rem; line-height: 1.6; color: var(--text-secondary); margin: 0; white-space: pre-wrap;">${slide.content || 'No content written yet.'}</p>
-              <span style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 1rem; font-style: italic; display: flex; align-items: center; gap: 0.25rem;">By ${flagHtml} ${authorName}</span>
+              <h4 class="viewer-card-title" style="font-size: 1.15rem;">${slide.title || this.translate('untitled_slide_label', 'Untitled Slide')}</h4>
+              <p style="font-size: 0.95rem; line-height: 1.6; color: var(--text-secondary); margin: 0; white-space: pre-wrap;">${slide.content || this.translate('no_content_written_yet', 'No content written yet.')}</p>
+              <span style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 1rem; font-style: italic; display: flex; align-items: center; gap: 0.25rem;">${this.translate('by_author', 'By')} ${flagHtml} ${authorName}</span>
             </div>
           </div>
         `;
       } else {
         viewerCard.innerHTML = `
           <div style="padding: 2rem 2.5rem; display: flex; flex-direction: column; overflow-y: auto; justify-content: center; height: 100%; width: 100%;">
-            <h4 class="viewer-card-title" style="font-size: 1.45rem; text-align: center; margin-bottom: 1rem;">${slide.title || 'Untitled Slide'}</h4>
-            <p style="font-size: 1.05rem; line-height: 1.7; color: var(--text-secondary); margin: 0; white-space: pre-wrap; text-align: center; max-width: 480px; margin-left: auto; margin-right: auto;">${slide.content || 'No content written yet.'}</p>
-            <span style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 1.5rem; font-style: italic; text-align: center; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">By ${flagHtml} ${authorName}</span>
+            <h4 class="viewer-card-title" style="font-size: 1.45rem; text-align: center; margin-bottom: 1rem;">${slide.title || this.translate('untitled_slide_label', 'Untitled Slide')}</h4>
+            <p style="font-size: 1.05rem; line-height: 1.7; color: var(--text-secondary); margin: 0; white-space: pre-wrap; text-align: center; max-width: 480px; margin-left: auto; margin-right: auto;">${slide.content || this.translate('no_content_written_yet', 'No content written yet.')}</p>
+            <span style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 1.5rem; font-style: italic; text-align: center; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">${this.translate('by_author', 'By')} ${flagHtml} ${authorName}</span>
           </div>
         `;
       }
@@ -7727,7 +7745,7 @@ class App {
           slidesContainer.appendChild(div);
         });
       } else {
-        slidesContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-style: italic; font-size: 0.8rem; padding: 1rem;">No slides created yet.</div>`;
+        slidesContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-style: italic; font-size: 0.8rem; padding: 1rem;">${this.translate('no_slides_created', 'No slides created yet.')}</div>`;
       }
     }
 
@@ -7749,7 +7767,7 @@ class App {
     const msgs = window.db.getProjectMessages().filter(m => m.projectId === projectId);
 
     if (msgs.length === 0) {
-      chatHistory.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-style: italic; font-size: 0.8rem; padding: 2rem; margin: auto;">No messages in this chat yet.</div>`;
+      chatHistory.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-style: italic; font-size: 0.8rem; padding: 2rem; margin: auto;">${this.translate('no_messages_in_chat', 'No messages in this chat yet.')}</div>`;
     } else {
       msgs.forEach(m => {
         const isTeacher = m.senderName && m.senderName.startsWith('Teacher');
@@ -7906,7 +7924,7 @@ class App {
     const chatMsgs = window.db.getProjectMessages().filter(m => m.projectId === project.id);
     let chatHTML = '';
     if (chatMsgs.length === 0) {
-      chatHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.75rem; padding: 0.5rem 0;">No messages yet.</div>`;
+      chatHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.75rem; padding: 0.5rem 0;">${this.translate('no_messages_yet', 'No messages yet.')}</div>`;
     } else {
       chatMsgs.forEach(msg => {
         const sender = window.db.getStudent(msg.senderId);
@@ -7949,9 +7967,9 @@ class App {
           </div>
           
           <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 280px; margin-top: 0.5rem;">
-            <button class="btn btn-secondary btn-small" onclick="app.prevReviewSlide('${project.id}')" style="padding: 0.25rem 0.65rem; font-weight: bold; border-radius: 6px; display: inline-flex; align-items: center; gap: 0.25rem;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg><span>Prev</span></button>
-            <span id="proj-review-viewer-progress" style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary);">Card 1 of 1</span>
-            <button class="btn btn-primary btn-small" onclick="app.nextReviewSlide('${project.id}')" style="padding: 0.25rem 0.65rem; font-weight: bold; border-radius: 6px; display: inline-flex; align-items: center; gap: 0.25rem;"><span>Next</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+            <button class="btn btn-secondary btn-small" onclick="app.prevReviewSlide('${project.id}')" style="padding: 0.25rem 0.65rem; font-weight: bold; border-radius: 6px; display: inline-flex; align-items: center; gap: 0.25rem;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg><span>${this.translate('prev_btn', 'Prev')}</span></button>
+            <span id="proj-review-viewer-progress" style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary);">${this.translate('card_progress_label', 'Card {current} of {total}').replace('{current}', 1).replace('{total}', 1)}</span>
+            <button class="btn btn-primary btn-small" onclick="app.nextReviewSlide('${project.id}')" style="padding: 0.25rem 0.65rem; font-weight: bold; border-radius: 6px; display: inline-flex; align-items: center; gap: 0.25rem;"><span>${this.translate('next_btn', 'Next')}</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
           </div>
         </div>
 
@@ -8046,28 +8064,28 @@ class App {
       card.innerHTML = `
         <div style="display: grid; grid-template-columns: 1fr 1fr; height: 100%; width: 100%;">
           <div style="background: rgba(0,0,0,0.1); border-right: 1px solid var(--panel-border); height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-            ${slide.photoUrl ? `<img src="${slide.photoUrl}" style="width:100%; height:100%; object-fit:cover;">` : `<span style="font-size:0.85rem; color:var(--text-muted);">No image uploaded</span>`}
+            ${slide.photoUrl ? `<img src="${slide.photoUrl}" style="width:100%; height:100%; object-fit:cover;">` : `<span style="font-size:0.85rem; color:var(--text-muted);">${this.translate('no_image_uploaded', 'No image uploaded')}</span>`}
           </div>
           <div style="padding: 1.5rem; display: flex; flex-direction: column; overflow-y: auto; justify-content: center;">
-            <h5 style="margin:0 0 0.5rem 0; font-family:var(--font-title); font-weight:800; color:var(--text-primary); font-size:1.1rem;">${slide.title || 'Untitled Slide'}</h5>
-            <p style="font-size: 0.9rem; line-height: 1.6; color: var(--text-secondary); margin: 0; white-space: pre-wrap;">${slide.content || 'No content.'}</p>
-            ${slide.author ? `<span style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 1rem; font-style: italic; display: flex; align-items: center; gap: 0.25rem;">By ${flagHtml} ${slide.author}</span>` : ''}
+            <h5 style="margin:0 0 0.5rem 0; font-family:var(--font-title); font-weight:800; color:var(--text-primary); font-size:1.1rem;">${slide.title || this.translate('untitled_slide_label', 'Untitled Slide')}</h5>
+            <p style="font-size: 0.9rem; line-height: 1.6; color: var(--text-secondary); margin: 0; white-space: pre-wrap;">${slide.content || this.translate('no_content_written_yet', 'No content written yet.')}</p>
+            ${slide.author ? `<span style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 1rem; font-style: italic; display: flex; align-items: center; gap: 0.25rem;">${this.translate('by_author', 'By')} ${flagHtml} ${slide.author}</span>` : ''}
           </div>
         </div>
       `;
     } else {
       card.innerHTML = `
         <div style="padding: 2rem 2.5rem; display: flex; flex-direction: column; overflow-y: auto; justify-content: center; height: 100%; width: 100%;">
-          <h5 style="margin:0 0 0.75rem 0; font-family:var(--font-title); font-weight:800; color:var(--text-primary); font-size:1.25rem; text-align:center;">${slide.title || 'Untitled Slide'}</h5>
-          <p style="font-size: 0.95rem; line-height: 1.7; color: var(--text-secondary); margin: 0; white-space: pre-wrap; text-align: center; max-width: 420px; margin-left: auto; margin-right: auto;">${slide.content || 'No content.'}</p>
-          ${slide.author ? `<span style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 1.5rem; font-style: italic; text-align: center; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">By ${flagHtml} ${slide.author}</span>` : ''}
+          <h5 style="margin:0 0 0.75rem 0; font-family:var(--font-title); font-weight:800; color:var(--text-primary); font-size:1.25rem; text-align:center;">${slide.title || this.translate('untitled_slide_label', 'Untitled Slide')}</h5>
+          <p style="font-size: 0.95rem; line-height: 1.7; color: var(--text-secondary); margin: 0; white-space: pre-wrap; text-align: center; max-width: 420px; margin-left: auto; margin-right: auto;">${slide.content || this.translate('no_content_written_yet', 'No content written yet.')}</p>
+          ${slide.author ? `<span style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 1.5rem; font-style: italic; text-align: center; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">${this.translate('by_author', 'By')} ${flagHtml} ${slide.author}</span>` : ''}
         </div>
       `;
     }
 
     const progress = document.getElementById('proj-review-viewer-progress');
     if (progress) {
-      progress.textContent = `Card ${this.reviewSlideIndex + 1} of ${project.slides.length}`;
+      progress.textContent = this.translate('card_progress_label', 'Card {current} of {total}').replace('{current}', this.reviewSlideIndex + 1).replace('{total}', project.slides.length);
     }
   }
 
@@ -8179,22 +8197,22 @@ class App {
     const container = document.getElementById(`flag-proj-slide-${slideId}`);
     container.innerHTML = `
       <div style="display: flex; flex-direction: column; gap: 0.4rem; width: 100%; padding: 0.25rem 0;">
-        <div style="font-size: 0.75rem; font-weight: bold; color: var(--primary);">Editing Card Content</div>
+        <div style="font-size: 0.75rem; font-weight: bold; color: var(--primary);">${this.translate('editing_card_content_title', 'Editing Card Content')}</div>
         <div style="display: flex; flex-direction: column; gap: 0.15rem;">
-          <label style="font-size: 0.7rem; color: var(--text-secondary); font-weight: bold;">Title</label>
+          <label style="font-size: 0.7rem; color: var(--text-secondary); font-weight: bold;">${this.translate('title_label', 'Title')}</label>
           <input type="text" id="edit-slide-title-${slideId}" class="form-control" style="font-size: 0.8rem; padding: 0.2rem 0.4rem; background: var(--bg-color); color: var(--text-primary); border: 1px solid var(--panel-border); border-radius: 4px;" value="${slide.title || ''}">
         </div>
         <div style="display: flex; flex-direction: column; gap: 0.15rem;">
-          <label style="font-size: 0.7rem; color: var(--text-secondary); font-weight: bold;">Content Body</label>
+          <label style="font-size: 0.7rem; color: var(--text-secondary); font-weight: bold;">${this.translate('content_body_label', 'Content Body')}</label>
           <textarea id="edit-slide-content-${slideId}" class="form-control" style="height: 60px; font-size: 0.8rem; padding: 0.2rem 0.4rem; background: var(--bg-color); color: var(--text-primary); border: 1px solid var(--panel-border); border-radius: 4px; resize: vertical;">${slide.content || ''}</textarea>
         </div>
         <div style="display: flex; flex-direction: column; gap: 0.15rem;">
-          <label style="font-size: 0.7rem; color: var(--text-secondary); font-weight: bold;">Photo URL (Optional)</label>
+          <label style="font-size: 0.7rem; color: var(--text-secondary); font-weight: bold;">${this.translate('photo_url_optional_label', 'Photo URL (Optional)')}</label>
           <input type="text" id="edit-slide-photo-${slideId}" class="form-control" style="font-size: 0.8rem; padding: 0.2rem 0.4rem; background: var(--bg-color); color: var(--text-primary); border: 1px solid var(--panel-border); border-radius: 4px;" value="${slide.photoUrl || ''}">
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 0.4rem; margin-top: 0.35rem;">
-          <button type="button" class="btn btn-secondary btn-small" style="font-size: 0.7rem; padding: 0.15rem 0.4rem; height: auto;" onclick="app.openResolveFlagModal('${flagId}', 'content')">Cancel</button>
-          <button type="button" class="btn btn-primary btn-small" style="font-size: 0.7rem; padding: 0.15rem 0.4rem; height: auto;" onclick="app.saveSlideInline('${flagId}', '${projectId}', '${slideId}')">Save Changes</button>
+          <button type="button" class="btn btn-secondary btn-small" style="font-size: 0.7rem; padding: 0.15rem 0.4rem; height: auto;" onclick="app.openResolveFlagModal('${flagId}', 'content')">${this.translate('cancel_btn', 'Cancel')}</button>
+          <button type="button" class="btn btn-primary btn-small" style="font-size: 0.7rem; padding: 0.15rem 0.4rem; height: auto;" onclick="app.saveSlideInline('${flagId}', '${projectId}', '${slideId}')">${this.translate('save_changes_btn', 'Save Changes')}</button>
         </div>
       </div>
     `;
