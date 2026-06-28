@@ -1214,8 +1214,18 @@
 
       <!-- Teacher Settings Tab -->
       <section class="tab-view-panel" id="view-teach-settings" style="display: none;">
+        <!-- Settings Subtabs -->
+        <div class="subtabs-nav" id="settings-subtabs-nav" style="margin-bottom: 1.5rem;">
+          <button type="button" class="subtab-btn active" id="subtab-btn-settings-profile" onclick="app.switchSettingsSubtab('profile')">
+            🏫 <span data-localize="settings_profile_subtab">School Profile</span>
+          </button>
+          <button type="button" class="subtab-btn" id="subtab-btn-settings-preferences" onclick="app.switchSettingsSubtab('preferences')">
+            ⚙️ <span data-localize="settings_preferences_subtab">SafeGuard Preferences</span>
+          </button>
+        </div>
+
         <!-- School Profile Editor Card -->
-        <div class="panel">
+        <div class="panel" id="settings-profile-subview">
           <div class="panel-header">
             <h2 class="panel-title">🏫 <span data-localize="school_profile_editor_title">School Profile Editor</span></h2>
           </div>
@@ -1291,7 +1301,7 @@
           </form>
         </div>
 
-        <div class="panel" style="margin-top: 1.5rem;">
+        <div class="panel" id="settings-preferences-subview" style="display: none; margin-top: 0;">
           <div class="panel-header">
             <h2 class="panel-title" data-localize="school_preferences_keywords_title">⚙️ School Preferences & Keywords Control</h2>
           </div>

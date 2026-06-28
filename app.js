@@ -5014,6 +5014,7 @@ class App {
 
   // Load teacher settings form
   populateTeacherSettings() {
+    this.switchSettingsSubtab(this.settingsSubTab || 'profile');
     const settings = window.db.getSettings();
     document.getElementById('flagged-words-input').value = settings.flaggedKeywords.join(', ');
     document.getElementById('attachments-toggle').checked = settings.attachmentsEnabled;
@@ -5086,6 +5087,31 @@ class App {
       }
     }
     this.populateTeacherStaffDirectory();
+  }
+
+  switchSettingsSubtab(subtabName) {
+    this.settingsSubTab = subtabName;
+    const profileBtn = document.getElementById('subtab-btn-settings-profile');
+    const preferencesBtn = document.getElementById('subtab-btn-settings-preferences');
+    
+    const profileView = document.getElementById('settings-profile-subview');
+    const preferencesView = document.getElementById('settings-preferences-subview');
+
+    if (!profileBtn || !preferencesBtn || !profileView || !preferencesView) return;
+
+    profileBtn.classList.remove('active');
+    preferencesBtn.classList.remove('active');
+    
+    profileView.style.display = 'none';
+    preferencesView.style.display = 'none';
+
+    if (subtabName === 'profile') {
+      profileBtn.classList.add('active');
+      profileView.style.display = 'block';
+    } else if (subtabName === 'preferences') {
+      preferencesBtn.classList.add('active');
+      preferencesView.style.display = 'block';
+    }
   }
 
   // Save teacher configuration preferences
