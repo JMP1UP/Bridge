@@ -3436,7 +3436,7 @@ class App {
 
         const age = partnerStudent ? `${partnerStudent.age} ${this.translate('years_old_suffix', 'y/o')}` : 'Unknown';
         const gender = partnerStudent ? partnerStudent.gender : 'Unknown';
-        const schoolName = partnerSchool ? partnerSchool.name : this.translate('exchange_school_fallback', 'Exchange School');
+        const schoolName = partnerSchool ? `${this.getSchoolFlag(partnerSchool.country)} ${partnerSchool.name}` : this.translate('exchange_school_fallback', 'Exchange School');
         const firstName = partnerStudent ? partnerStudent.name.split(' ')[0] : 'Unknown';
 
         const assignedStudentId = this.tempAssignments[match.id];
@@ -3485,7 +3485,7 @@ class App {
         row.innerHTML = `
           <td style="font-weight: 600;">${myStudent ? myStudent.name : 'Unknown'}<br><span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">${myStudent?.gender} • ${myStudent?.age} ${this.translate('years_old_suffix', 'y/o')}</span></td>
           <td>
-            <div style="font-weight: 600;">${partnerSchool ? partnerSchool.name : this.translate('matching_partner_school', 'Partner School')}</div>
+            <div style="font-weight: 600;">${partnerSchool ? `${this.getSchoolFlag(partnerSchool.country)} ${partnerSchool.name}` : this.translate('matching_partner_school', 'Partner School')}</div>
             <div style="font-size: 0.75rem; color: var(--text-muted);">${this.translate('awaiting_assignment_status', 'Awaiting Assignment')}</div>
           </td>
           <td>${dateStr}</td>
@@ -3527,6 +3527,7 @@ class App {
     const reqDiv = document.getElementById('matching-subtab-requests');
     const activeDiv = document.getElementById('matching-subtab-active');
     const connDiv = document.getElementById('matching-subtab-connections');
+    const metricsDiv = document.getElementById('matching-metrics-summary');
 
     if (!pairBtn || !reqBtn || !activeBtn || !pairDiv || !reqDiv || !activeDiv) return;
 
@@ -3543,12 +3544,15 @@ class App {
     if (subtab === 'pair') {
       pairBtn.classList.add('active');
       pairDiv.style.display = 'block';
+      if (metricsDiv) metricsDiv.style.display = 'none';
     } else if (subtab === 'requests') {
       reqBtn.classList.add('active');
       reqDiv.style.display = 'block';
+      if (metricsDiv) metricsDiv.style.display = 'none';
     } else if (subtab === 'active') {
       activeBtn.classList.add('active');
       activeDiv.style.display = 'block';
+      if (metricsDiv) metricsDiv.style.display = 'block';
       this.renderActiveMatches();
     } else if (subtab === 'connections') {
       if (connBtn) connBtn.classList.add('active');
@@ -3556,6 +3560,7 @@ class App {
         connDiv.style.display = 'block';
         this.renderSchoolConnections();
       }
+      if (metricsDiv) metricsDiv.style.display = 'none';
     }
   }
 
@@ -3610,7 +3615,9 @@ class App {
           </div>
         </td>
         <td>
-          <div style="font-weight: 600;">${partnerSchool ? partnerSchool.name : this.translate('matching_partner_school', 'Partner School')}</div>
+          <div style="font-weight: 600;">
+            ${partnerSchool ? `${this.getSchoolFlag(partnerSchool.country)} ${partnerSchool.name}` : this.translate('matching_partner_school', 'Partner School')}
+          </div>
           <span style="font-size: 0.75rem; color: var(--text-muted);">${partnerSchool ? partnerSchool.city + ', ' + partnerSchool.country : ''}</span>
         </td>
         <td>${dateStr}</td>
