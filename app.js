@@ -3708,6 +3708,89 @@ class App {
     this.refreshUI();
   }
 
+  openDiscoverSchoolsModal() {
+    const teacher = this.getLoggedTeacher();
+    const schoolId = teacher ? teacher.schoolId : 'school_1';
+
+    const connections = window.db.getSchoolConnections();
+    const connectedOrRequestedSchoolIds = connections.filter(c => 
+      c.fromSchoolId === schoolId || c.toSchoolId === schoolId
+    ).map(c => c.fromSchoolId === schoolId ? c.toSchoolId : c.fromSchoolId);
+
+    const unconnectedSchools = window.db.getSchools().filter(s => 
+      s.id !== schoolId && !connectedOrRequestedSchoolIds.includes(s.id)
+    );
+
+    const galleryContainer = document.getElementById('discover-schools-gallery');
+    if (!galleryContainer) return;
+
+    galleryContainer.innerHTML = '';
+
+    if (unconnectedSchools.length === 0) {
+      galleryContainer.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 3rem; font-size: 0.9rem;">
+          ${this.translate('no_new_schools_available', 'All available schools are already connected or have pending requests!')}
+        </div>
+      `;
+    } else {
+      unconnectedSchools.forEach(s => {
+        const coords = window.db.getCoordinators().filter(c => c.schoolId === s.id);
+        const coord = coords[0]; // Primary coordinator
+        const coordText = coord ? `${coord.name} (${coord.email})` : this.translate('no_coordinator_registered', 'No coordinator registered');
+
+        const card = document.createElement('div');
+        card.className = 'panel';
+        card.style.cssText = 'display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--panel-border); border-radius: 12px; background: rgba(255,255,255,0.01); transition: transform 0.2s, box-shadow 0.2s; box-sizing: border-box; text-align: left;';
+        
+        const campusPhoto = s.campusPhotoUrl || 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=400&q=80';
+        const schoolLogo = s.logoUrl || 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&w=100&q=80';
+
+        card.innerHTML = `
+          <div style="position: relative; height: 120px; background: var(--bg-dark);">
+            <img src="${campusPhoto}" alt="${s.name}" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.7;">
+            <img src="${schoolLogo}" alt="${s.name} logo" style="position: absolute; bottom: -15px; left: 1rem; width: 44px; height: 44px; border-radius: 8px; border: 2px solid var(--panel-bg); object-fit: cover; background: var(--bg-dark);">
+          </div>
+          <div style="padding: 1.25rem 1rem 1rem 1rem; flex-grow: 1; display: flex; flex-direction: column; gap: 0.6rem; margin-top: 5px; box-sizing: border-box;">
+            <div>
+              <h4 style="font-weight: 700; font-size: 0.95rem; margin: 0; color: var(--text-primary); display: flex; align-items: center; gap: 0.35rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">
+                ${this.getSchoolFlag(s.country)} ${s.name}
+              </h4>
+              <span style="font-size: 0.7rem; color: var(--text-secondary); font-weight: 500;">${s.city}, ${s.country}</span>
+            </div>
+            
+            <p style="font-size: 0.8rem; line-height: 1.45; color: var(--text-muted); margin: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; height: 4.35em;">
+              ${this.translate(s.id + '_desc', s.description) || this.translate('no_description_available', 'No biography available for this school.')}
+            </p>
+            
+            <div style="margin-top: auto; border-top: 1px solid var(--panel-border); padding-top: 0.6rem; font-size: 0.72rem; color: var(--text-secondary); line-height: 1.3;">
+              <strong style="color: var(--text-primary);">${this.translate('coordinator_label', 'Coordinator')}:</strong><br>
+              ${coordText}
+            </div>
+            
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.4rem;">
+              ${coord ? `<button class="btn btn-secondary btn-small" onclick="app.messageCoordinatorFromGallery('${coord.id}')" style="flex: 1; justify-content: center; font-size: 0.72rem; padding: 0.3rem 0.5rem; min-height: 28px;">💬 ${this.translate('message_btn', 'Message')}</button>` : ''}
+              <button class="btn btn-primary btn-small" onclick="app.requestConnectionFromGallery('${s.id}')" style="flex: 1.2; justify-content: center; font-size: 0.72rem; padding: 0.3rem 0.5rem; min-height: 28px; color: #0b0f19;" onmouseover="this.style.filter='brightness(1.15)'" onmouseout="this.style.filter='none'">🤝 ${this.translate('connect_action_btn', 'Connect')}</button>
+            </div>
+          </div>
+        `;
+        galleryContainer.appendChild(card);
+      });
+    }
+
+    this.openModal('discover-schools-modal');
+  }
+
+  messageCoordinatorFromGallery(coordId) {
+    this.closeModal('discover-schools-modal');
+    this.activeCoordinatorId = coordId;
+    this.switchTab('teach-messages');
+  }
+
+  requestConnectionFromGallery(targetSchoolId) {
+    this.closeModal('discover-schools-modal');
+    this.openConnectRequestModal(targetSchoolId);
+  }
+
   // Opens connection request modal
   openConnectRequestModal(targetSchoolId) {
     const school = window.db.getSchool(targetSchoolId);

@@ -1134,27 +1134,14 @@
             </div>
           </div>
 
-          <!-- Right Column: Establish connection -->
-          <div class="panel" style="padding: 1.5rem;">
-            <div class="panel-header" style="padding: 0 0 0.5rem 0; border-bottom: 1px solid var(--panel-border); margin-bottom: 1rem;">
-              <h2 class="panel-title" style="font-size: 1.1rem; font-weight: 700; margin: 0;">🤝 <span data-localize="new_connection_title">New Connection</span></h2>
-            </div>
-            <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0 0 1rem 0;" data-localize="new_connection_desc">
-              Propose a connection request to link with another school on the platform.
+          <!-- Right Column: Discover connections -->
+          <div class="panel" style="padding: 1.5rem; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 250px; background: linear-gradient(135deg, rgba(6, 182, 212, 0.03) 0%, rgba(139, 92, 246, 0.03) 100%); border: 1px dashed var(--panel-border); border-radius: 12px;">
+            <div style="font-size: 2.2rem; margin-bottom: 0.75rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15));">🌐</div>
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin: 0 0 0.5rem 0; color: var(--text-primary);" data-localize="discover_partner_schools_title">Discover Schools</h3>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0 0 1.25rem 0; line-height: 1.4; max-width: 250px;" data-localize="discover_partner_schools_desc">
+              Browse the global directory of schools looking for connections. View profiles, see campus photos, and connect with language coordinators.
             </p>
-            <form id="establish-connection-form" onsubmit="app.handleSendConnectionRequest(event)">
-              <div class="form-group" style="margin-bottom: 1rem;">
-                <label for="connect-target-school-select" style="font-weight: 600; font-size: 0.8rem; display: block; margin-bottom: 0.35rem;" data-localize="target_school_label">Target School:</label>
-                <select id="connect-target-school-select" class="form-control" required style="font-size: 0.85rem;">
-                  <option value="" data-localize="choose_school_to_connect">-- Choose school to connect --</option>
-                </select>
-              </div>
-              <div class="form-group" style="margin-bottom: 1rem;">
-                <label for="connect-message-note" style="font-weight: 600; font-size: 0.8rem; display: block; margin-bottom: 0.35rem;" data-localize="message_note_label">Message Note:</label>
-                <textarea id="connect-message-note" class="form-control" placeholder="Introduce your school and state language/age target groups..." style="height: 100px; resize: vertical; font-size: 0.85rem;" data-localize="connect_message_note_placeholder"></textarea>
-              </div>
-              <button type="submit" class="btn btn-primary" style="width: 100%;" data-localize="send_connection_invite_btn">Send Connection Invite</button>
-            </form>
+            <button class="btn btn-primary" onclick="app.openDiscoverSchoolsModal()" style="font-weight: 700; width: 100%; max-width: 180px; color: #0b0f19;" data-localize="find_partners_btn">Find Connections</button>
           </div>
         </div>
       </section>
@@ -1863,6 +1850,21 @@
           <button type="submit" class="btn btn-danger" data-localize="submit_safety_report_btn">Submit Safety Report</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Discover Partner Schools Modal -->
+  <div class="modal-overlay" id="discover-schools-modal">
+    <div class="modal-content" style="max-width: 900px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+      <div class="modal-header">
+        <h3 class="panel-title" style="font-weight: 700;">🌐 <span data-localize="discover_partner_schools_title">Discover Partner Schools</span></h3>
+        <button class="modal-close" onclick="app.closeModal('discover-schools-modal')">&times;</button>
+      </div>
+      <div class="modal-body" style="overflow-y: auto; padding: 1.5rem; flex-grow: 1;">
+        <div id="discover-schools-gallery" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 1.5rem;">
+          <!-- Populated by JS -->
+        </div>
+      </div>
     </div>
   </div>
 
