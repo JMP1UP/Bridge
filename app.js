@@ -2084,6 +2084,11 @@ class App {
       const data = await response.json();
       const translated = data.responseData?.translatedText || msg.text;
 
+      // Fail-safe: if the translation contains error keywords, trigger mock fallback
+      if (translated.includes('INVALID') || translated.includes('LANGPAIR') || translated.includes('SUPPORTED')) {
+        throw new Error("MyMemory API returned an error: " + translated);
+      }
+
       const allMsgs = window.db.getCoordinatorMessages();
       const dbMsg = allMsgs.find(m => m.id === msg.id);
       if (dbMsg) {
@@ -7205,6 +7210,17 @@ class App {
       );
 
       msgs.forEach(msg => {
+        // Self-healing: clear any invalid MyMemory error responses from database
+        if (msg.translation && (msg.translation.includes('INVALID') || msg.translation.includes('LANGPAIR') || msg.translation.includes('SUPPORTED'))) {
+          msg.translation = '';
+          const allMsgs = window.db.getCoordinatorMessages();
+          const dbMsg = allMsgs.find(m => m.id === msg.id);
+          if (dbMsg) {
+            dbMsg.translation = '';
+            window.db.saveTable('coordinatorMessages', allMsgs);
+          }
+        }
+
         const row = document.createElement('div');
         const isSent = msg.senderId === myId;
         row.className = `message-row ${isSent ? 'sent' : 'received'}`;
@@ -7219,32 +7235,59 @@ class App {
         } else if (!msg.translation && translationEnabled && this.teacherConversationTranslateEnabled) {
           const ownSchool = window.db.getSchool(teacher.schoolId);
           const myLang = ownSchool ? (ownSchool.country.toLowerCase().includes('germany') ? 'de' : ownSchool.country.toLowerCase().includes('france') ? 'fr' : 'en') : 'en';
-          
+          const partnerSchool = window.db.getSchool(activeCoord.schoolId);
+          const partnerLang = partnerSchool ? (partnerSchool.country.toLowerCase().includes('germany') ? 'de' : partnerSchool.country.toLowerCase().includes('france') ? 'fr' : 'en') : 'en';
+
           let needsTranslation = false;
+          let detectedSourceLang = myLang;
+
           if (!isSent) {
             needsTranslation = true;
+            detectedSourceLang = partnerLang;
+            
+            // Refine detection for received messages
+            const lower = msg.text.toLowerCase();
+            const germanWords = ['danke', 'bitte', 'hallo', 'guten', 'tag', 'wie', 'geht', 'ist', 'gut', 'ja', 'nein'];
+            const hasGerman = germanWords.some(w => new RegExp('\\b' + w + '\\b').test(lower));
+            const hasGermanChars = /[äöüß]/i.test(msg.text);
+            const frenchWords = ['bonjour', 'merci', 's\'il', 'vous', 'plaît', 'oui', 'non', 'salut', 'ça', 'va'];
+            const hasFrench = frenchWords.some(w => new RegExp('\\b' + w + '\\b').test(lower));
+            const hasFrenchChars = /[éèàùçâêîôûëïüÿœæ]/i.test(msg.text);
+            if (hasGerman || hasGermanChars) {
+              detectedSourceLang = 'de';
+            } else if (hasFrench || hasFrenchChars) {
+              detectedSourceLang = 'fr';
+            }
           } else {
+            const lower = msg.text.toLowerCase();
+            const germanWords = ['danke', 'bitte', 'hallo', 'guten', 'tag', 'wie', 'geht', 'ist', 'gut', 'ja', 'nein'];
+            const hasGerman = germanWords.some(w => new RegExp('\\b' + w + '\\b').test(lower));
+            const hasGermanChars = /[äöüß]/i.test(msg.text);
+            const frenchWords = ['bonjour', 'merci', 's\'il', 'vous', 'plaît', 'oui', 'non', 'salut', 'ça', 'va'];
+            const hasFrench = frenchWords.some(w => new RegExp('\\b' + w + '\\b').test(lower));
+            const hasFrenchChars = /[éèàùçâêîôûëïüÿœæ]/i.test(msg.text);
+            
             if (myLang === 'en') {
-              const germanWords = ['danke', 'bitte', 'hallo', 'guten', 'tag', 'wie', 'geht', 'ist', 'gut', 'ja', 'nein'];
-              const lower = msg.text.toLowerCase();
-              const hasGerman = germanWords.some(w => new RegExp('\\b' + w + '\\b').test(lower));
-              const hasGermanChars = /[äöüß]/i.test(msg.text);
               if (hasGerman || hasGermanChars) {
+                detectedSourceLang = 'de';
+                needsTranslation = true;
+              } else if (hasFrench || hasFrenchChars) {
+                detectedSourceLang = 'fr';
                 needsTranslation = true;
               }
             } else if (myLang === 'de') {
               const englishWords = ['hello', 'hi', 'test', 'thanks', 'thank', 'you', 'please', 'good', 'morning', 'yes', 'no'];
-              const lower = msg.text.toLowerCase();
               const hasEnglish = englishWords.some(w => new RegExp('\\b' + w + '\\b').test(lower));
               if (hasEnglish) {
+                detectedSourceLang = 'en';
                 needsTranslation = true;
               }
             }
           }
 
-          if (needsTranslation) {
+          if (needsTranslation && detectedSourceLang !== myLang) {
             transRow = `<div class="message-translation" style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.25rem; font-style: italic; border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 0.25rem;">⏳ Translating...</div>`;
-            this.translateCoordinatorMessageOnTheFly(msg, 'auto', myLang);
+            this.translateCoordinatorMessageOnTheFly(msg, detectedSourceLang, myLang);
           }
         }
 
