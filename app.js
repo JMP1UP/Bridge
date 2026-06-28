@@ -2494,8 +2494,37 @@ class App {
     `;
   }
 
+  switchStudentsSubtab(subTab) {
+    this.studentsSubTab = subTab;
+    this.renderStudentRoster();
+  }
+
   // Renders teacher list of students
   renderStudentRoster() {
+    // Default subtab if not set
+    if (!this.studentsSubTab) {
+      this.studentsSubTab = 'roster';
+    }
+
+    const subtabRoster = document.getElementById('subtab-btn-students-roster');
+    const subtabAnnouncements = document.getElementById('subtab-btn-students-announcements');
+    const rosterView = document.getElementById('students-roster-subview');
+    const announcementsView = document.getElementById('students-announcements-subview');
+
+    if (subtabRoster && subtabAnnouncements && rosterView && announcementsView) {
+      if (this.studentsSubTab === 'roster') {
+        subtabRoster.classList.add('active');
+        subtabAnnouncements.classList.remove('active');
+        rosterView.style.display = 'block';
+        announcementsView.style.display = 'none';
+      } else {
+        subtabRoster.classList.remove('active');
+        subtabAnnouncements.classList.add('active');
+        rosterView.style.display = 'none';
+        announcementsView.style.display = 'block';
+      }
+    }
+
     // Reset selection list on re-render to prevent off-screen stale selections
     this.selectedRosterStudentIds = [];
     const masterCheckbox = document.getElementById('roster-select-all');
@@ -9353,7 +9382,7 @@ class App {
     
     if (myAnnouncements.length === 0) {
       container.innerHTML = `
-        <p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; padding: 2rem; margin: 0;">
+        <p style="font-size: 1rem; color: var(--text-muted); text-align: center; padding: 2rem; margin: 0;">
           ${this.translate('no_announcements_posted', 'No announcements posted for your school yet.')}
         </p>
       `;
@@ -9364,18 +9393,18 @@ class App {
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       .forEach(ann => {
         const div = document.createElement('div');
-        div.style.cssText = 'display: flex; justify-content: space-between; align-items: flex-start; padding: 0.75rem 1rem; background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border); border-radius: 8px;';
+        div.style.cssText = 'display: flex; justify-content: space-between; align-items: flex-start; padding: 1rem; background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border); border-radius: 8px;';
         div.innerHTML = `
-          <div style="display: flex; flex-direction: column; gap: 0.25rem; flex: 1; margin-right: 1rem;">
-            <h4 style="font-size: 0.95rem; font-weight: 700; margin: 0; color: var(--text-primary);">${ann.title}</h4>
-            <span style="font-size: 0.7rem; color: var(--text-muted);">
+          <div style="display: flex; flex-direction: column; gap: 0.35rem; flex: 1; margin-right: 1rem;">
+            <h4 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text-primary);">${ann.title}</h4>
+            <span style="font-size: 1rem; color: var(--text-muted);">
               ${this.translate('posted_by', 'Posted by')} ${ann.postedBy} ${this.translate('on_label', 'on')} ${new Date(ann.timestamp).toLocaleString()}
             </span>
-            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0.25rem 0 0 0; white-space: pre-wrap; line-height: 1.4;">
+            <p style="font-size: 1rem; color: var(--text-secondary); margin: 0.25rem 0 0 0; white-space: pre-wrap; line-height: 1.45;">
               ${ann.content}
             </p>
           </div>
-          <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: rgba(239,68,68,0.2); padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="app.deleteAnnouncement('${ann.id}')">${this.translate('delete_btn', 'Delete')}</button>
+          <button class="btn btn-secondary" style="color: var(--danger); border-color: rgba(239,68,68,0.2); padding: 0.4rem 0.75rem; font-size: 0.95rem;" onclick="app.deleteAnnouncement('${ann.id}')">${this.translate('delete_btn', 'Delete')}</button>
         `;
         container.appendChild(div);
       });
