@@ -7541,40 +7541,54 @@ class App {
 
     // 4. Update Projects Subtabs UI and Render Lists
     const subtabGallery = document.getElementById('subtab-btn-gallery');
+    const subtabProposals = document.getElementById('subtab-btn-proposals');
+    const subtabLaunch = document.getElementById('subtab-btn-launch');
     const subtabCancelled = document.getElementById('subtab-btn-cancelled');
+
     const galleryView = document.getElementById('teach-projects-gallery-subview');
+    const proposalsView = document.getElementById('teach-projects-proposals-subview');
+    const launchView = document.getElementById('teach-projects-launch-subview');
     const cancelledView = document.getElementById('teach-projects-cancelled-subview');
-    
-    if (this.projectsSubTab === 'gallery') {
-      if (subtabGallery) {
-        subtabGallery.style.background = 'var(--secondary)';
-        subtabGallery.style.border = 'none';
-        subtabGallery.style.color = '#0b0f19';
-        subtabGallery.style.fontWeight = '700';
+
+    // Default to 'gallery' if invalid
+    if (!['gallery', 'proposals', 'launch', 'cancelled'].includes(this.projectsSubTab)) {
+      this.projectsSubTab = 'gallery';
+    }
+
+    const subtabDefs = [
+      { btn: subtabGallery, view: galleryView, name: 'gallery' },
+      { btn: subtabProposals, view: proposalsView, name: 'proposals' },
+      { btn: subtabLaunch, view: launchView, name: 'launch' },
+      { btn: subtabCancelled, view: cancelledView, name: 'cancelled' }
+    ];
+
+    subtabDefs.forEach(t => {
+      if (!t.btn) return;
+      if (this.projectsSubTab === t.name) {
+        t.btn.style.background = 'var(--secondary)';
+        t.btn.style.border = 'none';
+        t.btn.style.color = '#0b0f19';
+        t.btn.style.fontWeight = '700';
+        if (t.view) t.view.style.display = 'flex';
+      } else {
+        t.btn.style.background = 'transparent';
+        t.btn.style.border = '1px solid var(--panel-border)';
+        t.btn.style.color = 'var(--text-secondary)';
+        t.btn.style.fontWeight = '500';
+        if (t.view) t.view.style.display = 'none';
       }
-      if (subtabCancelled) {
-        subtabCancelled.style.background = 'transparent';
-        subtabCancelled.style.border = '1px solid var(--panel-border)';
-        subtabCancelled.style.color = 'var(--text-secondary)';
-        subtabCancelled.style.fontWeight = '500';
+    });
+
+    // Update pending proposals count badge on proposals subtab button
+    const proposals = window.db.getProjects().filter(p => p.status === 'Proposed' && p.targetSchoolId === schoolId);
+    const badgeEl = document.getElementById('proposals-badge');
+    if (badgeEl) {
+      if (proposals.length > 0) {
+        badgeEl.textContent = proposals.length;
+        badgeEl.style.display = 'inline-flex';
+      } else {
+        badgeEl.style.display = 'none';
       }
-      if (galleryView) galleryView.style.display = 'flex';
-      if (cancelledView) cancelledView.style.display = 'none';
-    } else {
-      if (subtabGallery) {
-        subtabGallery.style.background = 'transparent';
-        subtabGallery.style.border = '1px solid var(--panel-border)';
-        subtabGallery.style.color = 'var(--text-secondary)';
-        subtabGallery.style.fontWeight = '500';
-      }
-      if (subtabCancelled) {
-        subtabCancelled.style.background = 'var(--secondary)';
-        subtabCancelled.style.border = 'none';
-        subtabCancelled.style.color = '#0b0f19';
-        subtabCancelled.style.fontWeight = '700';
-      }
-      if (galleryView) galleryView.style.display = 'none';
-      if (cancelledView) cancelledView.style.display = 'flex';
     }
 
     // Render Active Gallery Grid
@@ -8074,6 +8088,7 @@ class App {
     document.getElementById('launch-project-form').reset();
     
     alert(this.translate('project_proposal_launched_success', 'Project proposal launched successfully! Sent to target partner school for review.'));
+    this.projectsSubTab = 'gallery';
     this.refreshUI();
   }
 
@@ -8106,6 +8121,7 @@ class App {
     );
 
     alert(this.translate('proposal_accepted_success', 'Proposal accepted! The project is now active for students of both schools.'));
+    this.projectsSubTab = 'gallery';
     this.refreshUI();
   }
 
