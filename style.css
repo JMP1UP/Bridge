@@ -1296,7 +1296,7 @@ tr:hover td {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--panel-border);
   border-radius: 20px;
-  padding: 2.25rem 2rem;
+  padding: 1.5rem 1.25rem; /* Reduced card padding */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1313,30 +1313,30 @@ tr:hover td {
 }
 
 .login-section-icon {
-  font-size: 2.75rem;
-  margin-bottom: 1.25rem;
+  font-size: 2.25rem; /* More compact icon */
+  margin-bottom: 0.75rem;
   filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.15));
 }
 
 .login-section-card h3 {
-  font-size: 1.15rem;
+  font-size: 1.25rem;
   font-weight: 700;
-  margin: 0 0 0.75rem 0;
+  margin: 0 0 0.5rem 0;
   color: var(--text-primary);
 }
 
 .login-section-card p {
-  font-size: 0.8rem;
+  font-size: 1rem; /* Bushed to 12pt (16px) minimum font size */
   color: var(--text-muted);
-  line-height: 1.6;
-  margin: 0 0 1.5rem 0;
+  line-height: 1.5;
+  margin: 0 0 1.25rem 0; /* Reduced description margin */
   flex-grow: 1;
 }
 
 .login-select {
   width: 100%;
-  font-size: 0.85rem;
-  padding: 0.6rem 0.85rem;
+  font-size: 0.95rem; /* Bushed to ~12pt minimum */
+  padding: 0.5rem 0.75rem; /* Compact selector padding */
   background: rgba(0, 0, 0, 0.2);
   border-color: var(--panel-border);
   text-align-last: center;
