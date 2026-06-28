@@ -361,6 +361,7 @@ class App {
             previewSpan.removeAttribute('data-draft');
           }
         }
+        this.renderTeacherMessages();
       });
     }
 
@@ -382,6 +383,7 @@ class App {
         if (this.autoTranslateEnabled) {
           this.handleAutoTranslate();
         }
+        this.renderStudentChat();
       });
     }
 
@@ -1686,7 +1688,7 @@ class App {
         row.className = `message-row ${isSent ? 'sent' : 'received'}`;
         
         let transRow = '';
-        if (msg.translation && translationEnabled) {
+        if (msg.translation && translationEnabled && this.autoTranslateEnabled) {
           transRow = `<div class="message-translation">📝 ${msg.translation}</div>`;
         }
 
@@ -7130,7 +7132,7 @@ class App {
       document.getElementById('teacher-chat-partner-name').textContent = activeCoord.name;
       
       const schoolEl = document.getElementById('teacher-chat-partner-school');
-      schoolEl.textContent = partnerSchool ? `${partnerFlag} ${partnerSchool.name} • ${partnerSchool.country}` : 'Unknown School';
+      schoolEl.innerHTML = partnerSchool ? `${partnerFlag} ${partnerSchool.name} • ${partnerSchool.country}` : 'Unknown School';
       if (partnerSchool) {
         schoolEl.style.cursor = 'pointer';
         schoolEl.style.textDecoration = 'underline';
@@ -7161,7 +7163,7 @@ class App {
         row.className = `message-row ${isSent ? 'sent' : 'received'}`;
         
         let transRow = '';
-        if (msg.translation && translationEnabled) {
+        if (msg.translation && translationEnabled && this.teacherAutoTranslateEnabled) {
           transRow = `<div class="message-translation" style="font-size: 0.82rem; color: var(--secondary); margin-top: 0.25rem; font-style: italic; border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 0.25rem;">📝 ${msg.translation}</div>`;
         }
 
