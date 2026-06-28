@@ -4187,28 +4187,37 @@ class App {
       const otherSchool = otherSchoolId ? window.db.getSchool(otherSchoolId) : null;
       const otherResolution = otherSchoolId ? resolutions[otherSchoolId] : null;
 
-      let statusBadgeHtml = '';
-      if (myResolution.status === 'Resolved') {
-        statusBadgeHtml = `<div style="margin-bottom: 0.35rem;"><span class="badge badge-success">${this.translate('safeguarding_resolved_you', 'Resolved (You)')}</span></div>`;
-      } else {
-        statusBadgeHtml = `<div style="margin-bottom: 0.35rem;"><span class="badge badge-danger">${this.translate('safeguarding_unresolved_you', 'Unresolved (You)')}</span></div>`;
-      }
+      let statusBadgeHtml = `
+        <div style="display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start; min-width: 155px; line-height: 1.35;">
+          <!-- Your School Status -->
+          <div style="display: flex; flex-direction: column; gap: 0.2rem; width: 100%;">
+            <span style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted); letter-spacing: 0.5px;">${this.translate('your_school_label', 'Your School')}</span>
+            <div>
+              ${myResolution.status === 'Resolved' 
+                ? `<span class="badge badge-success" style="font-size: 0.75rem; padding: 0.15rem 0.45rem; font-weight: 600;">${this.translate('resolved_status', 'Resolved')}</span>`
+                : `<span class="badge badge-danger" style="font-size: 0.75rem; padding: 0.15rem 0.45rem; font-weight: 600;">${this.translate('safeguarding_unresolved_badge', 'Unresolved')}</span>`}
+            </div>
+          </div>
+      `;
 
       if (otherSchool) {
         const flagImg = this.getSchoolFlag(otherSchool.country);
-        if (otherResolution && otherResolution.status === 'Resolved') {
-          statusBadgeHtml += `
-            <div style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.25;">
-              ${flagImg} ${otherSchool.name}: <span class="badge badge-success" style="font-size: 0.65rem; padding: 0.05rem 0.2rem;">${this.translate('resolved_status', 'Resolved')}</span><br>
-              <span style="font-size: 0.7rem; color: var(--text-muted); font-style: italic;">"${otherResolution.resolutionNotes || this.translate('safeguarding_no_comment', 'No comment')}"</span>
-            </div>`;
-        } else {
-          statusBadgeHtml += `
-            <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.25;">
-              ${flagImg} ${otherSchool.name}: <span class="badge badge-danger" style="font-size: 0.65rem; padding: 0.05rem 0.2rem;">${this.translate('safeguarding_unresolved_badge', 'Unresolved')}</span>
-            </div>`;
-        }
+        statusBadgeHtml += `
+          <!-- Partner School Status -->
+          <div style="display: flex; flex-direction: column; gap: 0.2rem; border-top: 1px solid var(--panel-border); padding-top: 0.4rem; width: 100%;">
+            <span style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted); letter-spacing: 0.5px; display: flex; align-items: center; gap: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 155px;" title="${otherSchool.name}">
+              ${flagImg} ${otherSchool.name}
+            </span>
+            <div>
+              ${otherResolution && otherResolution.status === 'Resolved'
+                ? `<span class="badge badge-success" style="font-size: 0.75rem; padding: 0.15rem 0.45rem; font-weight: 600;">${this.translate('resolved_status', 'Resolved')}</span>
+                   <div style="font-size: 0.7rem; color: var(--text-muted); font-style: italic; margin-top: 0.15rem; line-height: 1.35;">"${otherResolution.resolutionNotes || this.translate('safeguarding_no_comment', 'No comment')}"</div>`
+                : `<span class="badge badge-danger" style="font-size: 0.75rem; padding: 0.15rem 0.45rem; font-weight: 600;">${this.translate('safeguarding_unresolved_badge', 'Unresolved')}</span>`}
+            </div>
+          </div>
+        `;
       }
+      statusBadgeHtml += `</div>`;
 
       const isProjectFlag = !!flag.projectId;
       let flagTitle = '';
