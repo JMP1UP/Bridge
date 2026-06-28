@@ -8361,6 +8361,13 @@ class App {
           tr.style.borderBottom = '1px solid var(--panel-border)';
           tr.innerHTML = `
             <td style="padding: 0.75rem; vertical-align: top; font-size: 1rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                ${p.isStaffProject ? `
+                  <span class="badge" style="font-size: 0.65rem; padding: 0.15rem 0.35rem; font-weight: 700; color: var(--accent-light, #a78bfa); background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.25); border-radius: 4px;">🟣 Staff Collaboration</span>
+                ` : `
+                  <span class="badge" style="font-size: 0.65rem; padding: 0.15rem 0.35rem; font-weight: 700; color: #60a5fa; background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.25); border-radius: 4px;">👥 Student Exchange</span>
+                `}
+              </div>
               <div style="font-weight: 700; color: var(--text-primary); font-size: 1.05rem;">${p.title}</div>
               <div style="font-size: 1rem; color: var(--text-muted); margin-top: 0.2rem; line-height: 1.4; max-width: 250px;">
                 ${p.brief}
@@ -8557,7 +8564,12 @@ class App {
               <input type="checkbox" id="chk-broadcast-${p.id}" style="width: 16px; height: 16px; cursor: ${this.broadcastTarget === 'all' ? 'not-allowed' : 'pointer'}; opacity: ${this.broadcastTarget === 'all' ? 0.6 : 1};" ${(this.broadcastTarget === 'all' || isSelected) ? 'checked' : ''} ${this.broadcastTarget === 'all' ? 'disabled' : ''} onclick="app.toggleProjectBroadcastSelect('${p.id}')">
             </div>
 
-            <div style="padding-right: 1.5rem;">
+            <div style="padding-right: 1.5rem; display: flex; flex-direction: column; gap: 0.25rem; align-items: flex-start;">
+              ${p.isStaffProject ? `
+                <span class="badge" style="font-size: 0.72rem; padding: 0.15rem 0.45rem; font-weight: 700; color: var(--accent-light, #a78bfa); background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.25); border-radius: 4px;">🟣 Staff Collaboration</span>
+              ` : `
+                <span class="badge" style="font-size: 0.72rem; padding: 0.15rem 0.45rem; font-weight: 700; color: #60a5fa; background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.25); border-radius: 4px;">👥 Student Exchange</span>
+              `}
               <h4 style="font-size: 1.15rem; font-weight: 800; margin: 0; color: var(--text-primary);">${p.title}</h4>
               <span style="font-size: 1rem; color: var(--text-muted);">${this.translate('partner_label', 'Partner')}: ${partnerSchool ? partnerSchool.name : this.translate('unknown_school', 'Unknown School')}</span>
             </div>
@@ -8625,7 +8637,12 @@ class App {
           item.style.flexWrap = 'wrap';
 
           item.innerHTML = `
-            <div>
+            <div style="display: flex; flex-direction: column; gap: 0.25rem; align-items: flex-start;">
+              ${p.isStaffProject ? `
+                <span class="badge" style="font-size: 0.65rem; padding: 0.15rem 0.35rem; font-weight: 700; color: var(--accent-light, #a78bfa); background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.25); border-radius: 4px;">🟣 Staff Collaboration</span>
+              ` : `
+                <span class="badge" style="font-size: 0.65rem; padding: 0.15rem 0.35rem; font-weight: 700; color: #60a5fa; background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.25); border-radius: 4px;">👥 Student Exchange</span>
+              `}
               <h4 style="font-size: 1.15rem; font-weight: 800; margin: 0; color: var(--text-primary);">${p.title}</h4>
               <span style="font-size: 1rem; color: var(--text-muted);">${this.translate('partner_label', 'Partner')}: ${partnerSchool ? partnerSchool.name : this.translate('unknown_school', 'Unknown School')}</span>
               <p style="font-size: 1rem; color: var(--text-secondary); margin: 0.25rem 0 0 0; line-height: 1.45;">${p.brief}</p>
