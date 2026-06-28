@@ -8681,7 +8681,7 @@ class App {
                 🚫 ${this.translate('cancel_btn', 'Cancel')}
               </button>
               <button class="btn btn-primary" onclick="app.openProjectModerationChat('${p.id}')" style="grid-column: span 2; font-size: 0.95rem; justify-content: center; display: flex; padding: 0.5rem 1rem;">
-                💬 ${this.translate('moderate_chat_cards_btn', 'Moderate Chat & Cards')}
+                💬 ${p.isStaffProject ? this.translate('collaborate_edit_workspace_btn', 'Collaborate & Edit Workspace') : this.translate('moderate_chat_cards_btn', 'Moderate Chat & Cards')}
               </button>
             `;
           }
@@ -8953,29 +8953,76 @@ class App {
     if (!project) return;
 
     this.activeModeratedProjectId = projectId;
+    this.editingTeacherSlideId = null;
 
     const modal = document.getElementById('teacher-project-moderation-modal');
     const titleEl = document.getElementById('moderation-modal-title');
-    const slidesContainer = document.getElementById('moderation-slides-container');
-    const chatHistory = document.getElementById('moderation-chat-history');
     const chatInput = document.getElementById('moderation-chat-input');
+    const addSlideBtn = document.getElementById('teach-add-slide-btn');
 
     if (!modal) return;
 
-    titleEl.textContent = `💬 Moderating Project: ${project.title}`;
+    if (project.isStaffProject) {
+      titleEl.textContent = `💬 Collaborative Workspace: ${project.title}`;
+    } else {
+      titleEl.textContent = `💬 Moderating Project: ${project.title}`;
+    }
+
+    if (addSlideBtn) {
+      addSlideBtn.style.display = project.isStaffProject ? 'inline-block' : 'none';
+    }
+
     if (chatInput) chatInput.value = '';
 
-    // Render slides
-    if (slidesContainer) {
-      slidesContainer.innerHTML = '';
-      if (project.slides && project.slides.length > 0) {
-        project.slides.forEach((s, index) => {
-          const div = document.createElement('div');
-          div.style.padding = '0.65rem';
-          div.style.background = 'rgba(255,255,255,0.02)';
-          div.style.border = '1px solid var(--panel-border)';
-          div.style.borderRadius = '8px';
-          div.style.marginBottom = '0.5rem';
+    // Render workspace
+    this.renderTeacherWorkspace(project);
+
+    // Show modal
+    modal.classList.add('active');
+  }
+
+  renderTeacherWorkspace(project) {
+    const slidesContainer = document.getElementById('moderation-slides-container');
+    if (!slidesContainer) return;
+
+    slidesContainer.innerHTML = '';
+    if (project.slides && project.slides.length > 0) {
+      project.slides.forEach((s, index) => {
+        const div = document.createElement('div');
+        div.style.padding = '0.65rem';
+        div.style.background = 'rgba(255,255,255,0.02)';
+        div.style.border = '1px solid var(--panel-border)';
+        div.style.borderRadius = '8px';
+        div.style.marginBottom = '0.5rem';
+
+        if (project.isStaffProject) {
+          if (this.editingTeacherSlideId === s.id) {
+            div.innerHTML = `
+              <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                <div style="font-size: 0.7rem; color: var(--text-muted);">Editing Card ${index + 1}</div>
+                <input type="text" id="edit-slide-title-${s.id}" class="form-control" style="font-size: 0.8rem; padding: 0.25rem 0.5rem;" value="${s.title.replace(/"/g, '&quot;')}" placeholder="Card Title">
+                <textarea id="edit-slide-content-${s.id}" class="form-control" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; height: 80px; resize: vertical;" placeholder="Card Content">${s.content}</textarea>
+                <div style="display: flex; gap: 0.35rem; justify-content: flex-end; margin-top: 0.25rem;">
+                  <button class="btn btn-primary btn-small" style="font-size: 0.7rem; padding: 0.15rem 0.35rem;" onclick="app.saveTeacherSlideInline('${project.id}', '${s.id}')">Save</button>
+                  <button class="btn btn-secondary btn-small" style="font-size: 0.7rem; padding: 0.15rem 0.35rem;" onclick="app.cancelTeacherSlideInline('${project.id}')">Cancel</button>
+                </div>
+              </div>
+            `;
+          } else {
+            div.innerHTML = `
+              <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.15rem;">
+                <span>Card ${index + 1}</span>
+                <strong>By ${s.author}</strong>
+              </div>
+              <h5 style="margin: 0 0 0.2rem 0; font-size: 0.8rem; color: var(--text-primary); font-weight: 700;">${s.title || 'Untitled Card'}</h5>
+              <p style="margin: 0; font-size: 0.75rem; color: var(--text-secondary); white-space: pre-wrap;">${s.content || '(No content yet)'}</p>
+              <div style="display: flex; gap: 0.35rem; margin-top: 0.5rem; justify-content: flex-end; border-top: 1px dashed rgba(255,255,255,0.05); padding-top: 0.35rem;">
+                <button class="btn btn-secondary btn-small" style="font-size: 0.7rem; padding: 0.15rem 0.35rem; color: var(--secondary);" onclick="app.editTeacherSlideInline('${project.id}', '${s.id}')">✏️ Edit</button>
+                <button class="btn btn-secondary btn-small" style="font-size: 0.7rem; padding: 0.15rem 0.35rem; color: var(--danger);" onclick="app.deleteTeacherSlideInline('${project.id}', '${s.id}')">🗑️ Delete</button>
+              </div>
+            `;
+          }
+        } else {
           div.innerHTML = `
             <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.15rem;">
               <span>Card ${index + 1}</span>
@@ -8984,18 +9031,93 @@ class App {
             <h5 style="margin: 0 0 0.2rem 0; font-size: 0.8rem; color: var(--text-primary); font-weight: 700;">${s.title}</h5>
             <p style="margin: 0; font-size: 0.75rem; color: var(--text-secondary); white-space: pre-wrap;">${s.content}</p>
           `;
-          slidesContainer.appendChild(div);
-        });
-      } else {
-        slidesContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-style: italic; font-size: 0.8rem; padding: 1rem;">${this.translate('no_slides_created', 'No slides created yet.')}</div>`;
-      }
+        }
+        slidesContainer.appendChild(div);
+      });
+    } else {
+      slidesContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-style: italic; font-size: 0.8rem; padding: 1rem;">${this.translate('no_slides_created', 'No slides created yet.')}</div>`;
     }
 
     // Render Chat
     this.renderModerationChat();
+  }
 
-    // Show modal
-    modal.classList.add('active');
+  addTeacherProjectSlide() {
+    const projectId = this.activeModeratedProjectId;
+    if (!projectId) return;
+    const project = window.db.getProject(projectId);
+    if (!project) return;
+
+    const teacher = this.getLoggedTeacher();
+    const newSlide = {
+      id: 'slide_' + Date.now(),
+      layout: 'split',
+      title: '',
+      content: '',
+      photoUrl: '',
+      author: teacher ? teacher.name : 'Teacher',
+      editableByOthers: true
+    };
+    if (!project.slides) project.slides = [];
+    project.slides.push(newSlide);
+    window.db.updateProject(projectId, { slides: project.slides });
+
+    this.editingTeacherSlideId = newSlide.id;
+    this.renderTeacherWorkspace(project);
+    this.renderTeacherProjects(); 
+  }
+
+  editTeacherSlideInline(projectId, slideId) {
+    const project = window.db.getProject(projectId);
+    if (!project) return;
+    this.editingTeacherSlideId = slideId;
+    this.renderTeacherWorkspace(project);
+  }
+
+  cancelTeacherSlideInline(projectId) {
+    const project = window.db.getProject(projectId);
+    if (!project) return;
+    this.editingTeacherSlideId = null;
+    this.renderTeacherWorkspace(project);
+  }
+
+  saveTeacherSlideInline(projectId, slideId) {
+    const project = window.db.getProject(projectId);
+    if (!project) return;
+
+    const titleInput = document.getElementById(`edit-slide-title-${slideId}`);
+    const contentInput = document.getElementById(`edit-slide-content-${slideId}`);
+
+    if (titleInput && contentInput) {
+      const slide = project.slides.find(s => s.id === slideId);
+      if (slide) {
+        slide.title = titleInput.value.trim();
+        slide.content = contentInput.value.trim();
+        window.db.updateProject(projectId, { slides: project.slides });
+      }
+    }
+
+    this.editingTeacherSlideId = null;
+    this.renderTeacherWorkspace(project);
+  }
+
+  deleteTeacherSlideInline(projectId, slideId) {
+    const project = window.db.getProject(projectId);
+    if (!project) return;
+
+    if (!confirm(this.translate('delete_slide_confirm_prompt', 'Are you sure you want to delete this card? This action cannot be undone.'))) {
+      return;
+    }
+
+    project.slides = project.slides.filter(s => s.id !== slideId);
+    window.db.updateProject(projectId, { slides: project.slides });
+
+    if (this.editingTeacherSlideId === slideId) {
+      this.editingTeacherSlideId = null;
+    }
+
+    this.renderTeacherWorkspace(project);
+    this.renderTeacherProjects(); 
   }
 
   renderModerationChat() {

@@ -2388,7 +2388,10 @@
         
         <!-- Left Side: Slides list -->
         <div style="display: flex; flex-direction: column; gap: 0.75rem; overflow-y: auto; border-right: 1px solid var(--panel-border); padding-right: 1rem;">
-          <h4 style="font-size: 0.9rem; font-weight: 700; margin: 0; color: var(--text-primary);" data-localize="project_slides_title">📄 Project Slides</h4>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+            <h4 style="font-size: 0.9rem; font-weight: 700; margin: 0; color: var(--text-primary);" data-localize="project_slides_title">📄 Project Slides</h4>
+            <button id="teach-add-slide-btn" class="btn btn-primary btn-small" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; display: none;" onclick="app.addTeacherProjectSlide()">+ Add Card</button>
+          </div>
           <div id="moderation-slides-container" style="display: flex; flex-direction: column; gap: 0.75rem;">
             <!-- Populated dynamically -->
           </div>
