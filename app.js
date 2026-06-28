@@ -2441,13 +2441,15 @@ class App {
           <span style="font-size: 0.85rem;">${this.getLogonDisplay(stud.activityLevel)}</span>
         </td>
         <td>${activeBadge}</td>
-        <td>
-          ${stud.invitationStatus === 'Invited' 
-            ? `<button class="btn btn-secondary btn-small" onclick="app.simulateInviteResend('${stud.id}')" title="${this.translate('resend_invite_code_title', 'Resend Invite Code')}">${this.translate('resend_invite_btn', 'Resend invite')}</button>` 
-            : stud.invitationStatus === 'Active' 
-              ? `<button class="btn btn-secondary btn-small" onclick="app.simulateResetPassword('${stud.id}')" title="${this.translate('reset_student_password_title', 'Reset Student Password')}">${this.translate('reset_pw_btn', 'Reset PW')}</button>` 
-              : ''}
-          <button class="btn btn-danger btn-small" onclick="app.removeStudentAccount('${stud.id}')">${this.translate('archive_btn', 'Archive')}</button>
+        <td style="min-width: 210px;">
+          <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: flex-start; width: 100%;">
+            ${stud.invitationStatus === 'Invited' 
+              ? `<button class="btn btn-secondary btn-small" style="width: 105px; justify-content: center; text-align: center; white-space: nowrap; padding: 0.4rem 0.2rem;" onclick="app.simulateInviteResend('${stud.id}')" title="${this.translate('resend_invite_code_title', 'Resend Invite Code')}">${this.translate('resend_invite_btn', 'Resend invite')}</button>` 
+              : stud.invitationStatus === 'Active' 
+                ? `<button class="btn btn-secondary btn-small" style="width: 105px; justify-content: center; text-align: center; white-space: nowrap; padding: 0.4rem 0.2rem;" onclick="app.simulateResetPassword('${stud.id}')" title="${this.translate('reset_student_password_title', 'Reset Student Password')}">${this.translate('reset_pw_btn', 'Reset PW')}</button>` 
+                : `<div style="width: 105px;"></div>`}
+            <button class="btn btn-danger btn-small" style="width: 85px; justify-content: center; text-align: center; padding: 0.4rem 0.2rem;" onclick="app.removeStudentAccount('${stud.id}')">${this.translate('archive_btn', 'Archive')}</button>
+          </div>
         </td>
       `;
       tbody.appendChild(row);
