@@ -203,21 +203,11 @@ class App {
       });
     }
 
-    // Populate login screen options
-    this.populateLoginScreen();
-
-    // Bind login buttons
-    document.getElementById('login-student-btn').addEventListener('click', () => {
-      const email = document.getElementById('login-student-email').value;
-      const password = document.getElementById('login-student-password').value;
-      if (email) this.loginAsStudent(email, password);
-    });
-
-    document.getElementById('login-staff-btn').addEventListener('click', () => {
-      const email = document.getElementById('login-staff-email').value;
-      const password = document.getElementById('login-staff-password').value;
-      if (email) this.loginAsStaff(email, password);
-    });
+    // Bind Unified Login form
+    const unifiedLoginForm = document.getElementById('unified-login-form');
+    if (unifiedLoginForm) {
+      unifiedLoginForm.addEventListener('submit', (e) => this.handleUnifiedLogin(e));
+    }
 
     // Bind logout button
     document.getElementById('logout-btn').addEventListener('click', () => this.logout());
@@ -922,20 +912,15 @@ class App {
     }
 
     // Bind Forgot Password links
-    document.querySelectorAll('.forgot-password-link').forEach(link => {
-      link.addEventListener('click', (e) => {
+    const unifiedForgotLink = document.getElementById('unified-forgot-password-link');
+    if (unifiedForgotLink) {
+      unifiedForgotLink.addEventListener('click', (e) => {
         e.preventDefault();
-        const role = link.getAttribute('data-role');
-        const roleInput = document.getElementById('forgot-role-input');
-        if (roleInput) roleInput.value = role;
-        
-        // Reset modal fields
         const emailInput = document.getElementById('forgot-email-input');
         if (emailInput) emailInput.value = '';
-        
         this.openModal('forgot-password-modal');
       });
-    });
+    }
 
     // Bind Forgot Password form submission
     const forgotForm = document.getElementById('forgot-password-form');
@@ -945,10 +930,8 @@ class App {
         const email = document.getElementById('forgot-email-input').value.trim();
         const role = document.getElementById('forgot-role-input').value;
         
-        let user = null;
-        if (role === 'student') {
-          user = window.db.getStudents().find(s => s.email.toLowerCase() === email.toLowerCase());
-        } else {
+        let user = window.db.getStudents().find(s => s.email.toLowerCase() === email.toLowerCase());
+        if (!user) {
           user = window.db.getCoordinators().find(c => c.email.toLowerCase() === email.toLowerCase());
         }
         
@@ -10286,22 +10269,6 @@ class App {
 
   // ================== LOGIN / LOGOUT PORTAL HELPERS ==================
 
-  populateLoginScreen() {
-    const studentSelect = document.getElementById('login-student-select');
-    if (!studentSelect) return;
-    studentSelect.innerHTML = '';
-    
-    const students = window.db.getStudents();
-    students.forEach(s => {
-      const school = window.db.getSchool(s.schoolId);
-      const schoolName = school ? school.name : 'Unknown School';
-      const opt = document.createElement('option');
-      opt.value = s.id;
-      opt.textContent = `${s.name} (${s.age} y/o, ${s.gender} • ${schoolName})`;
-      studentSelect.appendChild(opt);
-    });
-  }
-
   loginAsStudent(identifier, password) {
     let student;
     if (identifier.startsWith('stud_')) {
@@ -10356,12 +10323,50 @@ class App {
     document.querySelector('.app-container').style.setProperty('display', 'flex', 'important');
   }
 
+  handleUnifiedLogin(e) {
+    if (e) e.preventDefault();
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+
+    if (!email) return;
+
+    // Check if it's admin
+    if (email.toLowerCase() === 'admin' || email.toLowerCase() === 'admin@school-bridge.org') {
+      this.loginAsStaff(email, password);
+      return;
+    }
+
+    // Check if it's a coordinator
+    const coordinator = window.db.getCoordinators().find(c => c.email.toLowerCase() === email.toLowerCase());
+    if (coordinator) {
+      this.loginAsStaff(coordinator.id, password);
+      return;
+    }
+
+    // Check if it's a student
+    const student = window.db.getStudents().find(s => s.email.toLowerCase() === email.toLowerCase());
+    if (student) {
+      this.loginAsStudent(student.id, password);
+      return;
+    }
+
+    // If none found
+    alert(this.translate('user_not_found_alert', 'No account found matching that email address.'));
+  }
+
+  devAutoLogin() {
+    this.loginAsStaff('admin', 'admin123');
+  }
+
   logout() {
     this.isLoggedIn = false;
     this.currentRole = null;
     document.getElementById('login-screen').style.setProperty('display', 'flex', 'important');
     document.querySelector('.app-container').style.setProperty('display', 'none', 'important');
-    this.populateLoginScreen();
+    const emailInput = document.getElementById('login-email');
+    const passwordInput = document.getElementById('login-password');
+    if (emailInput) emailInput.value = '';
+    if (passwordInput) passwordInput.value = '';
   }
 
   startEditingSlideInline(flagId, projectId, slideId) {
