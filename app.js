@@ -8506,22 +8506,52 @@ class App {
     if (galleryGrid) {
       galleryGrid.innerHTML = '';
       
-      const activeProjects = window.db.getProjects()
-        .filter(p => (p.creatorSchoolId === schoolId || p.targetSchoolId === schoolId) && p.status !== 'Cancelled')
-        .sort((a, b) => {
-          // Sort order weight:
-          // 0: Proposed incoming (Action Required)
-          // 1: Active
-          // 2: Suspended (Paused)
-          // 3: Proposed outgoing (Awaiting partner approval)
-          const getWeight = (x) => {
-            if (x.status === 'Proposed') {
-              return x.targetSchoolId === schoolId ? 0 : 3;
-            }
-            return x.paused ? 2 : 1;
-          };
-          return getWeight(a) - getWeight(b);
+      const searchQuery = document.getElementById('proj-filter-search')?.value.trim().toLowerCase() || '';
+      const filterType = document.getElementById('proj-filter-type')?.value || 'all';
+      const filterStatus = document.getElementById('proj-filter-status')?.value || 'all';
+
+      let activeProjects = window.db.getProjects()
+        .filter(p => (p.creatorSchoolId === schoolId || p.targetSchoolId === schoolId) && p.status !== 'Cancelled');
+
+      // Filter by search query (title, partner school, brief text)
+      if (searchQuery) {
+        activeProjects = activeProjects.filter(p => {
+          const isCreator = p.creatorSchoolId === schoolId;
+          const partnerSchoolId = isCreator ? p.targetSchoolId : p.creatorSchoolId;
+          const partnerSchool = window.db.getSchool(partnerSchoolId);
+          const partnerName = partnerSchool ? partnerSchool.name.toLowerCase() : '';
+          return p.title.toLowerCase().includes(searchQuery) ||
+                 partnerName.includes(searchQuery) ||
+                 p.brief.toLowerCase().includes(searchQuery);
         });
+      }
+
+      // Filter by type
+      if (filterType === 'student') {
+        activeProjects = activeProjects.filter(p => !p.isStaffProject);
+      } else if (filterType === 'staff') {
+        activeProjects = activeProjects.filter(p => p.isStaffProject);
+      }
+
+      // Filter by status
+      if (filterStatus === 'active') {
+        activeProjects = activeProjects.filter(p => p.status !== 'Proposed' && !p.paused);
+      } else if (filterStatus === 'proposed') {
+        activeProjects = activeProjects.filter(p => p.status === 'Proposed');
+      } else if (filterStatus === 'paused') {
+        activeProjects = activeProjects.filter(p => p.status !== 'Proposed' && p.paused);
+      }
+
+      // Sort by priority weight
+      activeProjects.sort((a, b) => {
+        const getWeight = (x) => {
+          if (x.status === 'Proposed') {
+            return x.targetSchoolId === schoolId ? 0 : 3;
+          }
+          return x.paused ? 2 : 1;
+        };
+        return getWeight(a) - getWeight(b);
+      });
 
       // Update Broadcast Targeting UI elements
       const countEl = document.getElementById('broadcast-selected-count');
@@ -8781,6 +8811,10 @@ class App {
   switchProjectsSubtab(tabName) {
     this.projectsSubTab = tabName;
     this.selectedProjectBroadcastIds = [];
+    this.renderTeacherProjects();
+  }
+
+  handleProjectFiltersChange() {
     this.renderTeacherProjects();
   }
 
