@@ -762,7 +762,7 @@ class App {
       } else if (this.currentRole === 'new-coordinator') {
         brandDescEl.textContent = this.translate('onboarding_portal_subtitle', 'Onboarding Portal');
       } else {
-        brandDescEl.textContent = this.translate('connecting_students_subtitle', 'connecting students across cultures');
+        brandDescEl.textContent = this.translate('connecting_students_subtitle', 'connecting schools & teachers worldwide');
       }
     }
   }
