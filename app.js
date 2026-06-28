@@ -1040,6 +1040,7 @@ class App {
       this.renderLanguageWidget();
       this.populateStudentSettings();
       this.renderStudentProjects();
+      this.updateStudentUnreadBadge();
       if (student) this.renderDiscoveriesBoard(student);
     } else if (this.currentRole === 'teacher') {
       this.renderTeacherDashboard();
@@ -1069,6 +1070,31 @@ class App {
     ).length;
 
     const badge = document.getElementById('staff-unread-message-count');
+    if (badge) {
+      if (unreadCount > 0) {
+        badge.style.display = 'inline-flex';
+        badge.textContent = unreadCount;
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+  }
+
+  updateStudentUnreadBadge() {
+    if (this.currentRole !== 'student' || !this.currentStudentId) return;
+    const student = window.db.getStudent(this.currentStudentId);
+    if (!student) return;
+
+    // Get active matches for this student
+    const activeMatches = window.db.getMatches().filter(m => m.active && m.studentIds.includes(student.id));
+    let unreadCount = 0;
+    if (activeMatches.length > 0) {
+      unreadCount = window.db.getMessages().filter(m => 
+        m.matchId === activeMatches[0].id && m.senderId !== student.id && !m.read
+      ).length;
+    }
+
+    const badge = document.getElementById('student-sidebar-unread-count');
     if (badge) {
       if (unreadCount > 0) {
         badge.style.display = 'inline-flex';
@@ -1200,6 +1226,13 @@ class App {
         levelBorderColor = "rgba(59, 130, 246, 0.25)";
       }
 
+      // Retrieve unread count for this match
+      const unreadCount = window.db.getMessages().filter(m => m.matchId === matches[0].id && m.senderId !== student.id && !m.read).length;
+      let finalSendMsgText = sendMsgBtnText;
+      if (unreadCount > 0) {
+        finalSendMsgText = `${sendMsgBtnText} <span class="badge badge-danger alert-pulse" style="font-size: 0.72rem; padding: 0.15rem 0.35rem; border-radius: 10px; margin-left: 0.5rem; line-height: 1; display: inline-flex; align-items: center; justify-content: center;">${unreadCount}</span>`;
+      }
+
       welcomeContainer.innerHTML = `
         <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.5rem;">
           <div style="display: flex; gap: 0.75rem; align-items: center;">
@@ -1213,7 +1246,7 @@ class App {
               </div>
             </div>
           </div>
-          <button class="btn btn-primary btn-small w-full" style="justify-content: center; display: flex; margin-top: 0.25rem;" onclick="app.switchTab('stud-chat')">${sendMsgBtnText}</button>
+          <button class="btn btn-primary btn-small w-full" style="justify-content: center; display: flex; align-items: center; margin-top: 0.25rem;" onclick="app.switchTab('stud-chat')">${finalSendMsgText}</button>
         </div>
       `;
     } else {
@@ -1580,7 +1613,21 @@ class App {
       this.activeMatchId = activeMatches[0]?.id || null;
     }
 
-
+    // Auto-mark unread messages as read for active match
+    if (this.activeMatchId) {
+      const allMsgs = window.db.getMessages();
+      let changed = false;
+      allMsgs.forEach(m => {
+        if (m.matchId === this.activeMatchId && m.senderId !== student.id && !m.read) {
+          m.read = true;
+          changed = true;
+        }
+      });
+      if (changed) {
+        window.db.saveTable('messages', allMsgs);
+        this.updateStudentUnreadBadge();
+      }
+    }
 
     // 2. Render matched penpals in sidebar list
     if (activeMatches.length === 0) {
@@ -1598,6 +1645,7 @@ class App {
         const partnerName = this.getStudentDisplayName(partner);
         const messages = window.db.getMessages().filter(m => m.matchId === match.id);
         const lastMsg = messages[messages.length - 1];
+        const matchUnreadCount = messages.filter(m => m.senderId !== student.id && !m.read).length;
 
         const item = document.createElement('div');
         item.className = `chat-item ${this.activeMatchId === match.id ? 'active' : ''}`;
@@ -1605,6 +1653,8 @@ class App {
         let badgeStatus = '';
         if (match.paused) {
           badgeStatus = `<span class="badge badge-danger btn-small" style="font-size: 0.6rem; padding: 0.1rem 0.35rem;">${this.translate('paused_status', 'Paused')}</span>`;
+        } else if (matchUnreadCount > 0) {
+          badgeStatus = `<span class="badge badge-danger alert-pulse" style="font-size: 0.6rem; padding: 0.1rem 0.35rem; border-radius: 10px; line-height: 1;">${matchUnreadCount}</span>`;
         }
 
         const partnerSchool = partner ? window.db.getSchool(partner.schoolId) : null;
