@@ -1094,7 +1094,7 @@ class App {
         levelTextColor = "#f472b6";
         levelBorderColor = "rgba(236, 72, 153, 0.25)";
       } else if (msgCount >= 10) {
-        connectionLevel = translations.level_great_penpals || "Great Pen Pals! 🌟";
+        connectionLevel = translations.level_great_connections || "Great Connections! 🌟";
         levelBadgeColor = "rgba(245, 158, 11, 0.15)";
         levelTextColor = "#fbbf24";
         levelBorderColor = "rgba(245, 158, 11, 0.25)";
@@ -1438,7 +1438,7 @@ class App {
         statusBanner.style.background = 'rgba(16, 185, 129, 0.1)';
         statusBanner.style.border = '1px solid rgba(16, 185, 129, 0.2)';
         statusBanner.style.color = '#34d399';
-        statusBanner.textContent = this.translate('biography_approved', '✅ Biography approved and visible to your pen pal.');
+        statusBanner.textContent = this.translate('biography_approved', '✅ Biography approved and visible to your connection.');
       } else if (student.personalBiogStatus === 'Rejected') {
         statusBanner.style.display = 'block';
         statusBanner.style.padding = '0.5rem 0.75rem';
@@ -1494,7 +1494,7 @@ class App {
       emptyNote.style.color = 'var(--text-muted)';
       emptyNote.style.padding = '1rem';
       emptyNote.style.textAlign = 'center';
-      emptyNote.textContent = this.translate('no_matched_pen_pals', 'No matched pen pals yet.');
+      emptyNote.textContent = this.translate('no_matched_pen_pals', 'No active connections yet.');
       chatListContainer.appendChild(emptyNote);
     } else {
       activeMatches.forEach(match => {
@@ -2948,7 +2948,7 @@ class App {
       window.db.proposeMatch('1-to-1', [studentId, null], ownSchoolId, partnerSchoolId);
     });
 
-    alert(`Successfully sent match proposals for ${this.selectedMatchIds.length} student(s)! The partner school coordinator will review and assign pen pals.`);
+    alert(`Successfully sent match proposals for ${this.selectedMatchIds.length} student(s)! The partner school coordinator will review and assign connections.`);
     
     this.selectedMatchIds = [];
     this.refreshUI();
@@ -2966,7 +2966,7 @@ class App {
 
     window.db.confirmMatch(matchId, assignedStudentId, teacherName);
     delete this.tempAssignments[matchId];
-    alert('Match proposal approved! The pen pal link is now active and students can message each other.');
+    alert('Match proposal approved! The connection link is now active and students can message each other.');
     this.refreshUI();
   }
 
@@ -3372,7 +3372,7 @@ class App {
   }
 
   deleteActiveMatch(matchId) {
-    if (confirm(this.translate('disband_confirm_prompt', 'Are you sure you want to disband this penpal match? This will unlink the students and reset them to unmatched.'))) {
+    if (confirm(this.translate('disband_confirm_prompt', 'Are you sure you want to disband this connection match? This will unlink the students and reset them to unmatched.'))) {
       window.db.deleteMatch(matchId);
       alert(this.translate('disband_success_msg', 'Match disbanded successfully.'));
       this.refreshUI();
@@ -3719,7 +3719,7 @@ class App {
 
     let msg = this.translate('disconnect_confirm_base', 'Are you sure you want to disconnect from {partnerName}? You will no longer be able to propose new match suggestions.').replace('{partnerName}', partnerName);
     if (matches.length > 0) {
-      msg += '\n\n' + this.translate('disconnect_confirm_matches_count', 'There are currently {count} active penpal matches between your schools.').replace('{count}', matches.length);
+      msg += '\n\n' + this.translate('disconnect_confirm_matches_count', 'There are currently {count} active connection matches between your schools.').replace('{count}', matches.length);
     }
 
     if (confirm(msg)) {
@@ -4537,7 +4537,7 @@ class App {
       
       window.db.addNews({
         title: `Published: ${art?.title}`,
-        content: `Read a new cultural article by student ${author ? author.name : 'Exchange Pen Pal'}: "${art?.content.slice(0, 100)}..."`,
+        content: `Read a new cultural article by student ${author ? author.name : 'Exchange Connection'}: "${art?.content.slice(0, 100)}..."`,
         postedBy: reviewer,
         schoolId: art?.schoolId
       });
@@ -5704,7 +5704,7 @@ class App {
     if (matches.length === 0) {
       matchesHtml = `
         <div style="font-size: 0.85rem; color: var(--text-muted); padding: 0.5rem 0; font-style: italic;">
-          ${this.translate('no_matched_pen_pals', 'No matched pen pals yet.')}
+          ${this.translate('no_matched_pen_pals', 'No active connections yet.')}
         </div>
       `;
     } else {
@@ -5816,7 +5816,7 @@ class App {
       ${isStaff ? `
       <!-- Matched Pen Pals Section -->
       <div style="margin-top: 0.5rem;">
-        <h5 style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem;">${this.translate('matched_pen_pals_label', 'Matched Pen Pals')} (${matches.length})</h5>
+        <h5 style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem;">${this.translate('matched_pen_pals_label', 'Connected Partners')} (${matches.length})</h5>
         ${matchesHtml}
       </div>
 
@@ -8389,7 +8389,7 @@ class App {
     const checked = document.querySelectorAll('.break-link-checkbox:checked');
     if (checked.length === 0) return;
     
-    if (confirm(this.translate('break_selected_links_confirm_prompt', 'Are you sure you want to end active pen pal links for the {count} selected student(s)? This will unlink them and reset them to Unmatched status.').replace('{count}', checked.length))) {
+    if (confirm(this.translate('break_selected_links_confirm_prompt', 'Are you sure you want to end active connection links for the {count} selected student(s)? This will unlink them and reset them to Unmatched status.').replace('{count}', checked.length))) {
       const teacher = this.getLoggedTeacher();
       const teacherName = teacher ? teacher.name : this.translate('teacher_label', 'Teacher');
       const selectedIds = Array.from(checked).map(cb => cb.value);

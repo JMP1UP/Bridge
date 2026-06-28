@@ -29,7 +29,7 @@
           <div class="login-section-card">
             <div class="login-section-icon">🎓</div>
             <h3>Student Portal</h3>
-            <p>Chat with your pen pal, write articles, and build project slide decks.</p>
+            <p>Chat with your connection, write articles, and build project slide decks.</p>
             <div class="form-group" style="width: 100%; margin-bottom: 1rem;">
               <select id="login-student-select" class="form-control login-select">
                 <!-- Dynamically populated by JS -->
@@ -168,9 +168,9 @@
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
               <span data-localize="stud_discoveries">Cultural Discoveries</span>
             </a></li>
-            <li><a class="nav-link" data-tab="stud-chat">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-              <span data-localize="stud_chat">My Pen Pals</span>
+            <li><a class="nav-link" id="tab-stud-chat" onclick="app.switchTab('stud-chat')">
+              <svg><use href="#icon-chat"></use></svg>
+              <span data-localize="stud_chat">My Connections</span>
             </a></li>
             <li><a class="nav-link" data-tab="stud-culture">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
@@ -196,9 +196,9 @@
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
               <span data-localize="teach_students">Student List</span>
             </a></li>
-            <li><a class="nav-link" data-tab="teach-matching">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><polyline points="16 11 18 13 22 9"></polyline></svg>
-              <span data-localize="teach_matching">Penpal Matching</span>
+            <li><a class="nav-link" id="tab-teach-matching" onclick="app.switchTab('teach-matching')">
+              <svg><use href="#icon-matching"></use></svg>
+              <span data-localize="teach_matching">Connections Matching</span>
             </a></li>
             <li><a class="nav-link" data-tab="teach-partnerships">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
@@ -336,10 +336,10 @@
               </div>
             </div>
 
-            <!-- My Pen Pal Card (Right Column) -->
+            <!-- My Connection Card (Right Column) -->
             <div class="panel student-welcome-card" id="student-welcome-card-panel">
               <div class="panel-header">
-                <h2 class="panel-title">👥 <span data-localize="my_penpal">My Pen Pal</span></h2>
+                <h2 class="panel-title">👥 <span data-localize="my_penpal">My Connection</span></h2>
                 <span class="badge badge-info" id="student-match-badge">Matching Status</span>
               </div>
               <div id="student-welcome-details">
@@ -389,7 +389,7 @@
           <!-- Chat sidebar -->
           <div class="chat-sidebar">
             <div class="chat-sidebar-header">
-              <span data-localize="my_penpals">My Pen Pals</span>
+              <span data-localize="my_penpals">My Connections</span>
             </div>
             <div class="chat-list" id="student-chat-list">
               <!-- Chat list populated by JS -->
@@ -403,7 +403,7 @@
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-secondary); text-align: center; padding: 2rem;" id="chat-empty-state">
               <span style="font-size: 3rem;">✉️</span>
               <h3 style="margin-top: 1rem;">No Conversation Selected</h3>
-              <p style="font-size: 0.85rem;">Select a pen pal from the list to start chatting.</p>
+              <p style="font-size: 0.85rem;">Select a connection from the list to start chatting.</p>
             </div>
 
             <!-- Active chat feed -->
@@ -581,7 +581,7 @@
             </div>
             <div class="form-group">
               <label for="stud-setting-biog">Personal Biography</label>
-              <textarea class="form-control" id="stud-setting-biog" style="height: 100px; resize: vertical;" placeholder="Tell your pen pal about yourself (e.g. hobbies, favorite music, sports)..."></textarea>
+              <textarea class="form-control" id="stud-setting-biog" style="height: 100px; resize: vertical;" placeholder="Tell your connection about yourself (e.g. hobbies, favorite music, sports)..."></textarea>
               <div id="stud-biog-status-banner" style="margin-top: 0.5rem; font-size: 0.8rem; font-weight: 500;"></div>
             </div>
             <div style="display: flex; justify-content: flex-end; margin-top: -0.5rem; margin-bottom: 0.5rem;">
@@ -976,7 +976,7 @@
         <!-- Matching Tool Subtabs Navigation -->
         <div class="subtabs-nav">
           <button class="subtab-btn active" id="subtab-pair-btn" onclick="app.switchMatchingSubtab('pair')" data-localize="matching_penpal_matching">
-            Penpal Matching
+            Connections Matching
           </button>
           <button class="subtab-btn" id="subtab-requests-btn" onclick="app.switchMatchingSubtab('requests')">
             <span data-localize="matching_match_requests">Match Requests</span>
@@ -994,7 +994,7 @@
         <div id="matching-subtab-pair">
           <div class="panel" style="margin-bottom: 1.5rem;">
             <div class="panel-header">
-              <h2 class="panel-title">🤝 <span data-localize="matching_center_title">Pen Pal Matching Center</span></h2>
+              <h2 class="panel-title">🤝 <span data-localize="matching_center_title">Connections Matching Center</span></h2>
               <button class="btn btn-primary" id="propose-match-btn" disabled data-localize="send_profiles_matching_btn">Send Profiles for Matching</button>
             </div>
             <p style="font-size: 0.85rem; color: var(--text-secondary);" data-localize="matching_center_desc">Select one or more unmatched students from your school on the left, then select the target partner school from the dropdown on the right to send matching suggestions. To protect student privacy under GDPR, all requests are sent anonymously (showing only first name, age, gender, and biography details).</p>
@@ -1807,7 +1807,7 @@
         <button class="modal-close" onclick="app.closeModal('report-concern-modal')">&times;</button>
       </div>
       <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem;" data-localize="safety_report_desc">
-        If you feel uncomfortable, or if your pen pal sent something concerning, report it below. Your teacher will review the chat history immediately and the conversation will be paused for safety.
+        If you feel uncomfortable, or if your connection sent something concerning, report it below. Your teacher will review the chat history immediately and the conversation will be paused for safety.
       </p>
       <form id="report-concern-form">
         <div class="form-group">
@@ -2047,7 +2047,7 @@
   <div class="modal-overlay" id="assign-student-modal">
     <div class="modal-content" style="max-width: 600px;">
       <div class="modal-header">
-        <h3 class="panel-title" data-localize="assign_student_proposal_title">Assign Local Student to Pen Pal Proposal</h3>
+        <h3 class="panel-title" data-localize="assign_student_proposal_title">Assign Local Student to Connection Proposal</h3>
         <button class="modal-close" onclick="app.closeModal('assign-student-modal')">&times;</button>
       </div>
       <div style="display: flex; flex-direction: column; gap: 1.25rem;">
@@ -2063,7 +2063,7 @@
             <!-- Populated dynamically by JS -->
           </div>
           <div id="assign-disclaimer-warning" style="display: none; font-size: 0.75rem; color: #ffb020; margin-top: 0.75rem; font-weight: 600;" data-localize="warning_already_matched">
-            ⚠️ Note: This student is already matched. Confirming will pair them with an additional pen pal.
+            ⚠️ Note: This student is already matched. Confirming will pair them with an additional connection.
           </div>
         </div>
 
@@ -2209,7 +2209,7 @@
         <button class="modal-close" onclick="app.closeModal('break-student-links-modal')">&times;</button>
       </div>
       <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0.75rem 0; line-height: 1.4;" data-localize="selective_link_breaking_desc">
-        Select the matched students whose pen pal pairings you want to end. Selective link breaking will deactivate their matches and return both students to Unmatched.
+        Select the matched students whose connection pairings you want to end. Selective link breaking will deactivate their matches and return both students to Unmatched.
       </p>
       
       <div style="margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--panel-border);">
@@ -2240,7 +2240,7 @@
       <form id="post-announcement-form" onsubmit="app.submitPostAnnouncement(event)" style="display: flex; flex-direction: column; gap: 1rem; margin-top: 0.75rem;">
         <div class="form-group">
           <label for="announcement-title" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.25rem;" data-localize="announcement_title_label">Announcement Title</label>
-          <input type="text" id="announcement-title" class="form-control" placeholder="e.g. Winter Holiday Pen Pal Party, New Writing Prompt..." required data-localize="placeholder_announcement_title">
+          <input type="text" id="announcement-title" class="form-control" placeholder="e.g. Winter Holiday Connection Party, New Writing Prompt..." required data-localize="placeholder_announcement_title">
         </div>
         <div class="form-group">
           <label for="announcement-content" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.25rem;" data-localize="announcement_details_label">Announcement Details</label>
