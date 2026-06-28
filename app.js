@@ -8506,8 +8506,34 @@ class App {
     if (galleryGrid) {
       galleryGrid.innerHTML = '';
       
+      const schoolFilterSelect = document.getElementById('proj-filter-school');
+      if (schoolFilterSelect && (!schoolFilterSelect.dataset.initialized || schoolFilterSelect.dataset.lastTeacherId !== teacher.id)) {
+        const currentVal = schoolFilterSelect.value;
+        const allProjs = window.db.getProjects().filter(p => (p.creatorSchoolId === schoolId || p.targetSchoolId === schoolId) && p.status !== 'Cancelled');
+        const partnerSchoolIds = Array.from(new Set(allProjs.map(p => p.creatorSchoolId === schoolId ? p.targetSchoolId : p.creatorSchoolId)));
+        
+        schoolFilterSelect.innerHTML = `<option value="all">All Schools</option>`;
+        partnerSchoolIds.forEach(psId => {
+          const sch = window.db.getSchool(psId);
+          if (sch) {
+            const flag = this.getSchoolFlag(sch.country);
+            const opt = document.createElement('option');
+            opt.value = psId;
+            opt.textContent = `${flag} ${sch.name}`;
+            schoolFilterSelect.appendChild(opt);
+          }
+        });
+        schoolFilterSelect.value = currentVal || 'all';
+        if (schoolFilterSelect.selectedIndex === -1) {
+          schoolFilterSelect.value = 'all';
+        }
+        schoolFilterSelect.dataset.initialized = 'true';
+        schoolFilterSelect.dataset.lastTeacherId = teacher.id;
+      }
+
       const searchQuery = document.getElementById('proj-filter-search')?.value.trim().toLowerCase() || '';
       const filterType = document.getElementById('proj-filter-type')?.value || 'all';
+      const filterSchool = document.getElementById('proj-filter-school')?.value || 'all';
       const filterStatus = document.getElementById('proj-filter-status')?.value || 'all';
 
       let activeProjects = window.db.getProjects()
@@ -8531,6 +8557,15 @@ class App {
         activeProjects = activeProjects.filter(p => !p.isStaffProject);
       } else if (filterType === 'staff') {
         activeProjects = activeProjects.filter(p => p.isStaffProject);
+      }
+
+      // Filter by partner school
+      if (filterSchool !== 'all') {
+        activeProjects = activeProjects.filter(p => {
+          const isCreator = p.creatorSchoolId === schoolId;
+          const partnerSchoolId = isCreator ? p.targetSchoolId : p.creatorSchoolId;
+          return partnerSchoolId === filterSchool;
+        });
       }
 
       // Filter by status
@@ -8729,7 +8764,7 @@ class App {
                 <span class="badge" style="font-size: 0.72rem; padding: 0.15rem 0.45rem; font-weight: 700; color: #60a5fa; background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.25); border-radius: 4px;">👥 Student Exchange</span>
               `}
               <h4 style="font-size: 1.15rem; font-weight: 800; margin: 0; color: var(--text-primary);">${p.title}</h4>
-              <span style="font-size: 1rem; color: var(--text-muted);">${this.translate('partner_label', 'Partner')}: ${partnerSchool ? partnerSchool.name : this.translate('unknown_school', 'Unknown School')}</span>
+              <span style="font-size: 1rem; color: var(--text-muted);">${this.translate('partner_label', 'Partner')}: ${partnerSchool ? `${this.getSchoolFlag(partnerSchool.country)} ${partnerSchool.name}` : this.translate('unknown_school', 'Unknown School')}</span>
             </div>
 
             <p style="font-size: 1rem; color: var(--text-secondary); margin: 0; line-height: 1.45;">
@@ -8811,6 +8846,10 @@ class App {
   switchProjectsSubtab(tabName) {
     this.projectsSubTab = tabName;
     this.selectedProjectBroadcastIds = [];
+    const schoolFilterSelect = document.getElementById('proj-filter-school');
+    if (schoolFilterSelect) {
+      schoolFilterSelect.removeAttribute('data-initialized');
+    }
     this.renderTeacherProjects();
   }
 
