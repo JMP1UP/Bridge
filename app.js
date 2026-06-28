@@ -217,6 +217,8 @@ class App {
       });
     });
 
+    this.initStaffArticleListeners();
+
     // Theme Toggle
     document.getElementById('theme-toggle-btn').addEventListener('click', () => this.toggleTheme());
     
@@ -1739,9 +1741,15 @@ class App {
         ${combinedDiscoveries.map(item => {
           if (item.feedType === 'article') {
             const art = item;
-            const author = window.db.getStudent(art.authorId);
             const school = window.db.getSchool(art.schoolId);
-            const authorName = this.getStudentDisplayName(author);
+            let authorName = '';
+            if (art.authorType === 'staff') {
+              const staffObj = window.db.getCoordinators().find(c => c.id === art.authorId);
+              authorName = staffObj ? `${staffObj.name} (${this.translate('staff_label', 'Staff')})` : this.translate('unknown_staff_author', 'Staff Member');
+            } else {
+              const author = window.db.getStudent(art.authorId);
+              authorName = this.getStudentDisplayName(author);
+            }
             const schoolFlag = this.getSchoolFlag(school?.country);
             const dateStr = new Date(art.submittedAt).toLocaleDateString();
             const photoHtml = art.photoUrl
@@ -4829,6 +4837,29 @@ class App {
 
   // Renders student article editorial desk submissions
   renderTeacherEditorDesk() {
+    if (!this.editorialSubTab) {
+      this.editorialSubTab = 'student';
+    }
+    const studentBtn = document.getElementById('subtab-btn-editor-student');
+    const staffBtn = document.getElementById('subtab-btn-editor-staff');
+    const studentView = document.getElementById('editor-student-subview');
+    const staffView = document.getElementById('editor-staff-subview');
+    if (studentBtn && staffBtn && studentView && staffView) {
+      studentBtn.classList.remove('active');
+      staffBtn.classList.remove('active');
+      studentView.style.display = 'none';
+      staffView.style.display = 'none';
+      if (this.editorialSubTab === 'student') {
+        studentBtn.classList.add('active');
+        studentView.style.display = 'block';
+      } else {
+        staffBtn.classList.add('active');
+        staffView.style.display = 'block';
+        this.renderStaffPublications();
+        return;
+      }
+    }
+
     const container = document.getElementById('editorial-desk-list');
     if (!container) return;
 
@@ -5017,6 +5048,177 @@ class App {
     alert(this.translate('article_reviewed', 'Article reviewed: {status}').replace('{status}', this.translate(status.toLowerCase() + '_status', status)));
   }
 
+  switchEditorialSubtab(subtabName) {
+    this.editorialSubTab = subtabName;
+    const studentBtn = document.getElementById('subtab-btn-editor-student');
+    const staffBtn = document.getElementById('subtab-btn-editor-staff');
+    
+    const studentView = document.getElementById('editor-student-subview');
+    const staffView = document.getElementById('editor-staff-subview');
+
+    if (!studentBtn || !staffBtn || !studentView || !staffView) return;
+
+    studentBtn.classList.remove('active');
+    staffBtn.classList.remove('active');
+    
+    studentView.style.display = 'none';
+    staffView.style.display = 'none';
+
+    if (subtabName === 'student') {
+      studentBtn.classList.add('active');
+      studentView.style.display = 'block';
+      this.renderTeacherEditorDesk();
+    } else if (subtabName === 'staff') {
+      staffBtn.classList.add('active');
+      staffView.style.display = 'block';
+      this.renderStaffPublications();
+    }
+  }
+
+  renderStaffPublications() {
+    const listContainer = document.getElementById('published-staff-articles-list');
+    if (!listContainer) return;
+
+    const teacher = this.getLoggedTeacher();
+    const ownSchoolId = teacher ? teacher.schoolId : 'school_1';
+
+    const staffArticles = window.db.getArticles().filter(a => a.schoolId === ownSchoolId && a.authorType === 'staff');
+
+    if (staffArticles.length === 0) {
+      listContainer.innerHTML = `<p style="font-size: 0.95rem; color: var(--text-muted); padding: 1rem 0;">${this.translate('no_published_staff_articles', 'No staff articles published yet.')}</p>`;
+      return;
+    }
+
+    listContainer.innerHTML = staffArticles.map(art => {
+      const dateStr = new Date(art.submittedAt).toLocaleDateString();
+      const photoHtml = art.photoUrl ? `<img src="${art.photoUrl}" alt="article photo" style="width: 100px; height: 75px; object-fit: cover; border-radius: 6px;" />` : '';
+      return `
+        <div style="display: flex; gap: 1rem; align-items: center; padding: 1rem; background: rgba(255,255,255,0.01); border: 1px solid var(--panel-border); border-radius: 8px;">
+          ${photoHtml}
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 0.25rem;">
+            <h4 style="font-weight: 700; font-size: 1.1rem; margin: 0; color: var(--text-primary);">${art.title}</h4>
+            <span style="font-size: 0.85rem; color: var(--text-muted);">${this.translate('published_on', 'Published on')} ${dateStr}</span>
+            <p style="font-size: 0.95rem; color: var(--text-secondary); line-height: 1.4; margin: 0.25rem 0 0 0;">${art.content.substring(0, 150)}...</p>
+          </div>
+          <button class="btn btn-secondary btn-small" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2);" onclick="app.deleteStaffArticle('${art.id}')">
+            ${this.translate('delete_btn', 'Delete')}
+          </button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  handleStaffArticleSubmit(e) {
+    e.preventDefault();
+    const title = document.getElementById('staff-article-title').value.trim();
+    const content = document.getElementById('staff-article-content').value.trim();
+    
+    if (!title || !content) return;
+
+    const teacher = this.getLoggedTeacher();
+    const ownSchoolId = teacher ? teacher.schoolId : 'school_1';
+    const authorId = teacher ? teacher.id : 'coord_1';
+
+    const newArticle = {
+      id: 'art_' + Date.now(),
+      title,
+      content,
+      photoUrl: this.currentStaffArticlePhotoDataUrl || '',
+      schoolId: ownSchoolId,
+      authorId,
+      authorType: 'staff',
+      submittedAt: new Date().toISOString(),
+      status: 'Approved',
+      reviewedBy: teacher ? teacher.name : 'System'
+    };
+
+    const articles = window.db.getArticles();
+    articles.push(newArticle);
+    window.db.saveTable('articles', articles);
+
+    // Add log
+    window.db.addLog(
+      'Staff Article Published',
+      `Published staff article: "${title}"`,
+      `${this.translate('teacher_label', 'Teacher')} ${teacher ? teacher.name : 'Unknown'}`
+    );
+
+    alert(this.translate('staff_article_published_success', 'Staff article published successfully!'));
+    
+    // Reset form
+    document.getElementById('staff-article-form').reset();
+    this.currentStaffArticlePhotoDataUrl = '';
+    const previewImg = document.getElementById('staff-article-photo-preview');
+    if (previewImg) {
+      previewImg.src = '';
+      previewImg.style.display = 'none';
+    }
+    const placeholderSpan = document.getElementById('staff-article-photo-placeholder');
+    if (placeholderSpan) placeholderSpan.style.display = 'block';
+    const removeBtn = document.getElementById('staff-article-photo-remove-btn');
+    if (removeBtn) removeBtn.style.display = 'none';
+
+    this.renderStaffPublications();
+    this.refreshUI();
+  }
+
+  deleteStaffArticle(id) {
+    if (confirm(this.translate('delete_article_confirm', 'Are you sure you want to delete this staff article?'))) {
+      const articles = window.db.getArticles().filter(a => a.id !== id);
+      window.db.saveTable('articles', articles);
+      this.renderStaffPublications();
+      this.refreshUI();
+    }
+  }
+
+  initStaffArticleListeners() {
+    const uploadBtn = document.getElementById('staff-article-photo-upload-btn');
+    const uploadInput = document.getElementById('staff-article-photo-upload');
+    const previewImg = document.getElementById('staff-article-photo-preview');
+    const placeholderSpan = document.getElementById('staff-article-photo-placeholder');
+    const removeBtn = document.getElementById('staff-article-photo-remove-btn');
+
+    this.currentStaffArticlePhotoDataUrl = '';
+
+    if (uploadBtn && uploadInput) {
+      uploadBtn.addEventListener('click', () => uploadInput.click());
+      uploadInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          if (file.size > 1.5 * 1024 * 1024) {
+            alert(this.translate('image_too_large_alert', 'Image file is too large. Please select an image smaller than 1.5MB.'));
+            uploadInput.value = '';
+            this.currentStaffArticlePhotoDataUrl = '';
+            previewImg.style.display = 'none';
+            if (placeholderSpan) placeholderSpan.style.display = 'block';
+            if (removeBtn) removeBtn.style.display = 'none';
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            this.currentStaffArticlePhotoDataUrl = event.target.result;
+            previewImg.src = event.target.result;
+            previewImg.style.display = 'block';
+            if (placeholderSpan) placeholderSpan.style.display = 'none';
+            if (removeBtn) removeBtn.style.display = 'inline-block';
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+
+    if (removeBtn) {
+      removeBtn.addEventListener('click', () => {
+        this.currentStaffArticlePhotoDataUrl = '';
+        previewImg.src = '';
+        previewImg.style.display = 'none';
+        if (placeholderSpan) placeholderSpan.style.display = 'block';
+        removeBtn.style.display = 'none';
+        if (uploadInput) uploadInput.value = '';
+      });
+    }
+  }
+
   // Load teacher settings form
   populateTeacherSettings() {
     this.switchSettingsSubtab(this.settingsSubTab || 'profile');
@@ -5036,6 +5238,8 @@ class App {
         nameInput.value = teacher.name || '';
       }
       document.getElementById('coordinator-bio-input').value = teacher.bio || '';
+      document.getElementById('coordinator-subjects-input').value = teacher.subjects || '';
+      document.getElementById('coordinator-interests-input').value = teacher.interests || '';
       
       // Coordinator Photo Preview
       const coordPreview = document.getElementById('coordinator-photo-preview');
@@ -5187,12 +5391,14 @@ class App {
     }
 
     const bio = document.getElementById('coordinator-bio-input').value.trim();
+    const subjects = document.getElementById('coordinator-subjects-input').value.trim();
+    const interests = document.getElementById('coordinator-interests-input').value.trim();
 
     const teacher = this.getLoggedTeacher();
     const schoolId = teacher ? teacher.schoolId : 'school_1';
     window.db.updateSchool(schoolId, { description, logoUrl, photoUrl });
     if (teacher) {
-      window.db.updateCoordinator(teacher.id, { name, bio, photoUrl: coordPhotoUrl });
+      window.db.updateCoordinator(teacher.id, { name, bio, photoUrl: coordPhotoUrl, subjects, interests });
     }
 
     alert(this.translate('school_profile_updated', 'School profile updated successfully! Matches and exchange partner students will see the updated spotlight.'));
@@ -5856,21 +6062,21 @@ class App {
       coordinatorsHtml = `<p style="font-size: 0.8rem; color: var(--text-muted); font-style: italic; padding: 0.5rem 0;">${this.translate('no_coordinators_registered', 'No coordinators registered for this school.')}</p>`;
     } else {
       coordinatorsHtml = `
-        <div class="table-container" style="max-height: 150px; overflow-y: auto; margin-top: 0.5rem; border: 1px solid var(--panel-border); border-radius: 8px;">
-          <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+        <div class="table-container" style="max-height: 180px; overflow-y: auto; margin-top: 0.5rem; border: 1px solid var(--panel-border); border-radius: 8px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 1rem;">
             <thead>
               <tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--panel-border);">
-                <th style="padding: 0.5rem; text-align: left;">${this.translate('th_name', 'Name')}</th>
-                <th style="padding: 0.5rem; text-align: left;">${this.translate('th_email', 'Email')}</th>
-                <th style="padding: 0.5rem; text-align: left;">${this.translate('th_status', 'Status')}</th>
-                <th style="padding: 0.5rem; text-align: left;">${this.translate('th_actions', 'Actions')}</th>
+                <th style="padding: 0.65rem 0.5rem; text-align: left;">${this.translate('th_name', 'Name')}</th>
+                <th style="padding: 0.65rem 0.5rem; text-align: left;">${this.translate('th_email', 'Email')}</th>
+                <th style="padding: 0.65rem 0.5rem; text-align: left;">${this.translate('th_status', 'Status')}</th>
+                <th style="padding: 0.65rem 0.5rem; text-align: left;">${this.translate('th_actions', 'Actions')}</th>
               </tr>
             </thead>
             <tbody>
               ${schoolCoords.map(c => {
                 const adminBadge = c.isSchoolAdmin 
-                  ? `<span class="badge badge-success" style="font-size: 0.65rem; padding: 0.15rem 0.45rem;">${this.translate('admin_role', 'Admin')}</span>` 
-                  : `<span class="badge badge-secondary" style="font-size: 0.65rem; padding: 0.15rem 0.45rem;">${this.translate('staff_role', 'Staff')}</span>`;
+                  ? `<span class="badge badge-success" style="font-size: 0.85rem; padding: 0.2rem 0.5rem;">${this.translate('admin_role', 'Admin')}</span>` 
+                  : `<span class="badge badge-secondary" style="font-size: 0.85rem; padding: 0.2rem 0.5rem;">${this.translate('staff_role', 'Staff')}</span>`;
                 
                 const isSystemAdmin = this.currentRole === 'admin';
                 const isOwnSchoolTeacher = this.currentRole === 'teacher' && schoolId === 'school_1';
@@ -5879,17 +6085,21 @@ class App {
                 if (isSystemAdmin || isOwnSchoolTeacher) {
                   const btnLabel = c.isSchoolAdmin ? this.translate('revoke_admin_btn', 'Revoke Admin') : this.translate('grant_admin_btn', 'Grant Admin');
                   const btnClass = c.isSchoolAdmin ? 'btn-secondary' : 'btn-primary';
-                  actionsHtml = `<button class="btn ${btnClass} btn-small" style="font-size: 0.65rem; padding: 0.2rem 0.5rem;" onclick="app.toggleCoordinatorAdminInsideModal('${c.id}', '${schoolId}')">${btnLabel}</button>`;
+                  actionsHtml = `<button class="btn ${btnClass} btn-small" style="font-size: 0.9rem; padding: 0.35rem 0.75rem;" onclick="app.toggleCoordinatorAdminInsideModal('${c.id}', '${schoolId}')">${btnLabel}</button>`;
                 } else if (this.currentRole === 'teacher' && schoolId !== 'school_1') {
-                  actionsHtml = `<button class="btn btn-primary btn-small" style="font-size: 0.65rem; padding: 0.2rem 0.5rem;" onclick="app.startCoordinatorChat('${c.id}')">💬 ${this.translate('message_btn', 'Message')}</button>`;
+                  actionsHtml = `<button class="btn btn-primary btn-small" style="font-size: 0.9rem; padding: 0.35rem 0.75rem;" onclick="app.startCoordinatorChat('${c.id}')">💬 ${this.translate('message_btn', 'Message')}</button>`;
                 }
                 
                 return `
                   <tr style="border-bottom: 1px solid var(--panel-border);">
-                    <td style="padding: 0.5rem; font-weight: 600;">${c.name}</td>
-                    <td style="padding: 0.5rem; color: var(--text-secondary);"><a href="mailto:${c.email}" style="color: var(--secondary); text-decoration: underline;">${c.email}</a></td>
-                    <td style="padding: 0.5rem;">${adminBadge}</td>
-                    <td style="padding: 0.5rem;">
+                    <td style="padding: 0.65rem 0.5rem; font-weight: 600; line-height: 1.45;">
+                      <div>${c.name}</div>
+                      ${c.subjects ? `<div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.2rem; font-weight: normal;">📚 <strong>Subjects:</strong> ${c.subjects}</div>` : ''}
+                      ${c.interests ? `<div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.1rem; font-weight: normal;">🌟 <strong>Interests:</strong> ${c.interests}</div>` : ''}
+                    </td>
+                    <td style="padding: 0.65rem 0.5rem; color: var(--text-secondary);"><a href="mailto:${c.email}" style="color: var(--secondary); text-decoration: underline;">${c.email}</a></td>
+                    <td style="padding: 0.65rem 0.5rem;">${adminBadge}</td>
+                    <td style="padding: 0.65rem 0.5rem;">
                       ${actionsHtml}
                     </td>
                   </tr>
@@ -6517,7 +6727,14 @@ class App {
   openStudentArticleDetail(articleId) {
     const art = window.db.getArticles().find(a => a.id === articleId);
     if (!art) return;
-    const author = window.db.getStudent(art.authorId);
+    let authorName = '';
+    if (art.authorType === 'staff') {
+      const staffObj = window.db.getCoordinators().find(c => c.id === art.authorId);
+      authorName = staffObj ? `${staffObj.name} (${this.translate('staff_label', 'Staff')})` : 'Staff Member';
+    } else {
+      const author = window.db.getStudent(art.authorId);
+      authorName = author ? this.getStudentDisplayName(author) : 'Unknown Author';
+    }
     const school = window.db.getSchool(art.schoolId);
 
     const container = document.getElementById('article-detail-content');
@@ -6538,7 +6755,7 @@ class App {
         <div>
           <h4 style="font-weight: 700; font-size: 1.25rem; margin: 0; color: var(--text-primary);">${art.title}</h4>
           <span style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 500;">
-            By ${author ? this.getStudentDisplayName(author) : 'Unknown Author'} • ${school ? school.name : 'Unknown School'} (${art.language.toUpperCase()})
+            By ${authorName} • ${school ? school.name : 'Unknown School'} ${art.language ? `(${art.language.toUpperCase()})` : ''}
           </span>
         </div>
         <div>${statusBadge}</div>
