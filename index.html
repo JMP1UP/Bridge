@@ -1498,30 +1498,30 @@
           <!-- 1. Active Gallery Subview Container -->
           <div id="teach-projects-gallery-subview" style="display: flex; flex-direction: column; gap: 1.5rem;">
             <!-- Bulk Broadcast Panel -->
-            <div class="panel" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
-              <h3 style="font-size: 0.95rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.35rem;">
+            <div class="panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+              <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
                 <span>📢</span> <span data-localize="bulk_message_broadcast_title">Bulk Message Broadcast</span>
               </h3>
-              <textarea class="form-control" id="broadcast-message-textarea" oninput="app.updateBroadcastSubmitButton()" placeholder="Type a broadcast message to selected project chats..." style="height: 60px; font-size: 0.8rem; resize: vertical;" data-localize="broadcast_message_textarea_placeholder"></textarea>
+              <textarea class="form-control" id="broadcast-message-textarea" oninput="app.updateBroadcastSubmitButton()" placeholder="Type a broadcast message to selected project chats..." style="height: 70px; font-size: 1rem; resize: vertical;" data-localize="broadcast_message_textarea_placeholder"></textarea>
               
               <!-- Broadcast Targeting Selector -->
-              <div style="display: flex; gap: 1.25rem; padding: 0.2rem 0; flex-wrap: wrap;" id="broadcast-target-wrapper">
-                <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; cursor: pointer; color: var(--text-primary);">
-                  <input type="radio" name="proto-broadcast-target" id="broadcast-target-selected" value="selected" checked onclick="app.setBroadcastTarget('selected')" style="accent-color: var(--primary);">
+              <div style="display: flex; gap: 1.5rem; padding: 0.2rem 0; flex-wrap: wrap;" id="broadcast-target-wrapper">
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; cursor: pointer; color: var(--text-primary);">
+                  <input type="radio" name="proto-broadcast-target" id="broadcast-target-selected" value="selected" checked onclick="app.setBroadcastTarget('selected')" style="accent-color: var(--primary); width: 16px; height: 16px;">
                   <span data-localize="selected_projects_only_label">Selected projects only</span> (<span id="broadcast-selected-count-label">0</span> <span data-localize="selected_suffix">selected</span>)
                 </label>
-                <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; cursor: pointer; color: var(--text-primary);">
-                  <input type="radio" name="proto-broadcast-target" id="broadcast-target-all" value="all" onclick="app.setBroadcastTarget('all')" style="accent-color: var(--primary);">
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; cursor: pointer; color: var(--text-primary);">
+                  <input type="radio" name="proto-broadcast-target" id="broadcast-target-all" value="all" onclick="app.setBroadcastTarget('all')" style="accent-color: var(--primary); width: 16px; height: 16px;">
                   <span data-localize="all_connected_projects_label">All connected projects</span> (<span id="broadcast-all-count-label">0</span>)
                 </label>
               </div>
 
-              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                  <button type="button" class="btn btn-secondary btn-small" id="broadcast-select-all-btn" onclick="app.toggleSelectAllBroadcast()" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;" data-localize="select_all_btn">Select All</button>
-                  <span id="broadcast-selected-count" style="font-size: 0.75rem; color: var(--text-secondary);">0 <span data-localize="selected_suffix">selected</span></span>
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                  <button type="button" class="btn btn-secondary btn-small" id="broadcast-select-all-btn" onclick="app.toggleSelectAllBroadcast()" style="font-size: 0.95rem; padding: 0.35rem 0.75rem;" data-localize="select_all_btn">Select All</button>
+                  <span id="broadcast-selected-count" style="font-size: 1rem; color: var(--text-secondary);">0 <span data-localize="selected_suffix">selected</span></span>
                 </div>
-                <button type="button" class="btn btn-primary btn-small" id="broadcast-submit-btn" onclick="app.sendBulkBroadcast()" style="font-size: 0.75rem; padding: 0.3rem 0.75rem;" data-localize="send_broadcast_btn">Send Broadcast</button>
+                <button type="button" class="btn btn-primary btn-small" id="broadcast-submit-btn" onclick="app.sendBulkBroadcast()" style="font-size: 0.95rem; padding: 0.4rem 1rem;" data-localize="send_broadcast_btn">Send Broadcast</button>
               </div>
             </div>
 
@@ -1576,12 +1576,19 @@
                   <textarea id="launch-proj-brief" class="form-control" style="height: 120px; resize: vertical; font-size: 0.95rem;" placeholder="Define the task, objectives, and topics for students to present..." required data-localize="launch_proj_brief_placeholder"></textarea>
                 </div>
                 <div class="form-group" style="margin-bottom: 0.75rem;">
+                  <label for="launch-proj-type" style="font-size: 0.85rem; font-weight: 600;" data-localize="project_collaboration_type_label">Collaboration Type</label>
+                  <select id="launch-proj-type" class="form-control" style="font-size: 0.95rem;" onchange="app.handleProjectTypeChange(this.value)">
+                    <option value="student" data-localize="student_to_student_option">Student-to-Student Collaboration</option>
+                    <option value="staff" data-localize="staff_to_staff_option">Staff-to-Staff Collaboration</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0.75rem;">
                   <label for="launch-proj-school" style="font-size: 0.85rem; font-weight: 600;" data-localize="target_partner_school_label">Target Partner School</label>
                   <select id="launch-proj-school" class="form-control" style="font-size: 0.95rem;">
                     <!-- Partner schools populated by JS -->
                   </select>
                 </div>
-                <div class="form-group" style="margin-bottom: 1rem;">
+                <div class="form-group" id="launch-proj-students-container" style="margin-bottom: 1rem;">
                   <label style="font-weight: 600; margin-bottom: 0.5rem; display: block; font-size: 0.85rem;" data-localize="select_local_students_add_label">Select Local Students to Add</label>
                   <div id="launch-proj-students-list" style="max-height: 180px; overflow-y: auto; border: 1px solid var(--panel-border); border-radius: 8px; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.35rem; background: rgba(0,0,0,0.15);">
                     <!-- Checkboxes for students populated by JS -->

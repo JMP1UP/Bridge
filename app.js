@@ -8126,46 +8126,57 @@ class App {
       } else {
         proposals.forEach(p => {
           const creatorSchool = window.db.getSchool(p.creatorSchoolId);
-          const creatorStudents = p.creatorSchoolStudentIds.map(sid => window.db.getStudent(sid)?.name || 'Unknown').join(', ');
-          
-          const localStudents = window.db.getStudents().filter(s => s.schoolId === schoolId);
-          let checkboxesHTML = '';
-          if (localStudents.length === 0) {
-            checkboxesHTML = `<span style="font-size: 0.75rem; color: var(--text-muted);">${this.translate('no_local_students_available', 'No local students available')}</span>`;
+          let participantsText = '';
+          if (p.isStaffProject) {
+            const creatorCoords = window.db.getCoordinators().filter(c => c.schoolId === p.creatorSchoolId);
+            participantsText = `${this.translate('creator_staff_label', 'Staff')}: ${creatorCoords.map(c => c.name).join(', ')}`;
           } else {
-            localStudents.forEach(s => {
-              checkboxesHTML += `
-                <div style="display: flex; align-items: center; gap: 0.35rem; padding: 0.15rem 0;">
-                  <input type="checkbox" class="chk-accept-${p.id}" value="${s.id}" id="chk-acc-${p.id}-${s.id}" style="cursor: pointer;">
-                  <label for="chk-acc-${p.id}-${s.id}" style="font-size: 0.75rem; cursor: pointer; color: var(--text-primary); margin: 0;">
-                    ${s.name}
-                  </label>
-                </div>
-              `;
-            });
+            const creatorStudents = p.creatorSchoolStudentIds.map(sid => window.db.getStudent(sid)?.name || 'Unknown').join(', ');
+            participantsText = `${this.translate('students_label', 'Students')}: ${creatorStudents}`;
+          }
+          
+          let checkboxesHTML = '';
+          if (p.isStaffProject) {
+            checkboxesHTML = `<div style="font-size: 1rem; font-weight: 600; color: var(--secondary);">${this.translate('staff_collaboration_status', 'Staff Collaboration')}</div>`;
+          } else {
+            const localStudents = window.db.getStudents().filter(s => s.schoolId === schoolId);
+            if (localStudents.length === 0) {
+              checkboxesHTML = `<span style="font-size: 0.95rem; color: var(--text-muted);">${this.translate('no_local_students_available', 'No local students available')}</span>`;
+            } else {
+              localStudents.forEach(s => {
+                checkboxesHTML += `
+                  <div style="display: flex; align-items: center; gap: 0.35rem; padding: 0.15rem 0;">
+                    <input type="checkbox" class="chk-accept-${p.id}" value="${s.id}" id="chk-acc-${p.id}-${s.id}" style="cursor: pointer;">
+                    <label for="chk-acc-${p.id}-${s.id}" style="font-size: 1rem; cursor: pointer; color: var(--text-primary); margin: 0;">
+                      ${s.name}
+                    </label>
+                  </div>
+                `;
+              });
+            }
           }
 
           const tr = document.createElement('tr');
           tr.style.borderBottom = '1px solid var(--panel-border)';
           tr.innerHTML = `
-            <td style="padding: 0.75rem; vertical-align: top;">
-              <div style="font-weight: 700; color: var(--text-primary); font-size: 0.85rem;">${p.title}</div>
-              <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem; line-height: 1.4; max-width: 250px;">
+            <td style="padding: 0.75rem; vertical-align: top; font-size: 1rem;">
+              <div style="font-weight: 700; color: var(--text-primary); font-size: 1.05rem;">${p.title}</div>
+              <div style="font-size: 1rem; color: var(--text-muted); margin-top: 0.2rem; line-height: 1.4; max-width: 250px;">
                 ${p.brief}
               </div>
             </td>
-            <td style="padding: 0.75rem; vertical-align: top;">
-              <div style="font-weight: 600; color: var(--secondary); font-size: 0.8rem;">${creatorSchool?.name || 'Partner School'}</div>
-              <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.15rem;">
-                ${this.translate('students_label', 'Students')}: ${creatorStudents}
+            <td style="padding: 0.75rem; vertical-align: top; font-size: 1rem;">
+              <div style="font-weight: 600; color: var(--secondary); font-size: 1rem;">${creatorSchool?.name || 'Partner School'}</div>
+              <div style="font-size: 1rem; color: var(--text-secondary); margin-top: 0.15rem;">
+                ${participantsText}
               </div>
             </td>
-            <td style="padding: 0.75rem; vertical-align: top;">
-              <div style="max-height: 100px; overflow-y: auto; border: 1px solid var(--panel-border); border-radius: 8px; padding: 0.4rem; background: rgba(0,0,0,0.15); width: 180px;">
+            <td style="padding: 0.75rem; vertical-align: top; font-size: 1rem;">
+              <div style="max-height: 120px; overflow-y: auto; border: 1px solid var(--panel-border); border-radius: 8px; padding: 0.4rem; background: rgba(0,0,0,0.15); width: 180px;">
                 ${checkboxesHTML}
               </div>
             </td>
-            <td style="padding: 0.75rem; vertical-align: middle;">
+            <td style="padding: 0.75rem; vertical-align: middle; font-size: 1rem;">
               <button class="btn btn-primary btn-small" onclick="app.acceptProject('${p.id}')" style="padding: 0.4rem 0.85rem; font-weight: 600; font-size: 0.75rem;">
                 ${this.translate('accept_proposal_btn', 'Accept Proposal')}
               </button>
@@ -8294,12 +8305,27 @@ class App {
           const partnerSchool = window.db.getSchool(partnerSchoolId);
           const isSelected = this.selectedProjectBroadcastIds.includes(p.id);
 
-          const localStudentNames = (isCreator ? p.creatorSchoolStudentIds : p.targetSchoolStudentIds)
-            .map(sid => window.db.getStudent(sid)?.name || 'Unknown')
-            .join(', ');
-          const partnerStudentNames = (isCreator ? p.targetSchoolStudentIds : p.creatorSchoolStudentIds)
-            .map(sid => window.db.getStudent(sid)?.name || 'Unknown')
-            .join(', ');
+          let localStudentNames = '';
+          let partnerStudentNames = '';
+          let myStaffNames = '';
+          let partnerStaffNames = '';
+
+          if (p.isStaffProject) {
+            const creatorSchoolCoords = window.db.getCoordinators().filter(c => c.schoolId === p.creatorSchoolId);
+            const creatorStaffNames = creatorSchoolCoords.map(c => c.name).join(', ');
+            const targetSchoolCoords = window.db.getCoordinators().filter(c => c.schoolId === p.targetSchoolId);
+            const targetStaffNames = targetSchoolCoords.map(c => c.name).join(', ');
+
+            myStaffNames = isCreator ? creatorStaffNames : targetStaffNames;
+            partnerStaffNames = isCreator ? targetStaffNames : creatorStaffNames;
+          } else {
+            localStudentNames = (isCreator ? p.creatorSchoolStudentIds : p.targetSchoolStudentIds)
+              .map(sid => window.db.getStudent(sid)?.name || 'Unknown')
+              .join(', ');
+            partnerStudentNames = (isCreator ? p.targetSchoolStudentIds : p.creatorSchoolStudentIds)
+              .map(sid => window.db.getStudent(sid)?.name || 'Unknown')
+              .join(', ');
+          }
 
           const card = document.createElement('div');
           card.className = 'panel';
@@ -8311,6 +8337,19 @@ class App {
           card.style.border = p.paused ? '1px solid rgba(245,158,11,0.3)' : '1px solid var(--panel-border)';
           card.style.background = p.paused ? 'rgba(245,158,11,0.02)' : 'var(--panel-bg)';
 
+          let participantsHTML = '';
+          if (p.isStaffProject) {
+            participantsHTML = `
+              <div><strong>${this.translate('your_staff_label', 'Your Staff:')}</strong> ${myStaffNames || 'None'}</div>
+              <div><strong>${this.translate('partner_staff_label', 'Partner Staff:')}</strong> ${partnerStaffNames || 'None'}</div>
+            `;
+          } else {
+            participantsHTML = `
+              <div><strong>${this.translate('your_students_label', 'Your Students:')}</strong> ${localStudentNames || 'None'}</div>
+              <div><strong>${this.translate('partner_students_label', 'Partner Students:')}</strong> ${partnerStudentNames || 'None'}</div>
+            `;
+          }
+
           card.innerHTML = `
             <!-- Broadcast Checkbox -->
             <div style="position: absolute; top: 1rem; right: 1rem;">
@@ -8318,36 +8357,35 @@ class App {
             </div>
 
             <div style="padding-right: 1.5rem;">
-              <h4 style="font-size: 0.95rem; font-weight: 800; margin: 0; color: var(--text-primary);">${p.title}</h4>
-              <span style="font-size: 0.75rem; color: var(--text-muted);">${this.translate('partner_label', 'Partner')}: ${partnerSchool ? partnerSchool.name : this.translate('unknown_school', 'Unknown School')}</span>
+              <h4 style="font-size: 1.15rem; font-weight: 800; margin: 0; color: var(--text-primary);">${p.title}</h4>
+              <span style="font-size: 1rem; color: var(--text-muted);">${this.translate('partner_label', 'Partner')}: ${partnerSchool ? partnerSchool.name : this.translate('unknown_school', 'Unknown School')}</span>
             </div>
 
-            <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0; height: 3.6em; line-height: 1.2em; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+            <p style="font-size: 1rem; color: var(--text-secondary); margin: 0; line-height: 1.45;">
               ${p.brief}
             </p>
 
-            <div style="display: flex; flex-direction: column; gap: 0.35rem; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 0.5rem; font-size: 0.75rem; color: var(--text-secondary);">
-              <div><strong>${this.translate('your_students_label', 'Your Students:')}</strong> ${localStudentNames || 'None'}</div>
-              <div><strong>${this.translate('partner_students_label', 'Partner Students:')}</strong> ${partnerStudentNames || 'None'}</div>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 0.75rem; font-size: 1rem; color: var(--text-secondary);">
+              ${participantsHTML}
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 0.5rem; margin-top: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 0.75rem; margin-top: auto;">
               ${p.paused ? `
-                <span class="badge badge-warning" style="font-size: 0.7rem; padding: 0.15rem 0.4rem; font-weight: 700; color: #fbbf24; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25);">🔒 ${this.translate('suspended_status', 'Suspended')}</span>
+                <span class="badge badge-warning" style="font-size: 0.85rem; padding: 0.25rem 0.5rem; font-weight: 700; color: #fbbf24; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25);">🔒 ${this.translate('suspended_status', 'Suspended')}</span>
               ` : `
-                <span class="badge badge-success" style="font-size: 0.7rem; padding: 0.15rem 0.4rem; font-weight: 700; color: #34d399; background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.25);">✓ ${this.translate('active_status', 'Active')}</span>
+                <span class="badge badge-success" style="font-size: 0.85rem; padding: 0.25rem 0.5rem; font-weight: 700; color: #34d399; background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.25);">✓ ${this.translate('active_status', 'Active')}</span>
               `}
-              <span style="font-size: 0.7rem; color: var(--text-muted);">${this.translate('cards_count_label', 'Cards:')} ${p.slides ? p.slides.length : 0}</span>
+              <span style="font-size: 0.95rem; color: var(--text-muted);">${this.translate('cards_count_label', 'Cards:')} ${p.slides ? p.slides.length : 0}</span>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin-top: 0.25rem;">
-              <button class="btn btn-secondary btn-small" onclick="app.toggleSuspendProject('${p.id}', ${!!p.paused})" style="font-size: 0.7rem; color: ${p.paused ? 'var(--text-primary)' : '#f59e0b'}; border-color: ${p.paused ? 'rgba(59,130,246,0.2)' : 'rgba(245,158,11,0.2)'};">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem;">
+              <button class="btn btn-secondary" onclick="app.toggleSuspendProject('${p.id}', ${!!p.paused})" style="font-size: 0.95rem; color: ${p.paused ? 'var(--text-primary)' : '#f59e0b'}; border-color: ${p.paused ? 'rgba(59,130,246,0.2)' : 'rgba(245,158,11,0.2)'}; padding: 0.4rem 0.75rem;">
                 ${p.paused ? this.translate('unsuspend_btn', 'Unsuspend') : this.translate('suspend_btn', 'Suspend')}
               </button>
-              <button class="btn btn-secondary btn-small" onclick="app.cancelProject('${p.id}')" style="font-size: 0.7rem; color: var(--danger); border-color: rgba(239,68,68,0.2);">
+              <button class="btn btn-secondary" onclick="app.cancelProject('${p.id}')" style="font-size: 0.95rem; color: var(--danger); border-color: rgba(239,68,68,0.2); padding: 0.4rem 0.75rem;">
                 🚫 ${this.translate('cancel_btn', 'Cancel')}
               </button>
-              <button class="btn btn-primary btn-small" onclick="app.openProjectModerationChat('${p.id}')" style="grid-column: span 2; font-size: 0.7rem; justify-content: center; display: flex;">
+              <button class="btn btn-primary" onclick="app.openProjectModerationChat('${p.id}')" style="grid-column: span 2; font-size: 0.95rem; justify-content: center; display: flex; padding: 0.5rem 1rem;">
                 💬 ${this.translate('moderate_chat_cards_btn', 'Moderate Chat & Cards')}
               </button>
             </div>
@@ -8387,15 +8425,15 @@ class App {
 
           item.innerHTML = `
             <div>
-              <h4 style="font-size: 0.9rem; font-weight: 800; margin: 0; color: var(--text-primary);">${p.title}</h4>
-              <span style="font-size: 0.75rem; color: var(--text-muted);">${this.translate('partner_label', 'Partner')}: ${partnerSchool ? partnerSchool.name : this.translate('unknown_school', 'Unknown School')}</span>
-              <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0.2rem 0 0 0;">${p.brief}</p>
+              <h4 style="font-size: 1.15rem; font-weight: 800; margin: 0; color: var(--text-primary);">${p.title}</h4>
+              <span style="font-size: 1rem; color: var(--text-muted);">${this.translate('partner_label', 'Partner')}: ${partnerSchool ? partnerSchool.name : this.translate('unknown_school', 'Unknown School')}</span>
+              <p style="font-size: 1rem; color: var(--text-secondary); margin: 0.25rem 0 0 0; line-height: 1.45;">${p.brief}</p>
             </div>
-            <div style="display: flex; gap: 0.5rem;">
-              <button class="btn btn-secondary btn-small" onclick="app.reinstateProject('${p.id}')" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <button class="btn btn-secondary" onclick="app.reinstateProject('${p.id}')" style="font-size: 0.95rem; padding: 0.4rem 0.75rem;">
                 🔄 ${this.translate('reinstate_btn', 'Reinstate')}
               </button>
-              <button class="btn btn-secondary btn-small" onclick="app.deleteProjectPermanently('${p.id}')" style="font-size: 0.75rem; color: var(--danger); border-color: rgba(239,68,68,0.25); padding: 0.3rem 0.6rem;">
+              <button class="btn btn-secondary" onclick="app.deleteProjectPermanently('${p.id}')" style="font-size: 0.95rem; color: var(--danger); border-color: rgba(239,68,68,0.25); padding: 0.4rem 0.75rem;">
                 🗑️ ${this.translate('delete_permanently_btn', 'Delete Permanently')}
               </button>
             </div>
@@ -8693,15 +8731,21 @@ class App {
     const titleInput = document.getElementById('launch-proj-title');
     const briefInput = document.getElementById('launch-proj-brief');
     const targetSchoolSelect = document.getElementById('launch-proj-school');
+    const projTypeSelect = document.getElementById('launch-proj-type');
 
     if (!titleInput || !briefInput || !targetSchoolSelect) return;
 
-    const selectedCheckboxes = document.querySelectorAll('#launch-proj-students-list input[name="launch-student"]:checked');
-    const selectedStudentIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+    const isStaffProj = projTypeSelect ? projTypeSelect.value === 'staff' : false;
 
-    if (selectedStudentIds.length === 0) {
-      alert(this.translate('select_student_launch_project_warning', 'Please select at least one local student to launch the project.'));
-      return;
+    let selectedStudentIds = [];
+    if (!isStaffProj) {
+      const selectedCheckboxes = document.querySelectorAll('#launch-proj-students-list input[name="launch-student"]:checked');
+      selectedStudentIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+      if (selectedStudentIds.length === 0) {
+        alert(this.translate('select_student_launch_project_warning', 'Please select at least one local student to launch the project.'));
+        return;
+      }
     }
 
     const proj = {
@@ -8711,6 +8755,7 @@ class App {
       targetSchoolId: targetSchoolSelect.value,
       creatorSchoolStudentIds: selectedStudentIds,
       targetSchoolStudentIds: [],
+      isStaffProject: isStaffProj,
       status: 'Proposed'
     };
 
@@ -8718,26 +8763,37 @@ class App {
     
     // Reset form
     document.getElementById('launch-project-form').reset();
+    this.handleProjectTypeChange('student');
     
     alert(this.translate('project_proposal_launched_success', 'Project proposal launched successfully! Sent to target partner school for review.'));
     this.projectsSubTab = 'gallery';
     this.refreshUI();
   }
 
+  handleProjectTypeChange(value) {
+    const container = document.getElementById('launch-proj-students-container');
+    if (container) {
+      container.style.display = value === 'staff' ? 'none' : 'block';
+    }
+  }
+
   acceptProject(projectId) {
     const teacher = this.getLoggedTeacher();
     if (!teacher) return;
 
-    const selectedCheckboxes = document.querySelectorAll(`.chk-accept-${projectId}:checked`);
-    const selectedStudentIds = Array.from(selectedCheckboxes).map(cb => cb.value);
-
-    if (selectedStudentIds.length === 0) {
-      alert(this.translate('select_student_join_project_warning', 'Please select at least one local student to join the project.'));
-      return;
-    }
-
     const project = window.db.getProject(projectId);
     if (!project) return;
+
+    let selectedStudentIds = [];
+    if (!project.isStaffProject) {
+      const selectedCheckboxes = document.querySelectorAll(`.chk-accept-${projectId}:checked`);
+      selectedStudentIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+      if (selectedStudentIds.length === 0) {
+        alert(this.translate('select_student_join_project_warning', 'Please select at least one local student to join the project.'));
+        return;
+      }
+    }
 
     window.db.updateProject(projectId, {
       targetSchoolStudentIds: selectedStudentIds,
@@ -8745,14 +8801,18 @@ class App {
     });
 
     // Add a system log message in the group chat
+    const addedText = project.isStaffProject 
+      ? 'Staff-to-staff collaboration established.'
+      : `Added student(s): ${selectedStudentIds.map(sid => window.db.getStudent(sid)?.name || '').filter(Boolean).join(', ')}.`;
+
     window.db.addProjectMessage(
       projectId,
       'system',
       'System',
-      `Project accepted by coordinator ${teacher.name}. Added student(s): ${selectedStudentIds.map(sid => window.db.getStudent(sid)?.name || '').filter(Boolean).join(', ')}.`
+      `Project accepted by coordinator ${teacher.name}. ${addedText}`
     );
 
-    alert(this.translate('proposal_accepted_success', 'Proposal accepted! The project is now active for students of both schools.'));
+    alert(this.translate('proposal_accepted_success', 'Proposal accepted! The project is now active.'));
     this.projectsSubTab = 'gallery';
     this.refreshUI();
   }
