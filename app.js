@@ -7470,9 +7470,11 @@ class App {
       document.getElementById('project-title').textContent = activeProject.title;
 
       // Resolve schools & members
-      const creatorSchool = window.db.getSchool(activeProject.creatorSchoolId);
-      const targetSchool = window.db.getSchool(activeProject.targetSchoolId);
-      const schoolText = `${creatorSchool?.code || 'School 1'} & ${targetSchool?.code || 'School 2'}`;
+      const targets = activeProject.targetSchoolIds || (activeProject.targetSchoolId ? [activeProject.targetSchoolId] : []);
+      const allSchoolCodes = [activeProject.creatorSchoolId, ...targets]
+        .map(sid => window.db.getSchool(sid)?.code)
+        .filter(Boolean);
+      const schoolText = allSchoolCodes.join(' & ');
 
       // Get member names
       const allStudentIds = [...activeProject.creatorSchoolStudentIds, ...activeProject.targetSchoolStudentIds];
