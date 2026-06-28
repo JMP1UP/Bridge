@@ -3757,7 +3757,7 @@ class App {
               <strong style="color: var(--text-primary); font-size: 1rem; display: block;">${partnerFirstName}</strong>
               <span style="font-size: 0.95rem; color: var(--text-secondary); font-weight: normal; display: block; white-space: nowrap;">${partnerStudent?.gender} • ${partnerStudent?.age} ${this.translate('years_old_suffix', 'y/o')}</span>
             </div>
-            <button class="btn btn-secondary" onclick="app.openBioModal('${partnerStudentId}')" style="padding: 0.4rem 0.75rem; font-size: 0.95rem; font-weight: 600; border-radius: 6px; white-space: nowrap; flex-shrink: 0;">📖 ${this.translate('read_bio_btn', 'Read Bio')}</button>
+            <button class="btn btn-secondary" onclick="app.openBioModal('${partnerStudentId}')" style="padding: 0.4rem 0.75rem; font-size: 0.95rem; font-weight: 600; border-radius: 6px; white-space: nowrap; flex-shrink: 0;">${this.translate('read_bio_btn', '📖 Read Bio')}</button>
           </div>
         </td>
         <td style="vertical-align: middle; font-size: 1rem;">
