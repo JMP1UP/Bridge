@@ -6420,7 +6420,23 @@ class App {
       const partnerSchool = window.db.getSchool(activeCoord.schoolId);
       document.getElementById('teacher-chat-partner-avatar').textContent = activeCoord.name.split(' ').map(n => n[0]).join('') || '?';
       document.getElementById('teacher-chat-partner-name').textContent = activeCoord.name;
-      document.getElementById('teacher-chat-partner-school').textContent = `${partnerSchool?.name} • ${partnerSchool?.country}`;
+      
+      const schoolEl = document.getElementById('teacher-chat-partner-school');
+      schoolEl.textContent = partnerSchool ? `${partnerSchool.name} • ${partnerSchool.country}` : 'Unknown School';
+      if (partnerSchool) {
+        schoolEl.style.cursor = 'pointer';
+        schoolEl.style.textDecoration = 'underline';
+        schoolEl.style.color = 'var(--secondary)';
+        schoolEl.title = this.translate('click_view_school_profile', 'Click to view school profile');
+        schoolEl.onclick = () => {
+          this.openSchoolDetail(partnerSchool.id);
+        };
+      } else {
+        schoolEl.style.cursor = '';
+        schoolEl.style.textDecoration = '';
+        schoolEl.style.color = '';
+        schoolEl.onclick = null;
+      }
 
       // Render feed
       const feed = document.getElementById('teacher-chat-message-feed');
