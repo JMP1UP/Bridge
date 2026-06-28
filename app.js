@@ -7471,10 +7471,13 @@ class App {
 
       // Resolve schools & members
       const targets = activeProject.targetSchoolIds || (activeProject.targetSchoolId ? [activeProject.targetSchoolId] : []);
-      const allSchoolCodes = [activeProject.creatorSchoolId, ...targets]
-        .map(sid => window.db.getSchool(sid)?.code)
+      const allSchools = [activeProject.creatorSchoolId, ...targets]
+        .map(sid => window.db.getSchool(sid))
         .filter(Boolean);
-      const schoolText = allSchoolCodes.join(' & ');
+      const schoolText = allSchools.map(sch => {
+        const flag = this.getSchoolFlag(sch.country);
+        return `${flag} ${sch.name}`;
+      }).join(' & ');
 
       // Get member names
       const allStudentIds = [...activeProject.creatorSchoolStudentIds, ...activeProject.targetSchoolStudentIds];
