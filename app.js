@@ -2748,7 +2748,8 @@ class App {
     schools.forEach(school => {
       const option = document.createElement('option');
       option.value = school.id;
-      option.textContent = `${school.name} (${school.country})`;
+      const flag = this.getSchoolFlag(school.country);
+      option.textContent = `${flag} ${school.name} (${school.country})`;
       schoolSelect.appendChild(option);
     });
 
@@ -2765,7 +2766,8 @@ class App {
     schools.forEach(school => {
       const option = document.createElement('option');
       option.value = school.id;
-      option.textContent = `${school.name} (${school.country})`;
+      const flag = this.getSchoolFlag(school.country);
+      option.textContent = `${flag} ${school.name} (${school.country})`;
       schoolSelect.appendChild(option);
     });
 
@@ -3275,7 +3277,8 @@ class App {
     schools.forEach(s => {
       const opt = document.createElement('option');
       opt.value = s.id;
-      opt.textContent = `${s.name} (${s.country})`;
+      const flag = this.getSchoolFlag(s.country);
+      opt.textContent = `${flag} ${s.name} (${s.country})`;
       partnerSelect.appendChild(opt);
     });
 
