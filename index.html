@@ -13,13 +13,17 @@
 <body>
   
   <!-- Premium Rebranded Login Screen -->
-  <div id="login-screen" class="login-screen-container">
-    <div class="login-card">      <div class="login-logo-container" onclick="app.devAutoLogin()" style="cursor: pointer;" title="Developer Bypass Auto-Login (Click to auto-login as Admin)">
-        <img src="assets/bridge_logo.png" alt="Bridge Logo" class="login-logo">
+  <div id="login-screen" class="login-screen-container">    <div class="login-card">
+      <!-- Horizontal Brand Header Layout -->
+      <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1.25rem; width: 100%; justify-content: center;">
+        <div class="login-logo-container" onclick="app.devAutoLogin()" style="cursor: pointer; margin-bottom: 0;" title="Developer Bypass Auto-Login (Click to auto-login as Admin)">
+          <img src="assets/bridge_logo.png" alt="Bridge Logo" class="login-logo" style="width: 80px; height: 80px; border-radius: 18px;">
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-start; text-align: left;">
+          <h1 class="login-title" style="font-size: 2.6rem; line-height: 1.1; margin: 0;">Bridge</h1>
+          <p class="login-subtitle" data-localize="login_subtitle_exchange" style="margin: 0.2rem 0 0 0; font-size: 0.85rem; letter-spacing: 2px;">GLOBAL CULTURAL EXCHANGE</p>
+        </div>
       </div>
-      <h1 class="login-title">Bridge</h1>
-      <p class="login-subtitle" data-localize="login_subtitle_exchange">GLOBAL CULTURAL EXCHANGE</p>
-      <p class="login-desc" style="max-width: 580px; text-align: center; font-size: 0.95rem; line-height: 1.6; color: var(--text-secondary); margin: 0 auto 2.25rem auto; font-weight: 400;" data-localize="login_description">Connecting classrooms worldwide through shared project slide decks, automated safe translations, and teacher-guided matchmaking.</p>
       <!-- Wrapper for login portals and registration link (to toggle visibility together) -->
       <div id="login-portal-sections" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
         <div class="login-sections" style="max-width: 800px; margin: 0 auto 1rem auto; width: 100%;">
