@@ -987,6 +987,37 @@ class App {
       });
     }
 
+    // Bind Community Post form submission
+    const communityPostForm = document.getElementById('community-post-form');
+    if (communityPostForm) {
+      communityPostForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const targetRegion = document.getElementById('post-target-region').value;
+        const targetAgeGroup = document.getElementById('post-target-age').value;
+        const message = document.getElementById('post-message').value.trim();
+
+        const teacher = this.getLoggedTeacher();
+        if (teacher) {
+          window.db.addCommunityPost({
+            coordinatorId: teacher.id,
+            schoolId: teacher.schoolId,
+            targetRegion,
+            targetAgeGroup,
+            message
+          });
+
+          // Reset inputs
+          document.getElementById('post-target-region').value = '';
+          document.getElementById('post-target-age').value = '';
+          document.getElementById('post-message').value = '';
+
+          this.closeModal('community-post-modal');
+          alert('Your partnership request has been posted to the Community Board!');
+          this.refreshUI();
+        }
+      });
+    }
+
     // Load UI data
     this.refreshUI();
   }
@@ -1271,6 +1302,7 @@ class App {
       this.updateStaffUnreadBadge();
       this.renderTeacherProjects();
       this.renderSchoolConnections();
+      this.renderCommunityBoard();
     } else if (this.currentRole === 'admin') {
       this.renderAdminDashboard();
       this.renderAdminSchools();
@@ -2585,6 +2617,125 @@ class App {
 
 
   // ================== TEACHER / STAFF PORTAL RENDERERS ==================
+
+  renderCommunityBoard() {
+    const grid = document.getElementById('community-posts-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    const teacher = this.getLoggedTeacher();
+    if (!teacher) return;
+
+    let posts = window.db.getCommunityPosts();
+
+    // Sort posts: newest first
+    posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    // Get filters
+    const filterRegion = document.getElementById('community-filter-target-region').value;
+    const filterCountry = document.getElementById('community-filter-school-country').value;
+    const filterAge = document.getElementById('community-filter-age').value;
+
+    // Apply filters
+    if (filterRegion !== 'all') {
+      posts = posts.filter(p => p.targetRegion.toLowerCase().includes(filterRegion.toLowerCase()) || p.targetRegion.toLowerCase().includes('any'));
+    }
+    if (filterCountry !== 'all') {
+      posts = posts.filter(p => {
+        const school = window.db.getSchool(p.schoolId);
+        return school && school.country.toLowerCase() === filterCountry.toLowerCase();
+      });
+    }
+    if (filterAge !== 'all') {
+      posts = posts.filter(p => p.targetAgeGroup.includes(filterAge));
+    }
+
+    if (posts.length === 0) {
+      grid.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; background: rgba(255,255,255,0.01); border: 1px dashed var(--panel-border); border-radius: 12px; color: var(--text-secondary);">
+          <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔍</div>
+          <p style="margin: 0; font-size: 0.95rem;">No partnership requests match your active search filters.</p>
+        </div>
+      `;
+      return;
+    }
+
+    posts.forEach(post => {
+      const school = window.db.getSchool(post.schoolId);
+      const coord = window.db.getCoordinator(post.coordinatorId);
+      if (!school || !coord) return;
+
+      const isOwnPost = coord.id === teacher.id;
+      const flagEmoji = this.getSchoolFlag(school.country);
+
+      let actionBtnHtml = '';
+      if (isOwnPost) {
+        actionBtnHtml = `
+          <button class="btn btn-secondary btn-small w-full" style="justify-content: center; color: var(--danger); border-color: rgba(239, 68, 68, 0.2);" onclick="app.deleteCommunityPostAction('${post.id}')">
+            🗑️ Remove My Request
+          </button>
+        `;
+      } else {
+        actionBtnHtml = `
+          <button class="btn btn-primary btn-small w-full" style="justify-content: center; color: #0b0f19; font-weight: 700;" onclick="app.proposeConnection('${school.id}')">
+            🤝 Connect & Partner
+          </button>
+        `;
+      }
+
+      const card = document.createElement('div');
+      card.className = 'panel';
+      card.style.cssText = 'padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; border-color: var(--panel-border); background: var(--panel-bg);';
+
+      card.innerHTML = `
+        <div>
+          <!-- Header: School Name & Location -->
+          <div style="display: flex; gap: 0.75rem; align-items: flex-start; margin-bottom: 0.75rem;">
+            <div style="font-size: 1.8rem; line-height: 1;">${flagEmoji}</div>
+            <div style="overflow: hidden;">
+              <h4 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                ${school.name}
+              </h4>
+              <span style="font-size: 0.75rem; color: var(--text-secondary);">${school.city}, ${school.country}</span>
+            </div>
+          </div>
+
+          <!-- School Bio -->
+          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.45; margin: 0 0 1rem 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-align: justify;" title="${school.description}">
+            ${school.description}
+          </p>
+
+          <!-- Targets Box -->
+          <div style="background: rgba(0,0,0,0.15); border: 1px solid var(--panel-border); border-radius: 8px; padding: 0.75rem; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.85rem;">
+            <div>🎯 <strong style="color: var(--secondary);">Target Region:</strong> <span style="color: var(--text-primary);">${post.targetRegion}</span></div>
+            <div>👥 <strong style="color: var(--secondary);">Student Age:</strong> <span style="color: var(--text-primary);">${post.targetAgeGroup}</span></div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; display: flex; align-items: center; gap: 0.25rem;">
+              👤 Posted by ${coord.name} • ${new Date(post.createdAt).toLocaleDateString()}
+            </div>
+          </div>
+
+          <!-- Coordinator Message -->
+          <div style="border-left: 3px solid var(--primary); padding-left: 0.5rem; margin-bottom: 1.25rem; font-size: 0.85rem; line-height: 1.45; color: var(--text-secondary); font-style: italic;">
+            "${post.message}"
+          </div>
+        </div>
+
+        <div>
+          ${actionBtnHtml}
+        </div>
+      `;
+
+      grid.appendChild(card);
+    });
+  }
+
+  deleteCommunityPostAction(postId) {
+    if (confirm('Are you sure you want to remove your partnership request from the Community Board?')) {
+      window.db.deleteCommunityPost(postId);
+      alert('Your partnership request has been removed.');
+      this.refreshUI();
+    }
+  }
 
   renderTeacherDashboard() {
     const teacher = this.getLoggedTeacher();

@@ -179,7 +179,27 @@ const defaultDatabase = {
   schoolConnections: [
     { id: 'conn_1', fromSchoolId: 'school_1', toSchoolId: 'school_2', status: 'Connected', connectedAt: '2026-05-10T10:00:00Z', requestMessage: 'Seeded connection', requestorBio: 'System Seed' }
   ],
-  staffStudentMessages: []
+  staffStudentMessages: [],
+  communityPosts: [
+    { 
+      id: 'post_1', 
+      coordinatorId: 'coord_2', 
+      schoolId: 'school_2', 
+      targetRegion: 'United Kingdom / France', 
+      targetAgeGroup: 'Age 13-15', 
+      message: 'Looking for a class to run a joint project comparing seasonal festivals (like Christmas markets vs. Halloween/Bonfire Night). Hopefully we can start next month!', 
+      createdAt: '2026-06-26T10:00:00Z' 
+    },
+    { 
+      id: 'post_2', 
+      coordinatorId: 'coord_3', 
+      schoolId: 'school_3', 
+      targetRegion: 'Germany', 
+      targetAgeGroup: 'Age 14-16', 
+      message: 'Bonjour! We would love to find a German partner school for our Year 10 students. We want to exchange recipes and write articles on gastronomy.', 
+      createdAt: '2026-06-27T09:30:00Z' 
+    }
+  ]
 };
 
 class LocalDB {
@@ -203,8 +223,9 @@ class LocalDB {
     const isMissingCoordMessages = data && !data.coordinatorMessages;
     const isMissingProjects = data && (!data.projects || !data.projectMessages);
     const isMissingConnections = data && (!data.schoolConnections || !data.coordinators || data.coordinators.length < 3);
+    const isMissingCommunity = data && !data.communityPosts;
 
-    if (!data || hasOldName || isMissingTables || isMissingPhotos || isMissingBiog || isMissingResolvedFlags || isOldProposedMatchSeed || isMissingCoordMessages || isMissingProjects || isMissingConnections) {
+    if (!data || hasOldName || isMissingTables || isMissingPhotos || isMissingBiog || isMissingResolvedFlags || isOldProposedMatchSeed || isMissingCoordMessages || isMissingProjects || isMissingConnections || isMissingCommunity) {
       localStorage.setItem(DB_KEY, JSON.stringify(defaultDatabase));
       this.cachedData = defaultDatabase;
     } else {
@@ -284,6 +305,23 @@ class LocalDB {
   getProjectMessages() { return this.getTable('projectMessages'); }
   getSchoolConnections() { return this.getTable('schoolConnections'); }
   getStaffStudentMessages() { return this.getTable('staffStudentMessages'); }
+  getCommunityPosts() { return this.getTable('communityPosts'); }
+  addCommunityPost(post) {
+    const list = this.getCommunityPosts();
+    const newPost = {
+      id: 'post_' + Date.now(),
+      ...post,
+      createdAt: new Date().toISOString()
+    };
+    list.push(newPost);
+    this.saveTable('communityPosts', list);
+    return newPost;
+  }
+  deleteCommunityPost(id) {
+    const list = this.getCommunityPosts();
+    const filtered = list.filter(p => p.id !== id);
+    this.saveTable('communityPosts', filtered);
+  }
   addSchoolConnection(conn) {
     const list = this.getSchoolConnections();
     const newConn = {
