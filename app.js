@@ -2441,14 +2441,14 @@ class App {
           <span style="font-size: 0.85rem;">${this.getLogonDisplay(stud.activityLevel)}</span>
         </td>
         <td>${activeBadge}</td>
-        <td style="min-width: 210px;">
+        <td style="min-width: 250px;">
           <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: flex-start; width: 100%;">
             ${stud.invitationStatus === 'Invited' 
-              ? `<button class="btn btn-secondary btn-small" style="width: 105px; justify-content: center; text-align: center; white-space: nowrap; padding: 0.4rem 0.2rem;" onclick="app.simulateInviteResend('${stud.id}')" title="${this.translate('resend_invite_code_title', 'Resend Invite Code')}">${this.translate('resend_invite_btn', 'Resend invite')}</button>` 
+              ? `<button class="btn btn-secondary" style="width: 125px; justify-content: center; text-align: center; white-space: nowrap; padding: 0.45rem 0.2rem; font-size: 1rem;" onclick="app.simulateInviteResend('${stud.id}')" title="${this.translate('resend_invite_code_title', 'Resend Invite Code')}">${this.translate('resend_invite_btn', 'Resend invite')}</button>` 
               : stud.invitationStatus === 'Active' 
-                ? `<button class="btn btn-secondary btn-small" style="width: 105px; justify-content: center; text-align: center; white-space: nowrap; padding: 0.4rem 0.2rem;" onclick="app.simulateResetPassword('${stud.id}')" title="${this.translate('reset_student_password_title', 'Reset Student Password')}">${this.translate('reset_pw_btn', 'Reset PW')}</button>` 
-                : `<div style="width: 105px;"></div>`}
-            <button class="btn btn-danger btn-small" style="width: 85px; justify-content: center; text-align: center; padding: 0.4rem 0.2rem;" onclick="app.removeStudentAccount('${stud.id}')">${this.translate('archive_btn', 'Archive')}</button>
+                ? `<button class="btn btn-secondary" style="width: 125px; justify-content: center; text-align: center; white-space: nowrap; padding: 0.45rem 0.2rem; font-size: 1rem;" onclick="app.simulateResetPassword('${stud.id}')" title="${this.translate('reset_student_password_title', 'Reset Student Password')}">${this.translate('reset_pw_btn', 'Reset PW')}</button>` 
+                : `<div style="width: 125px;"></div>`}
+            <button class="btn btn-danger" style="width: 95px; justify-content: center; text-align: center; padding: 0.45rem 0.2rem; font-size: 1rem;" onclick="app.removeStudentAccount('${stud.id}')">${this.translate('archive_btn', 'Archive')}</button>
           </div>
         </td>
       `;
@@ -3769,9 +3769,9 @@ class App {
               ${coordText}
             </div>
             
-            <div style="display: flex; gap: 0.5rem; margin-top: 0.4rem;">
-              ${coord ? `<button class="btn btn-secondary btn-small" onclick="app.messageCoordinatorFromGallery('${coord.id}')" style="flex: 1; justify-content: center; font-size: 0.72rem; padding: 0.3rem 0.5rem; min-height: 28px;">💬 ${this.translate('message_btn', 'Message')}</button>` : ''}
-              <button class="btn btn-primary btn-small" onclick="app.requestConnectionFromGallery('${s.id}')" style="flex: 1.2; justify-content: center; font-size: 0.72rem; padding: 0.3rem 0.5rem; min-height: 28px; color: #0b0f19;" onmouseover="this.style.filter='brightness(1.15)'" onmouseout="this.style.filter='none'">🤝 ${this.translate('connect_action_btn', 'Connect')}</button>
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+              ${coord ? `<button class="btn btn-secondary" onclick="app.messageCoordinatorFromGallery('${coord.id}')" style="flex: 1; justify-content: center; font-size: 1rem; padding: 0.55rem 1rem;">💬 ${this.translate('message_btn', 'Message')}</button>` : ''}
+              <button class="btn btn-primary" onclick="app.requestConnectionFromGallery('${s.id}')" style="flex: 1.2; justify-content: center; font-size: 1rem; padding: 0.55rem 1rem; color: #0b0f19;" onmouseover="this.style.filter='brightness(1.15)'" onmouseout="this.style.filter='none'">🤝 ${this.translate('connect_action_btn', 'Connect')}</button>
             </div>
           </div>
         `;
