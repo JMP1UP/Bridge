@@ -30,7 +30,7 @@
   
   --chat-sent: #2563eb;
   --chat-received: rgba(30, 41, 59, 0.8);
-  --sidebar-w: 260px;
+  --sidebar-w: 280px;
 }
 
 [data-theme="light"] {
@@ -155,9 +155,8 @@ body {
   font-weight: 500;
   transition: all 0.2s ease;
   cursor: pointer;
-  white-space: nowrap;
-  overflow: hidden;
-  min-width: 0;
+  white-space: normal; /* Allows wrapping instead of horizontal cutoff */
+  line-height: 1.35;
 }
 
 .nav-link svg {
@@ -170,10 +169,7 @@ body {
 }
 
 .nav-link span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 0;
+  /* Removed ellipsis and truncation to show full text */
 }
 
 .nav-link:hover, .nav-link.active {
