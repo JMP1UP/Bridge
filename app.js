@@ -8949,6 +8949,23 @@ class App {
     }
   }
 
+  openBroadcastModal() {
+    const modal = document.getElementById('bulk-broadcast-modal');
+    if (!modal) return;
+
+    // Clear message textarea
+    const textEl = document.getElementById('broadcast-message-textarea');
+    if (textEl) textEl.value = '';
+
+    // Reset selection defaults
+    const radioSelected = document.getElementById('broadcast-target-selected');
+    if (radioSelected) radioSelected.checked = true;
+    this.broadcastTarget = 'selected';
+
+    this.updateBroadcastSubmitButton();
+    modal.classList.add('active');
+  }
+
   sendBulkBroadcast() {
     const textEl = document.getElementById('broadcast-message-textarea');
     if (!textEl) return;
@@ -8963,7 +8980,7 @@ class App {
     const schoolId = teacher.schoolId;
 
     const activeProjs = window.db.getProjects()
-      .filter(p => (p.creatorSchoolId === schoolId || p.targetSchoolId === schoolId) && p.status !== 'Cancelled' && p.status !== 'Proposed');
+      .filter(p => (p.creatorSchoolId === schoolId || p.targetSchoolId === schoolId || (p.targetSchoolIds && p.targetSchoolIds.includes(schoolId))) && p.status !== 'Cancelled' && p.status !== 'Proposed');
     
     const targetProjectIds = this.broadcastTarget === 'all'
       ? activeProjs.map(p => p.id)
@@ -8990,6 +9007,7 @@ class App {
     textEl.value = '';
     this.selectedProjectBroadcastIds = [];
     this.broadcastTarget = 'selected';
+    this.closeModal('bulk-broadcast-modal');
     this.refreshUI();
   }
 
