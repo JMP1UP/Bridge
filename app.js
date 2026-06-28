@@ -177,6 +177,17 @@ class App {
     return '🏫';
   }
 
+  getSchoolFlagEmoji(country) {
+    if (!country) return '🏫';
+    const c = country.toLowerCase();
+    if (c.includes('germany') || c.includes('deutschland')) return '🇩🇪';
+    if (c.includes('united kingdom') || c.includes('uk') || c.includes('britain') || c.includes('england')) return '🇬🇧';
+    if (c.includes('france')) return '🇫🇷';
+    if (c.includes('spain')) return '🇪🇸';
+    if (c.includes('united states') || c.includes('usa') || c.includes('us')) return '🇺🇸';
+    return '🏫';
+  }
+
   init() {
     this.isLoggedIn = false;
 
@@ -2748,7 +2759,7 @@ class App {
     schools.forEach(school => {
       const option = document.createElement('option');
       option.value = school.id;
-      const flag = this.getSchoolFlag(school.country);
+      const flag = this.getSchoolFlagEmoji(school.country);
       option.textContent = `${flag} ${school.name} (${school.country})`;
       schoolSelect.appendChild(option);
     });
@@ -2766,7 +2777,7 @@ class App {
     schools.forEach(school => {
       const option = document.createElement('option');
       option.value = school.id;
-      const flag = this.getSchoolFlag(school.country);
+      const flag = this.getSchoolFlagEmoji(school.country);
       option.textContent = `${flag} ${school.name} (${school.country})`;
       schoolSelect.appendChild(option);
     });
@@ -3277,7 +3288,7 @@ class App {
     schools.forEach(s => {
       const opt = document.createElement('option');
       opt.value = s.id;
-      const flag = this.getSchoolFlag(s.country);
+      const flag = this.getSchoolFlagEmoji(s.country);
       opt.textContent = `${flag} ${s.name} (${s.country})`;
       partnerSelect.appendChild(opt);
     });
@@ -8590,7 +8601,7 @@ class App {
         partnerSchoolIds.forEach(psId => {
           const sch = window.db.getSchool(psId);
           if (sch) {
-            const flag = this.getSchoolFlag(sch.country);
+            const flag = this.getSchoolFlagEmoji(sch.country);
             const opt = document.createElement('option');
             opt.value = psId;
             opt.textContent = `${flag} ${sch.name}`;
