@@ -3931,15 +3931,20 @@ class App {
         let coordHtml = '';
         if (partnerCoordinator) {
           coordHtml = `
-            <div style="display: flex; align-items: center; gap: 0.5rem; border-top: 1px solid rgba(255, 255, 255, 0.04); padding-top: 0.75rem; margin-top: 0.75rem;">
-              <div style="width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--panel-border); overflow: hidden; background: rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.8rem; font-weight: bold; color: var(--text-muted);">
-                ${partnerCoordinator.photoUrl ? `<img src="${partnerCoordinator.photoUrl}" alt="${partnerCoordinator.name}" style="width: 100%; height: 100%; object-fit: cover;" />` : partnerCoordinator.name.charAt(0)}
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; border-top: 1px solid rgba(255, 255, 255, 0.04); padding-top: 0.75rem; margin-top: 0.75rem; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--panel-border); overflow: hidden; background: rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1rem; font-weight: bold; color: var(--text-muted);">
+                  ${partnerCoordinator.photoUrl ? `<img src="${partnerCoordinator.photoUrl}" alt="${partnerCoordinator.name}" style="width: 100%; height: 100%; object-fit: cover;" />` : partnerCoordinator.name.charAt(0)}
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.15rem; line-height: 1.3;">
+                  <span style="font-size: 0.95rem; color: var(--text-muted);">${this.translate('school_coordinator_label', 'School Coordinator')}</span>
+                  <strong style="font-size: 1.15rem; color: var(--text-primary);">${partnerCoordinator.name}</strong>
+                  ${partnerCoordinator.email ? `<span style="font-size: 1rem; color: var(--text-muted);">✉️ <a href="mailto:${partnerCoordinator.email}" style="color: var(--secondary); text-decoration: underline;">${partnerCoordinator.email}</a></span>` : ''}
+                </div>
               </div>
-              <div style="display: flex; flex-direction: column; gap: 0.1rem; line-height: 1.2;">
-                <span style="font-size: 0.65rem; color: var(--text-muted);">${this.translate('school_coordinator_label', 'School Coordinator')}</span>
-                <strong style="font-size: 0.75rem; color: var(--text-primary);">${partnerCoordinator.name}</strong>
-                ${partnerCoordinator.email ? `<span style="font-size: 0.65rem; color: var(--text-muted);">✉️ <a href="mailto:${partnerCoordinator.email}" style="color: var(--secondary); text-decoration: underline;">${partnerCoordinator.email}</a></span>` : ''}
-              </div>
+              <button class="btn btn-secondary" style="font-size: 1rem; font-weight: 600; padding: 0.5rem 1rem;" onclick="app.messageCoordinatorFromGallery('${partnerCoordinator.id}')">
+                💬 <span data-localize="message_coordinator_btn">Message</span>
+              </button>
             </div>
           `;
         }
@@ -3950,34 +3955,34 @@ class App {
               <div style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;" onclick="app.openSchoolDetail('${school.id}')">
                 <span style="font-size: 1.75rem;">🏫</span>
                 <div>
-                  <h4 style="font-weight: 800; font-size: 0.95rem; margin: 0; color: var(--text-primary); text-decoration: underline;">
+                  <h4 style="font-weight: 800; font-size: 1.15rem; margin: 0; color: var(--text-primary); text-decoration: underline;">
                     ${flag} ${school.name}
                   </h4>
-                  <span style="font-size: 0.7rem; color: var(--text-muted);">📍 ${school.city}, ${school.country}</span>
+                  <span style="font-size: 1rem; color: var(--text-muted);">📍 ${school.city}, ${school.country}</span>
                 </div>
               </div>
               
               <button 
-                class="btn btn-secondary btn-small"
-                style="color: var(--danger); border-color: rgba(239, 68, 68, 0.25); padding: 0.25rem 0.5rem; font-size: 0.75rem;"
+                class="btn btn-secondary"
+                style="color: var(--danger); border-color: rgba(239, 68, 68, 0.25); padding: 0.5rem 1rem; font-size: 1rem;"
                 onclick="app.removeSchoolConnection('${c.id}')"
               >
                 ${this.translate('disconnect_btn', 'Disconnect')}
               </button>
             </div>
 
-            <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0; line-height: 1.4;">
+            <p style="font-size: 1rem; color: var(--text-secondary); margin: 0; line-height: 1.45;">
               ${school.description || this.translate('no_description_provided_by_school', 'No description provided by school.')}
             </p>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; background: rgba(255, 255, 255, 0.02); padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid var(--panel-border);">
-              <div style="display: flex; flex-direction: column;">
-                <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">${this.translate('linked_students_metric', 'Linked Students')}</span>
-                <strong style="font-size: 0.85rem; color: var(--secondary);">${linkedStudentsCount} ${this.translate('pairings_suffix', 'Pairing(s)')}</strong>
+              <div style="display: flex; flex-direction: column; gap: 0.15rem;">
+                <span style="font-size: 0.95rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">${this.translate('linked_students_metric', 'Linked Students')}</span>
+                <strong style="font-size: 1.15rem; color: var(--secondary);">${linkedStudentsCount} ${this.translate('pairings_suffix', 'Pairing(s)')}</strong>
               </div>
-              <div style="display: flex; flex-direction: column;">
-                <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">${this.translate('shared_group_projects_metric', 'Shared Group Projects')}</span>
-                <strong style="font-size: 0.85rem; color: var(--secondary);">${sharedProjectsCount} ${this.translate('projects_suffix', 'Project(s)')}</strong>
+              <div style="display: flex; flex-direction: column; gap: 0.15rem;">
+                <span style="font-size: 0.95rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">${this.translate('shared_group_projects_metric', 'Shared Group Projects')}</span>
+                <strong style="font-size: 1.15rem; color: var(--secondary);">${sharedProjectsCount} ${this.translate('projects_suffix', 'Project(s)')}</strong>
               </div>
             </div>
 
