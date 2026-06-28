@@ -780,6 +780,24 @@ class App {
       launchProjForm.addEventListener('submit', (e) => this.handleProjectLaunch(e));
     }
 
+    // Check if we are on the signup/welcome flow via query parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    if (token && token.startsWith('welcome_')) {
+      const studentId = token.replace('welcome_', '');
+      const student = window.db.getStudent(studentId);
+      if (student) {
+        // Activate student
+        window.db.updateStudent(studentId, { active: true, invitationStatus: 'Active' });
+        // Log in
+        this.loginAsStudent(studentId);
+        // Clear URL search params and signup route path without reloading
+        window.history.replaceState({}, document.title, window.location.origin + '/');
+        // Welcome notification
+        alert(`Welcome to Bridge, ${student.name}! Your account has been successfully activated.`);
+      }
+    }
+
     // Load UI data
     this.refreshUI();
   }
