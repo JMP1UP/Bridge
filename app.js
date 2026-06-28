@@ -2837,22 +2837,22 @@ class App {
     const t = templates[lang.toLowerCase()] || templates.en;
 
     previewEl.innerHTML = `
-      <div style="font-weight: 700; color: var(--primary); margin-bottom: 0.75rem; border-bottom: 1px dashed var(--panel-border); padding-bottom: 0.5rem; display: flex; justify-content: space-between; font-size: 0.8rem;">
+      <div style="font-weight: 700; color: var(--primary); margin-bottom: 0.75rem; border-bottom: 1px dashed var(--panel-border); padding-bottom: 0.5rem; display: flex; justify-content: space-between; font-size: 0.8rem; letter-spacing: 0.5px;">
         <span>📧 SENT EMAIL PREVIEW (${lang.toUpperCase()})</span>
         <span style="font-weight: 400; color: var(--text-secondary);">${student.email}</span>
       </div>
-      <div style="background: white; color: #1a202c; border-radius: 8px; padding: 1.25rem; font-size: 0.8rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-family: sans-serif;">
-        <div style="text-align: center; margin-bottom: 1.25rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem;">
-          <h2 style="color: #3b82f6; margin: 0; font-size: 1.4rem; font-family: system-ui, sans-serif;">${t.title}</h2>
-          <p style="color: #4a5568; margin: 2px 0 0 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">${t.subtitle}</p>
+      <div style="background: rgba(255, 255, 255, 0.03); color: var(--text-primary); border: 1px solid var(--panel-border); border-radius: 8px; padding: 1.25rem; font-size: 0.85rem; line-height: 1.6; font-family: var(--font-body);">
+        <div style="text-align: center; margin-bottom: 1.25rem; border-bottom: 1px solid var(--panel-border); padding-bottom: 1rem;">
+          <h4 style="color: var(--primary); margin: 0; font-size: 1.25rem; font-family: var(--font-title); font-weight: 700;">${t.title}</h4>
+          <p style="color: var(--text-secondary); margin: 2px 0 0 0; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px;">${t.subtitle}</p>
         </div>
-        <p style="font-size: 0.85rem; line-height: 1.5; font-weight: bold; margin: 0 0 0.75rem 0;">${t.greeting}</p>
-        <p style="font-size: 0.85rem; line-height: 1.5; margin: 0 0 0.75rem 0;">${t.body1}</p>
-        <p style="font-size: 0.85rem; line-height: 1.5; margin: 0 0 1.25rem 0;">${t.body2}</p>
+        <p style="font-weight: 600; margin: 0 0 0.75rem 0; color: var(--text-primary);">${t.greeting}</p>
+        <p style="margin: 0 0 0.75rem 0; color: var(--text-secondary);">${t.body1}</p>
+        <p style="margin: 0 0 1.25rem 0; color: var(--text-secondary);">${t.body2}</p>
         <div style="text-align: center; margin: 1.5rem 0;">
-          <a href="${inviteLink}" target="_blank" style="background-color: #3b82f6; color: #ffffff; padding: 8px 16px; font-size: 0.85rem; font-weight: bold; text-decoration: none; border-radius: 6px; display: inline-block;">${t.button}</a>
+          <a href="${inviteLink}" target="_blank" style="background-color: var(--primary); color: #ffffff; padding: 8px 16px; font-size: 0.8rem; font-weight: 600; text-decoration: none; border-radius: 6px; display: inline-block; transition: background 0.2s;">${t.button}</a>
         </div>
-        <p style="font-size: 0.75rem; color: #718096; line-height: 1.4; margin: 1.25rem 0 0 0; border-top: 1px solid #e2e8f0; padding-top: 0.75rem;">${t.footer}</p>
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin: 1.25rem 0 0 0; border-top: 1px solid var(--panel-border); padding-top: 0.75rem;">${t.footer}</p>
       </div>
     `;
   }
