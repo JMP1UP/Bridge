@@ -2353,6 +2353,17 @@ const SIMPLE_DICTIONARY = {
  */
 function mockTranslate(text, sourceLang, targetLang) {
   if (!text || text.trim() === "") return "";
+  
+  if (sourceLang === 'auto') {
+    const lower = text.toLowerCase();
+    const germanWords = ['danke', 'bitte', 'hallo', 'guten', 'tag', 'wie', 'geht', 'ist', 'gut', 'ja', 'nein', 'ich', 'du', 'sie', 'wir', 'und', 'der', 'die', 'das', 'ein', 'eine'];
+    const hasGerman = germanWords.some(w => {
+      const regex = new RegExp('\\b' + w + '\\b');
+      return regex.test(lower);
+    });
+    sourceLang = hasGerman ? 'de' : 'en';
+  }
+
   if (sourceLang === targetLang) return text;
 
   const cleanText = text.trim().toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g,"");

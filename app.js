@@ -7210,16 +7210,41 @@ class App {
         row.className = `message-row ${isSent ? 'sent' : 'received'}`;
         
         let transRow = '';
-        if (msg.translation && translationEnabled && this.teacherConversationTranslateEnabled) {
+        const cleanOriginal = msg.text.toLowerCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g,"");
+        const cleanTranslated = msg.translation ? msg.translation.toLowerCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g,"") : '';
+        const shouldShowTranslation = msg.translation && (cleanOriginal !== cleanTranslated);
+
+        if (shouldShowTranslation && translationEnabled && this.teacherConversationTranslateEnabled) {
           transRow = `<div class="message-translation" style="font-size: 0.82rem; color: var(--secondary); margin-top: 0.25rem; font-style: italic; border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 0.25rem;">📝 ${msg.translation}</div>`;
-        } else if (!isSent && !msg.translation && translationEnabled && this.teacherConversationTranslateEnabled) {
+        } else if (!msg.translation && translationEnabled && this.teacherConversationTranslateEnabled) {
           const ownSchool = window.db.getSchool(teacher.schoolId);
           const myLang = ownSchool ? (ownSchool.country.toLowerCase().includes('germany') ? 'de' : ownSchool.country.toLowerCase().includes('france') ? 'fr' : 'en') : 'en';
-          const partnerSchool = window.db.getSchool(activeCoord.schoolId);
-          const partnerLang = partnerSchool ? (partnerSchool.country.toLowerCase().includes('germany') ? 'de' : partnerSchool.country.toLowerCase().includes('france') ? 'fr' : 'en') : 'en';
-          if (myLang !== partnerLang) {
+          
+          let needsTranslation = false;
+          if (!isSent) {
+            needsTranslation = true;
+          } else {
+            if (myLang === 'en') {
+              const germanWords = ['danke', 'bitte', 'hallo', 'guten', 'tag', 'wie', 'geht', 'ist', 'gut', 'ja', 'nein'];
+              const lower = msg.text.toLowerCase();
+              const hasGerman = germanWords.some(w => new RegExp('\\b' + w + '\\b').test(lower));
+              const hasGermanChars = /[äöüß]/i.test(msg.text);
+              if (hasGerman || hasGermanChars) {
+                needsTranslation = true;
+              }
+            } else if (myLang === 'de') {
+              const englishWords = ['hello', 'hi', 'test', 'thanks', 'thank', 'you', 'please', 'good', 'morning', 'yes', 'no'];
+              const lower = msg.text.toLowerCase();
+              const hasEnglish = englishWords.some(w => new RegExp('\\b' + w + '\\b').test(lower));
+              if (hasEnglish) {
+                needsTranslation = true;
+              }
+            }
+          }
+
+          if (needsTranslation) {
             transRow = `<div class="message-translation" style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.25rem; font-style: italic; border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 0.25rem;">⏳ Translating...</div>`;
-            this.translateCoordinatorMessageOnTheFly(msg, partnerLang, myLang);
+            this.translateCoordinatorMessageOnTheFly(msg, 'auto', myLang);
           }
         }
 
