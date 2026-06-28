@@ -208,15 +208,15 @@ class App {
 
     // Bind login buttons
     document.getElementById('login-student-btn').addEventListener('click', () => {
-      const studentId = document.getElementById('login-student-select').value;
+      const email = document.getElementById('login-student-email').value;
       const password = document.getElementById('login-student-password').value;
-      if (studentId) this.loginAsStudent(studentId, password);
+      if (email) this.loginAsStudent(email, password);
     });
 
     document.getElementById('login-staff-btn').addEventListener('click', () => {
-      const role = document.getElementById('login-staff-select').value;
+      const email = document.getElementById('login-staff-email').value;
       const password = document.getElementById('login-staff-password').value;
-      if (role) this.loginAsStaff(role, password);
+      if (email) this.loginAsStaff(email, password);
     });
 
     // Bind logout button
@@ -10302,21 +10302,31 @@ class App {
     });
   }
 
-  loginAsStudent(studentId, password) {
-    const student = window.db.getStudent(studentId);
-    if (!student) return;
+  loginAsStudent(identifier, password) {
+    let student;
+    if (identifier.startsWith('stud_')) {
+      student = window.db.getStudent(identifier);
+    } else {
+      student = window.db.getStudents().find(s => s.email.toLowerCase() === identifier.toLowerCase().trim());
+    }
+
+    if (!student) {
+      alert(this.translate('user_not_found_alert', 'No account found with this email.'));
+      return;
+    }
     if (password !== undefined && student.password && student.password !== password) {
       alert(this.translate('incorrect_password_alert', 'Incorrect password. Please try again.'));
       return;
     }
     this.isLoggedIn = true;
-    this.switchRole('student', studentId);
+    this.switchRole('student', student.id);
     document.getElementById('login-screen').style.display = 'none';
     document.querySelector('.app-container').style.setProperty('display', 'flex', 'important');
   }
 
-  loginAsStaff(value, password) {
-    if (value === 'admin') {
+  loginAsStaff(identifier, password) {
+    const cleanInput = identifier.toLowerCase().trim();
+    if (cleanInput === 'admin' || cleanInput === 'admin@school-bridge.org') {
       if (password !== undefined && password !== 'admin123') {
         alert(this.translate('incorrect_password_alert', 'Incorrect password. Please try again.'));
         return;
@@ -10324,13 +10334,23 @@ class App {
       this.isLoggedIn = true;
       this.switchRole('admin');
     } else {
-      const coord = window.db.getCoordinator(value);
-      if (coord && password !== undefined && coord.password && coord.password !== password) {
+      let coord;
+      if (identifier.startsWith('coord_')) {
+        coord = window.db.getCoordinator(identifier);
+      } else {
+        coord = window.db.getCoordinators().find(c => c.email.toLowerCase() === cleanInput);
+      }
+
+      if (!coord) {
+        alert(this.translate('user_not_found_alert', 'No account found with this email.'));
+        return;
+      }
+      if (password !== undefined && coord.password && coord.password !== password) {
         alert(this.translate('incorrect_password_alert', 'Incorrect password. Please try again.'));
         return;
       }
       this.isLoggedIn = true;
-      this.switchRole('teacher', null, value);
+      this.switchRole('teacher', null, coord.id);
     }
     document.getElementById('login-screen').style.display = 'none';
     document.querySelector('.app-container').style.setProperty('display', 'flex', 'important');

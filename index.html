@@ -31,9 +31,7 @@
             <h3>Student Portal</h3>
             <p>Chat with your connection, write articles, and build project slide decks.</p>
             <div class="form-group" style="width: 100%; margin-bottom: 0.75rem;">
-              <select id="login-student-select" class="form-control login-select">
-                <!-- Dynamically populated by JS -->
-              </select>
+              <input type="email" id="login-student-email" class="form-control" placeholder="Enter Email Address" required style="background: rgba(0, 0, 0, 0.25); color: var(--text-primary);">
             </div>
             <div class="form-group" style="width: 100%; margin-bottom: 0.75rem;">
               <input type="password" id="login-student-password" class="form-control" placeholder="Enter Password" required>
@@ -50,12 +48,7 @@
             <h3>Staff & Coordinator Portal</h3>
             <p>Manage student pairings, approve articles, and review school requests.</p>
             <div class="form-group" style="width: 100%; margin-bottom: 0.75rem;">
-              <select id="login-staff-select" class="form-control login-select">
-                <option value="coord_1">Mrs. Smith (Languages Coordinator & School Admin - UK)</option>
-                <option value="coord_2">Herr Wagner (Languages Coordinator - Germany)</option>
-                <option value="coord_3">Monsieur Dupont (Languages Coordinator - France)</option>
-                <option value="admin">System Admin (Platform Administrator)</option>
-              </select>
+              <input type="text" id="login-staff-email" class="form-control" placeholder="Enter Email or 'admin'" required style="background: rgba(0, 0, 0, 0.25); color: var(--text-primary);">
             </div>
             <div class="form-group" style="width: 100%; margin-bottom: 0.75rem;">
               <input type="password" id="login-staff-password" class="form-control" placeholder="Enter Password" required>
@@ -71,6 +64,30 @@
         <div style="margin-top: 1.75rem; text-align: center; font-size: 0.95rem; color: var(--text-muted); animation: fadeIn 0.4s ease-out;">
           Don't see your school? <a href="#" id="login-show-register-btn" style="color: var(--secondary); text-decoration: underline; font-weight: 600; transition: color 0.2s;" onmouseenter="this.style.color='#0891b2'" onmouseleave="this.style.color='var(--secondary)'">Register your school</a>
         </div>
+
+        <!-- Demo Accounts Helper (For testing/reviewing purposes) -->
+        <details style="margin-top: 2rem; text-align: left; background: rgba(255, 255, 255, 0.03); border: 1px dashed var(--panel-border); border-radius: 12px; padding: 0.85rem 1.25rem; width: 100%; max-width: 650px; font-size: 0.85rem; color: var(--text-secondary); animation: fadeIn 0.4s ease-out; box-sizing: border-box;">
+          <summary style="cursor: pointer; font-weight: 700; color: var(--secondary); outline: none; user-select: none;">🔍 Demo Accounts & Passwords (Testing Info)</summary>
+          <div style="margin-top: 0.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div>
+              <strong style="color: var(--text-primary);">Staff & Coordinator Portals:</strong>
+              <ul style="padding-left: 1.2rem; margin: 0.25rem 0; line-height: 1.45;">
+                <li>System Admin: <code>admin</code> (Password: <code>admin123</code>)</li>
+                <li>Mrs. Smith (UK Admin): <code>smith@oakridge.edu</code> (Password: <code>password123</code>)</li>
+                <li>Herr Wagner (Germany): <code>wagner@goethe.de</code> (Password: <code>password123</code>)</li>
+                <li>Monsieur Dupont (France): <code>dupont@hugo.fr</code> (Password: <code>password123</code>)</li>
+              </ul>
+            </div>
+            <div>
+              <strong style="color: var(--text-primary);">Student Portals (Password: <code>password123</code>):</strong>
+              <ul style="padding-left: 1.2rem; margin: 0.25rem 0; line-height: 1.45;">
+                <li>Harriet Potter (UK): <code>harriet@oakridge.edu</code></li>
+                <li>Lukas Schmidt (Germany): <code>lukas@goethe.de</code></li>
+                <li>Manon Dubois (France): <code>manon@hugo.fr</code></li>
+              </ul>
+            </div>
+          </div>
+        </details>
       </div>
 
       <!-- Activate Student Account Card (Initially Hidden) -->
