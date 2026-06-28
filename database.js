@@ -39,20 +39,20 @@ const defaultDatabase = {
   ],
   students: [
     // UK Students (All female for Leicester High School)
-    { id: 'stud_1', name: 'Harriet Potter', email: 'harriet@leicesterhigh.edu', age: 14, gender: 'Female', yearGroup: 'Year 9', schoolId: 'school_1', language: 'en', active: true, matchStatus: 'matched', activityLevel: 'High', invitationStatus: 'Active', personalBiog: "Hi! I'm Harriet. I love drawing, playing tennis, and learning languages. I live in Leicester with my family.", pendingBiog: "", personalBiogStatus: "Approved" },
-    { id: 'stud_2', name: 'Emily Watson', email: 'emily@leicesterhigh.edu', age: 13, gender: 'Female', yearGroup: 'Year 8', schoolId: 'school_1', language: 'en', active: true, matchStatus: 'matched', activityLevel: 'Medium', invitationStatus: 'Active', personalBiog: "", pendingBiog: "I love baking chocolate chip cookies and reading mystery novels.", personalBiogStatus: "Pending" },
-    { id: 'stud_3', name: 'Jessica Smith', email: 'jessica@leicesterhigh.edu', age: 14, gender: 'Female', yearGroup: 'Year 9', schoolId: 'school_1', language: 'en', active: true, matchStatus: 'matched', activityLevel: 'Medium', invitationStatus: 'Active', personalBiog: "", pendingBiog: "", personalBiogStatus: "None" },
-    { id: 'stud_4', name: 'Chloe Jones', email: 'chloe@leicesterhigh.edu', age: 13, gender: 'Female', yearGroup: 'Year 8', schoolId: 'school_1', language: 'en', active: true, matchStatus: 'matched', activityLevel: 'Low', invitationStatus: 'Active', personalBiog: "", pendingBiog: "", personalBiogStatus: "None" },
-    { id: 'stud_5', name: 'Tabitha Brown', email: 'tabitha@leicesterhigh.edu', age: 14, gender: 'Female', yearGroup: 'Year 9', schoolId: 'school_1', language: 'en', active: false, matchStatus: 'unmatched', activityLevel: 'None', invitationStatus: 'Invited', personalBiog: "", pendingBiog: "", personalBiogStatus: "None" },
-    { id: 'stud_6', name: 'Sophia Taylor', email: 'sophia@leicesterhigh.edu', age: 15, gender: 'Female', yearGroup: 'Year 10', schoolId: 'school_1', language: 'en', active: false, matchStatus: 'unmatched', activityLevel: 'None', invitationStatus: 'Invited', personalBiog: "", pendingBiog: "", personalBiogStatus: "None" },
+    { id: 'stud_1', name: 'Harriet Potter', email: 'harriet@leicesterhigh.edu', age: 14, gender: 'Female', yearGroup: 'Year 9', schoolId: 'school_1', language: 'en', active: true, matchStatus: 'matched', activityLevel: 'High', invitationStatus: 'Active', personalBiog: "Hi! I'm Harriet. I love drawing, playing tennis, and learning languages. I live in Leicester with my family.", pendingBiog: "", personalBiogStatus: "Approved", password: "password123" },
+    { id: 'stud_2', name: 'Emily Watson', email: 'emily@leicesterhigh.edu', age: 13, gender: 'Female', yearGroup: 'Year 8', schoolId: 'school_1', language: 'en', active: true, matchStatus: 'matched', activityLevel: 'Medium', invitationStatus: 'Active', personalBiog: "", pendingBiog: "I love baking chocolate chip cookies and reading mystery novels.", personalBiogStatus: "Pending", password: "password123" },
+    { id: 'stud_3', name: 'Jessica Smith', email: 'jessica@leicesterhigh.edu', age: 14, gender: 'Female', yearGroup: 'Year 9', schoolId: 'school_1', language: 'en', active: true, matchStatus: 'matched', activityLevel: 'Medium', invitationStatus: 'Active', personalBiog: "", pendingBiog: "", personalBiogStatus: "None", password: "password123" },
+    { id: 'stud_4', name: 'Chloe Jones', email: 'chloe@leicesterhigh.edu', age: 13, gender: 'Female', yearGroup: 'Year 8', schoolId: 'school_1', language: 'en', active: true, matchStatus: 'matched', activityLevel: 'Low', invitationStatus: 'Active', personalBiog: "", pendingBiog: "", personalBiogStatus: "None", password: "password123" },
+    { id: 'stud_5', name: 'Tabitha Brown', email: 'tabitha@leicesterhigh.edu', age: 14, gender: 'Female', yearGroup: 'Year 9', schoolId: 'school_1', language: 'en', active: false, matchStatus: 'unmatched', activityLevel: 'None', invitationStatus: 'Invited', personalBiog: "", pendingBiog: "", personalBiogStatus: "None", password: "password123" },
+    { id: 'stud_6', name: 'Sophia Taylor', email: 'sophia@leicesterhigh.edu', age: 15, gender: 'Female', yearGroup: 'Year 10', schoolId: 'school_1', language: 'en', active: false, matchStatus: 'unmatched', activityLevel: 'None', invitationStatus: 'Invited', personalBiog: "", pendingBiog: "", personalBiogStatus: "None", password: "password123" },
 
     // German Students (Mixed school)
-    { id: 'stud_7', name: 'Lukas Schmidt', email: 'lukas@goethe.edu', age: 14, gender: 'Male', yearGroup: 'Klasse 9', schoolId: 'school_2', language: 'de', active: true, matchStatus: 'matched', activityLevel: 'High', invitationStatus: 'Active', personalBiog: "Hallo! Ich bin Lukas. Ich spiele gerne Fußball und zocke Minecraft. Ich freue mich auf den Austausch!", pendingBiog: "", personalBiogStatus: "Approved" },
-    { id: 'stud_8', name: 'Hanna Müller', email: 'hanna@goethe.edu', age: 13, gender: 'Female', yearGroup: 'Klasse 8', schoolId: 'school_2', language: 'de', active: true, matchStatus: 'matched', activityLevel: 'High', invitationStatus: 'Active', personalBiog: "", pendingBiog: "", personalBiogStatus: "None" },
-    { id: 'stud_9', name: 'Jonas Wagner', email: 'jonas@goethe.edu', age: 14, gender: 'Male', yearGroup: 'Klasse 9', schoolId: 'school_2', language: 'de', active: true, matchStatus: 'matched', activityLevel: 'Medium', invitationStatus: 'Active', personalBiog: "", pendingBiog: "", personalBiogStatus: "None" },
-    { id: 'stud_10', name: 'Mia Fischer', email: 'mia@goethe.edu', age: 13, gender: 'Female', yearGroup: 'Klasse 8', schoolId: 'school_2', language: 'de', active: true, matchStatus: 'matched', activityLevel: 'Low', invitationStatus: 'Active', personalBiog: "", pendingBiog: "", personalBiogStatus: "None" },
-    { id: 'stud_11', name: 'Sophie Weber', email: 'sophie@goethe.edu', age: 13, gender: 'Female', yearGroup: 'Klasse 8', schoolId: 'school_2', language: 'de', active: false, matchStatus: 'unmatched', activityLevel: 'None', invitationStatus: 'Invited', personalBiog: "", pendingBiog: "", personalBiogStatus: "None" },
-    { id: 'stud_12', name: 'Leon Becker', email: 'leon@goethe.edu', age: 15, gender: 'Male', yearGroup: 'Klasse 10', schoolId: 'school_2', language: 'de', active: false, matchStatus: 'proposed', activityLevel: 'None', invitationStatus: 'Invited', personalBiog: "", pendingBiog: "", personalBiogStatus: "None" }
+    { id: 'stud_7', name: 'Lukas Schmidt', email: 'lukas@goethe.edu', age: 14, gender: 'Male', yearGroup: 'Klasse 9', schoolId: 'school_2', language: 'de', active: true, matchStatus: 'matched', activityLevel: 'High', invitationStatus: 'Active', personalBiog: "Hallo! Ich bin Lukas. Ich spiele gerne Fußball und zocke Minecraft. Ich freue mich auf den Austausch!", pendingBiog: "", personalBiogStatus: "Approved", password: "password123" },
+    { id: 'stud_8', name: 'Hanna Müller', email: 'hanna@goethe.edu', age: 13, gender: 'Female', yearGroup: 'Klasse 8', schoolId: 'school_2', language: 'de', active: true, matchStatus: 'matched', activityLevel: 'High', invitationStatus: 'Active', personalBiog: "", pendingBiog: "", personalBiogStatus: "None", password: "password123" },
+    { id: 'stud_9', name: 'Jonas Wagner', email: 'jonas@goethe.edu', age: 14, gender: 'Male', yearGroup: 'Klasse 9', schoolId: 'school_2', language: 'de', active: true, matchStatus: 'matched', activityLevel: 'Medium', invitationStatus: 'Active', personalBiog: "", pendingBiog: "", personalBiogStatus: "None", password: "password123" },
+    { id: 'stud_10', name: 'Mia Fischer', email: 'mia@goethe.edu', age: 13, gender: 'Female', yearGroup: 'Klasse 8', schoolId: 'school_2', language: 'de', active: true, matchStatus: 'matched', activityLevel: 'Low', invitationStatus: 'Active', personalBiog: "", pendingBiog: "", personalBiogStatus: "None", password: "password123" },
+    { id: 'stud_11', name: 'Sophie Weber', email: 'sophie@goethe.edu', age: 13, gender: 'Female', yearGroup: 'Klasse 8', schoolId: 'school_2', language: 'de', active: false, matchStatus: 'unmatched', activityLevel: 'None', invitationStatus: 'Invited', personalBiog: "", pendingBiog: "", personalBiogStatus: "None", password: "password123" },
+    { id: 'stud_12', name: 'Leon Becker', email: 'leon@goethe.edu', age: 15, gender: 'Male', yearGroup: 'Klasse 10', schoolId: 'school_2', language: 'de', active: false, matchStatus: 'proposed', activityLevel: 'None', invitationStatus: 'Invited', personalBiog: "", pendingBiog: "", personalBiogStatus: "None", password: "password123" }
   ],
   matches: [
     { id: 'match_1', type: '1-to-1', studentIds: ['stud_1', 'stud_7'], active: true, status: 'Active', createdAt: '2026-05-10T10:00:00Z', paused: false },
@@ -127,9 +127,9 @@ const defaultDatabase = {
     translationEnabled: true
   },
   coordinators: [
-    { id: 'coord_1', name: 'Mrs. Smith', email: 'smith@leicesterhigh.edu', schoolId: 'school_1', isSchoolAdmin: true, bio: "Languages coordinator at Leicester High School. I have been teaching English and German for 12 years." },
-    { id: 'coord_2', name: 'Herr Wagner', email: 'wagner@goethe.edu', schoolId: 'school_2', isSchoolAdmin: false, bio: "Coordinator for international exchanges at Goethe-Gymnasium. Passionate about linking students globally." },
-    { id: 'coord_3', name: 'M. Dupont', email: 'dupont@lycee.edu', schoolId: 'school_3', isSchoolAdmin: true, bio: "Enseignant de langues au Lycée Saint-Exupéry à Lyon. Passionné par l'échange culturel et linguistique." }
+    { id: 'coord_1', name: 'Mrs. Smith', email: 'smith@leicesterhigh.edu', schoolId: 'school_1', isSchoolAdmin: true, bio: "Languages coordinator at Leicester High School. I have been teaching English and German for 12 years.", password: "password123" },
+    { id: 'coord_2', name: 'Herr Wagner', email: 'wagner@goethe.edu', schoolId: 'school_2', isSchoolAdmin: false, bio: "Coordinator for international exchanges at Goethe-Gymnasium. Passionate about linking students globally.", password: "password123" },
+    { id: 'coord_3', name: 'M. Dupont', email: 'dupont@lycee.edu', schoolId: 'school_3', isSchoolAdmin: true, bio: "Enseignant de langues au Lycée Saint-Exupéry à Lyon. Passionné par l'échange culturel et linguistique.", password: "password123" }
   ],
   schoolRequests: [
     { id: 'req_1', name: 'Oakridge Academy', country: 'United Kingdom', city: 'London', language: 'en', code: 'OAK-UK', coordinatorName: 'Mr. David Green', coordinatorEmail: 'david@oakridge.edu', status: 'Pending', requestedAt: '2026-06-21T09:00:00Z' }
@@ -209,6 +209,27 @@ class LocalDB {
       this.cachedData = defaultDatabase;
     } else {
       this.cachedData = data;
+      // Self-heal: ensure all user accounts have a password field
+      let modified = false;
+      if (this.cachedData.students) {
+        this.cachedData.students.forEach(s => {
+          if (!s.password) {
+            s.password = 'password123';
+            modified = true;
+          }
+        });
+      }
+      if (this.cachedData.coordinators) {
+        this.cachedData.coordinators.forEach(c => {
+          if (!c.password) {
+            c.password = 'password123';
+            modified = true;
+          }
+        });
+      }
+      if (modified) {
+        localStorage.setItem(DB_KEY, JSON.stringify(this.cachedData));
+      }
     }
   }
 
@@ -343,7 +364,8 @@ class LocalDB {
         name: req.coordinatorName,
         email: req.coordinatorEmail,
         schoolId: newSchoolId,
-        isSchoolAdmin: true
+        isSchoolAdmin: true,
+        password: 'password123'
       };
       coordinators.push(newCoord);
       this.saveTable('coordinators', coordinators);
@@ -389,6 +411,15 @@ class LocalDB {
     if (index !== -1) {
       list[index] = { ...list[index], ...updates };
       this.saveTable('students', list);
+    }
+  }
+
+  updateCoordinator(id, updates) {
+    const list = this.getCoordinators();
+    const index = list.findIndex(c => c.id === id);
+    if (index !== -1) {
+      list[index] = { ...list[index], ...updates };
+      this.saveTable('coordinators', list);
     }
   }
 

@@ -30,12 +30,18 @@
             <div class="login-section-icon">🎓</div>
             <h3>Student Portal</h3>
             <p>Chat with your connection, write articles, and build project slide decks.</p>
-            <div class="form-group" style="width: 100%; margin-bottom: 1rem;">
+            <div class="form-group" style="width: 100%; margin-bottom: 0.75rem;">
               <select id="login-student-select" class="form-control login-select">
                 <!-- Dynamically populated by JS -->
               </select>
             </div>
-            <button class="btn btn-primary" id="login-student-btn" style="width: 100%; margin-top: 0.75rem; padding: 0.55rem 1rem; background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 700; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);">Enter Student Portal</button>
+            <div class="form-group" style="width: 100%; margin-bottom: 0.75rem;">
+              <input type="password" id="login-student-password" class="form-control" placeholder="Enter Password" required>
+            </div>
+            <button class="btn btn-primary" id="login-student-btn" style="width: 100%; margin-top: 0.5rem; padding: 0.55rem 1rem; background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 700; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);">Enter Student Portal</button>
+            <div style="margin-top: 0.75rem; text-align: center;">
+              <a href="#" class="forgot-password-link" data-role="student" style="font-size: 0.75rem; color: var(--text-muted); text-decoration: underline;">Forgot Password?</a>
+            </div>
           </div>
 
           <!-- Coordinator/Admin Selection Card -->
@@ -43,7 +49,7 @@
             <div class="login-section-icon">🏫</div>
             <h3>Staff & Coordinator Portal</h3>
             <p>Manage student pairings, approve articles, and review school requests.</p>
-            <div class="form-group" style="width: 100%; margin-bottom: 1rem;">
+            <div class="form-group" style="width: 100%; margin-bottom: 0.75rem;">
               <select id="login-staff-select" class="form-control login-select">
                 <option value="coord_1">Mrs. Smith (Languages Coordinator & School Admin - UK)</option>
                 <option value="coord_2">Herr Wagner (Languages Coordinator - Germany)</option>
@@ -51,7 +57,13 @@
                 <option value="admin">System Admin (Platform Administrator)</option>
               </select>
             </div>
-            <button class="btn btn-primary" id="login-staff-btn" style="width: 100%; margin-top: 0.75rem; padding: 0.55rem 1rem; background: var(--secondary); border-color: var(--secondary); color: #0b0f19; font-weight: 700; box-shadow: 0 4px 14px rgba(6, 182, 212, 0.3);">Enter Staff Portal</button>
+            <div class="form-group" style="width: 100%; margin-bottom: 0.75rem;">
+              <input type="password" id="login-staff-password" class="form-control" placeholder="Enter Password" required>
+            </div>
+            <button class="btn btn-primary" id="login-staff-btn" style="width: 100%; margin-top: 0.5rem; padding: 0.55rem 1rem; background: var(--secondary); border-color: var(--secondary); color: #0b0f19; font-weight: 700; box-shadow: 0 4px 14px rgba(6, 182, 212, 0.3);">Enter Staff Portal</button>
+            <div style="margin-top: 0.75rem; text-align: center;">
+              <a href="#" class="forgot-password-link" data-role="coordinator" style="font-size: 0.75rem; color: var(--text-muted); text-decoration: underline;">Forgot Password?</a>
+            </div>
           </div>
         </div>
 
@@ -59,6 +71,49 @@
         <div style="margin-top: 1.75rem; text-align: center; font-size: 0.95rem; color: var(--text-muted); animation: fadeIn 0.4s ease-out;">
           Don't see your school? <a href="#" id="login-show-register-btn" style="color: var(--secondary); text-decoration: underline; font-weight: 600; transition: color 0.2s;" onmouseenter="this.style.color='#0891b2'" onmouseleave="this.style.color='var(--secondary)'">Register your school</a>
         </div>
+      </div>
+
+      <!-- Activate Student Account Card (Initially Hidden) -->
+      <div id="login-activate-section" style="display: none; width: 100%; max-width: 450px; animation: fadeIn 0.4s ease-out; background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 16px; padding: 2rem; box-sizing: border-box; backdrop-filter: blur(10px); margin: 0 auto;">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+          <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔑</div>
+          <h2 style="font-family: var(--font-title); font-size: 1.75rem; font-weight: 800; color: var(--text-primary); margin: 0 0 0.5rem 0;">Activate Your Account</h2>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">Welcome! Choose a password to secure your exchange profile.</p>
+        </div>
+        <form id="activate-account-form" style="display: flex; flex-direction: column; gap: 1rem; width: 100%;">
+          <input type="hidden" id="activate-student-id">
+          <div class="form-group">
+            <label for="activate-password">Choose Password</label>
+            <input type="password" id="activate-password" class="form-control" placeholder="Minimum 6 characters" minlength="6" required>
+          </div>
+          <div class="form-group">
+            <label for="activate-password-confirm">Confirm Password</label>
+            <input type="password" id="activate-password-confirm" class="form-control" placeholder="Repeat password" minlength="6" required>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem; padding: 0.65rem 1rem; font-weight: 700;">Activate Account</button>
+        </form>
+      </div>
+
+      <!-- Reset Password Card (Initially Hidden) -->
+      <div id="login-reset-section" style="display: none; width: 100%; max-width: 450px; animation: fadeIn 0.4s ease-out; background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 16px; padding: 2rem; box-sizing: border-box; backdrop-filter: blur(10px); margin: 0 auto;">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+          <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔄</div>
+          <h2 style="font-family: var(--font-title); font-size: 1.75rem; font-weight: 800; color: var(--text-primary); margin: 0 0 0.5rem 0;">Reset Your Password</h2>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">Choose a new password for your account.</p>
+        </div>
+        <form id="reset-password-form" style="display: flex; flex-direction: column; gap: 1rem; width: 100%;">
+          <input type="hidden" id="reset-user-id">
+          <input type="hidden" id="reset-user-role">
+          <div class="form-group">
+            <label for="reset-password-new">New Password</label>
+            <input type="password" id="reset-password-new" class="form-control" placeholder="Minimum 6 characters" minlength="6" required>
+          </div>
+          <div class="form-group">
+            <label for="reset-password-confirm">Confirm New Password</label>
+            <input type="password" id="reset-password-confirm" class="form-control" placeholder="Repeat new password" minlength="6" required>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem; padding: 0.65rem 1rem; font-weight: 700;">Save New Password</button>
+        </form>
       </div>
 
       <!-- Register School Card (Initially Hidden) -->
@@ -2501,6 +2556,29 @@
           <button type="button" class="btn btn-primary" id="broadcast-submit-btn" onclick="app.sendBulkBroadcast()" style="font-size: 0.95rem; padding: 0.5rem 1.25rem;" data-localize="send_broadcast_btn">Send Broadcast</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Forgot Password Modal -->
+  <div class="modal-overlay" id="forgot-password-modal">
+    <div class="modal-content" style="max-width: 450px; background: #1b1d30; border: 1px solid var(--panel-border); border-radius: 16px; padding: 2rem;">
+      <h3 class="panel-title" style="margin-top: 0; font-size: 1.35rem; display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary);">🔑 Forgot Password</h3>
+      <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.5;">
+        Enter your email address below. If an account is found, we will email you a secure link to reset your password.
+      </p>
+      
+      <form id="forgot-password-form" style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <input type="hidden" id="forgot-role-input">
+        <div class="form-group">
+          <label for="forgot-email-input">Email Address</label>
+          <input type="email" id="forgot-email-input" class="form-control" placeholder="e.g. name@school.edu" required>
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem;">
+          <button type="button" class="btn btn-secondary" onclick="app.closeModal('forgot-password-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Send Reset Link</button>
+        </div>
+      </form>
     </div>
   </div>
 

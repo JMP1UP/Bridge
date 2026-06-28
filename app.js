@@ -209,12 +209,14 @@ class App {
     // Bind login buttons
     document.getElementById('login-student-btn').addEventListener('click', () => {
       const studentId = document.getElementById('login-student-select').value;
-      if (studentId) this.loginAsStudent(studentId);
+      const password = document.getElementById('login-student-password').value;
+      if (studentId) this.loginAsStudent(studentId, password);
     });
 
     document.getElementById('login-staff-btn').addEventListener('click', () => {
       const role = document.getElementById('login-staff-select').value;
-      if (role) this.loginAsStaff(role);
+      const password = document.getElementById('login-staff-password').value;
+      if (role) this.loginAsStaff(role, password);
     });
 
     // Bind logout button
@@ -787,15 +789,202 @@ class App {
       const studentId = token.replace('welcome_', '');
       const student = window.db.getStudent(studentId);
       if (student) {
-        // Activate student
-        window.db.updateStudent(studentId, { active: true, invitationStatus: 'Active' });
-        // Log in
-        this.loginAsStudent(studentId);
-        // Clear URL search params and signup route path without reloading
-        window.history.replaceState({}, document.title, window.location.origin + '/');
-        // Welcome notification
-        alert(`Welcome to Bridge, ${student.name}! Your account has been successfully activated.`);
+        // Hide normal login portals
+        const loginPortalSections = document.getElementById('login-portal-sections');
+        if (loginPortalSections) loginPortalSections.style.display = 'none';
+        
+        // Show activation card
+        const activateSection = document.getElementById('login-activate-section');
+        if (activateSection) {
+          activateSection.style.display = 'block';
+          document.getElementById('activate-student-id').value = studentId;
+        }
       }
+    }
+
+    // Bind Activate Account form
+    const activateForm = document.getElementById('activate-account-form');
+    if (activateForm) {
+      activateForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const studentId = document.getElementById('activate-student-id').value;
+        const password = document.getElementById('activate-password').value;
+        const confirmPassword = document.getElementById('activate-password-confirm').value;
+
+        if (password.length < 6) {
+          alert('Password must be at least 6 characters long.');
+          return;
+        }
+
+        if (password !== confirmPassword) {
+          alert('Passwords do not match.');
+          return;
+        }
+
+        const student = window.db.getStudent(studentId);
+        if (student) {
+          // Update student password and set to active
+          window.db.updateStudent(studentId, { 
+            password: password, 
+            active: true, 
+            invitationStatus: 'Active' 
+          });
+          
+          alert(`Success! Welcome to Bridge, ${student.name}. Your account is activated.`);
+          
+          // Clear inputs
+          document.getElementById('activate-password').value = '';
+          document.getElementById('activate-password-confirm').value = '';
+          
+          // Hide activation section
+          const activateSection = document.getElementById('login-activate-section');
+          if (activateSection) activateSection.style.display = 'none';
+          
+          // Log in
+          this.loginAsStudent(studentId, password);
+          
+          // Clear URL search params and signup route path without reloading
+          window.history.replaceState({}, document.title, window.location.origin + '/');
+        }
+      });
+    }
+
+    // Check if we are on the reset password flow via query parameters
+    if (token && token.startsWith('reset_')) {
+      const userId = token.replace('reset_', '');
+      let user = null;
+      let role = '';
+      
+      if (userId.startsWith('stud_')) {
+        user = window.db.getStudent(userId);
+        role = 'student';
+      } else if (userId.startsWith('coord_')) {
+        user = window.db.getCoordinator(userId);
+        role = 'coordinator';
+      }
+      
+      if (user) {
+        // Hide normal login portals
+        const loginPortalSections = document.getElementById('login-portal-sections');
+        if (loginPortalSections) loginPortalSections.style.display = 'none';
+        
+        // Show reset password card
+        const resetSection = document.getElementById('login-reset-section');
+        if (resetSection) {
+          resetSection.style.display = 'block';
+          document.getElementById('reset-user-id').value = userId;
+          document.getElementById('reset-user-role').value = role;
+        }
+      }
+    }
+
+    // Bind Reset Password form submission
+    const resetForm = document.getElementById('reset-password-form');
+    if (resetForm) {
+      resetForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const userId = document.getElementById('reset-user-id').value;
+        const role = document.getElementById('reset-user-role').value;
+        const newPassword = document.getElementById('reset-password-new').value;
+        const confirmPassword = document.getElementById('reset-password-confirm').value;
+
+        if (newPassword.length < 6) {
+          alert('Password must be at least 6 characters long.');
+          return;
+        }
+
+        if (newPassword !== confirmPassword) {
+          alert('Passwords do not match.');
+          return;
+        }
+
+        if (role === 'student') {
+          window.db.updateStudent(userId, { password: newPassword });
+        } else {
+          window.db.updateCoordinator(userId, { password: newPassword });
+        }
+
+        alert('Password has been reset successfully! You can now log in using your new password.');
+        
+        // Clear fields
+        document.getElementById('reset-password-new').value = '';
+        document.getElementById('reset-password-confirm').value = '';
+        
+        // Hide reset section and show login section
+        const resetSection = document.getElementById('login-reset-section');
+        if (resetSection) resetSection.style.display = 'none';
+        const loginPortalSections = document.getElementById('login-portal-sections');
+        if (loginPortalSections) loginPortalSections.style.display = 'flex';
+        
+        // Clear token from URL
+        window.history.replaceState({}, document.title, window.location.origin + '/');
+      });
+    }
+
+    // Bind Forgot Password links
+    document.querySelectorAll('.forgot-password-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const role = link.getAttribute('data-role');
+        const roleInput = document.getElementById('forgot-role-input');
+        if (roleInput) roleInput.value = role;
+        
+        // Reset modal fields
+        const emailInput = document.getElementById('forgot-email-input');
+        if (emailInput) emailInput.value = '';
+        
+        this.openModal('forgot-password-modal');
+      });
+    });
+
+    // Bind Forgot Password form submission
+    const forgotForm = document.getElementById('forgot-password-form');
+    if (forgotForm) {
+      forgotForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('forgot-email-input').value.trim();
+        const role = document.getElementById('forgot-role-input').value;
+        
+        let user = null;
+        if (role === 'student') {
+          user = window.db.getStudents().find(s => s.email.toLowerCase() === email.toLowerCase());
+        } else {
+          user = window.db.getCoordinators().find(c => c.email.toLowerCase() === email.toLowerCase());
+        }
+        
+        if (!user) {
+          alert('No account found matching that email address.');
+          return;
+        }
+
+        const resetLink = `${window.location.origin}/signup?token=reset_${user.id}`;
+        
+        // Send reset email via Resend Vercel API
+        try {
+          const response = await fetch('/api/send-invite', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              studentName: user.name,
+              email: user.email,
+              inviteLink: resetLink,
+              language: user.language || 'en',
+              type: 'reset-password'
+            })
+          });
+          
+          if (response.ok) {
+            alert(`A secure password reset link has been emailed to ${user.name} at ${user.email}.`);
+          } else {
+            // Fallback alert with local simulation if API isn't fully configured
+            alert(`[Simulation] Password reset email link:\n${resetLink}`);
+          }
+        } catch (err) {
+          alert(`[Simulation] Password reset email link:\n${resetLink}`);
+        }
+        
+        this.closeModal('forgot-password-modal');
+      });
     }
 
     // Load UI data
@@ -2923,7 +3112,7 @@ class App {
   }
 
   // Dispatch secure invite signup email to student using Vercel Resend API
-  async sendInviteEmail(student, inviteLink) {
+  async sendInviteEmail(student, inviteLink, type = 'invite') {
     try {
       const response = await fetch('/api/send-invite', {
         method: 'POST',
@@ -2934,7 +3123,8 @@ class App {
           email: student.email,
           studentName: student.name,
           inviteLink: inviteLink,
-          lang: student.language || 'en'
+          lang: student.language || 'en',
+          type: type
         })
       });
       const data = await response.json();
@@ -3013,10 +3203,66 @@ class App {
   simulateResetPassword(studentId) {
     const stud = window.db.getStudent(studentId);
     if (stud) {
-      const inviteLink = `${window.location.origin}/signup?token=welcome_${stud.id}`;
-      this.sendInviteEmail(stud, inviteLink);
-      window.db.addLog('Password Reset Initiated', `Resent password reset invitation link to student ${stud.name}.`, 'Teacher');
-      alert(`Password reset invitation link successfully resent to ${stud.email}`);
+      const inviteLink = `${window.location.origin}/signup?token=reset_${stud.id}`;
+      this.sendInviteEmail(stud, inviteLink, 'reset-password');
+      window.db.addLog('Password Reset Initiated', `Sent password reset link to student ${stud.name}.`, 'Teacher');
+      alert(`Password reset link successfully sent to ${stud.email}!\n\n[Simulation] Link:\n${inviteLink}`);
+    }
+  }
+
+  // Simulate coordinator password reset action (from school detail modal)
+  simulateCoordinatorReset(coordinatorId, schoolId) {
+    const coord = window.db.getCoordinator(coordinatorId);
+    if (coord) {
+      const resetLink = `${window.location.origin}/signup?token=reset_${coord.id}`;
+      try {
+        fetch('/api/send-invite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            studentName: coord.name,
+            email: coord.email,
+            inviteLink: resetLink,
+            language: coord.language || 'en',
+            type: 'reset-password'
+          })
+        });
+      } catch (err) {
+        console.error('Failed to trigger reset email:', err);
+      }
+
+      window.db.addLog('Coordinator Password Reset Initiated', `Sent password reset link to coordinator ${coord.name}.`, 'System Admin');
+      alert(`Password reset link successfully sent to ${coord.email}!\n\n[Simulation] Link:\n${resetLink}`);
+      this.refreshUI();
+      this.openSchoolDetail(schoolId);
+    }
+  }
+
+  // Simulate coordinator password reset action (from staff settings panel)
+  simulateCoordinatorResetInsideSettings(coordinatorId) {
+    const coord = window.db.getCoordinator(coordinatorId);
+    if (coord) {
+      const resetLink = `${window.location.origin}/signup?token=reset_${coord.id}`;
+      try {
+        fetch('/api/send-invite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            studentName: coord.name,
+            email: coord.email,
+            inviteLink: resetLink,
+            language: coord.language || 'en',
+            type: 'reset-password'
+          })
+        });
+      } catch (err) {
+        console.error('Failed to trigger reset email:', err);
+      }
+
+      window.db.addLog('Coordinator Password Reset Initiated', `Sent password reset link to coordinator ${coord.name}.`, 'Teacher');
+      alert(`Password reset link successfully sent to ${coord.email}!\n\n[Simulation] Link:\n${resetLink}`);
+      this.refreshUI();
+      this.populateTeacherStaffDirectory();
     }
   }
 
@@ -5726,6 +5972,9 @@ class App {
             <button class="btn btn-secondary btn-small" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;" onclick="app.toggleStaffAdminInsideSettings('${coord.id}')">
               ${coord.isSchoolAdmin ? this.translate('demote_btn', 'Demote') : this.translate('promote_btn', 'Promote')}
             </button>
+            <button class="btn btn-secondary btn-small" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;" onclick="app.simulateCoordinatorResetInsideSettings('${coord.id}')">
+              Reset PW
+            </button>
             <button class="btn btn-secondary btn-small" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; color: var(--danger); border-color: rgba(239,68,68,0.2);" onclick="app.deleteStaffInsideSettings('${coord.id}')">
               ${this.translate('remove_btn', 'Remove')}
             </button>
@@ -6383,7 +6632,12 @@ class App {
                 if (isSystemAdmin || isOwnSchoolTeacher) {
                   const btnLabel = c.isSchoolAdmin ? this.translate('revoke_admin_btn', 'Revoke Admin') : this.translate('grant_admin_btn', 'Grant Admin');
                   const btnClass = c.isSchoolAdmin ? 'btn-secondary' : 'btn-primary';
-                  actionsHtml = `<button class="btn ${btnClass} btn-small" style="font-size: 0.9rem; padding: 0.35rem 0.75rem;" onclick="app.toggleCoordinatorAdminInsideModal('${c.id}', '${schoolId}')">${btnLabel}</button>`;
+                  actionsHtml = `
+                    <div style="display: flex; gap: 0.35rem;">
+                      <button class="btn ${btnClass} btn-small" style="font-size: 0.9rem; padding: 0.35rem 0.75rem;" onclick="app.toggleCoordinatorAdminInsideModal('${c.id}', '${schoolId}')">${btnLabel}</button>
+                      <button class="btn btn-secondary btn-small" style="font-size: 0.9rem; padding: 0.35rem 0.75rem;" onclick="app.simulateCoordinatorReset('${c.id}', '${schoolId}')">Reset PW</button>
+                    </div>
+                  `;
                 } else if (this.currentRole === 'teacher' && schoolId !== 'school_1') {
                   actionsHtml = `<button class="btn btn-primary btn-small" style="font-size: 0.9rem; padding: 0.35rem 0.75rem;" onclick="app.startCoordinatorChat('${c.id}')">💬 ${this.translate('message_btn', 'Message')}</button>`;
                 }
@@ -7105,7 +7359,8 @@ class App {
       name,
       email,
       schoolId,
-      isSchoolAdmin
+      isSchoolAdmin,
+      password: 'password123'
     };
 
     coordinators.push(newCoord);
@@ -9896,18 +10151,34 @@ class App {
     });
   }
 
-  loginAsStudent(studentId) {
+  loginAsStudent(studentId, password) {
+    const student = window.db.getStudent(studentId);
+    if (!student) return;
+    if (password !== undefined && student.password && student.password !== password) {
+      alert(this.translate('incorrect_password_alert', 'Incorrect password. Please try again.'));
+      return;
+    }
     this.isLoggedIn = true;
     this.switchRole('student', studentId);
     document.getElementById('login-screen').style.display = 'none';
     document.querySelector('.app-container').style.setProperty('display', 'flex', 'important');
   }
 
-  loginAsStaff(value) {
-    this.isLoggedIn = true;
+  loginAsStaff(value, password) {
     if (value === 'admin') {
+      if (password !== undefined && password !== 'admin123') {
+        alert(this.translate('incorrect_password_alert', 'Incorrect password. Please try again.'));
+        return;
+      }
+      this.isLoggedIn = true;
       this.switchRole('admin');
     } else {
+      const coord = window.db.getCoordinator(value);
+      if (coord && password !== undefined && coord.password && coord.password !== password) {
+        alert(this.translate('incorrect_password_alert', 'Incorrect password. Please try again.'));
+        return;
+      }
+      this.isLoggedIn = true;
       this.switchRole('teacher', null, value);
     }
     document.getElementById('login-screen').style.display = 'none';
