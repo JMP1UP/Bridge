@@ -5421,6 +5421,7 @@ class App {
   // ================== ADMIN PORTAL RENDERERS ==================
 
   renderAdminDashboard() {
+    this.switchAdminSubtab(this.adminSubTab || 'requests');
     const schools = window.db.getSchools();
     const audits = window.db.getAuditLogs();
     
@@ -5452,6 +5453,38 @@ class App {
     // Populate registration requests and safeguarding hub
     this.renderAdminRequests();
     this.renderAdminSafeguarding();
+  }
+
+  switchAdminSubtab(subtabName) {
+    this.adminSubTab = subtabName;
+    const requestsBtn = document.getElementById('subtab-btn-admin-requests');
+    const safeguardingBtn = document.getElementById('subtab-btn-admin-safeguarding');
+    const auditBtn = document.getElementById('subtab-btn-admin-audit');
+    
+    const requestsView = document.getElementById('admin-requests-subview');
+    const safeguardingView = document.getElementById('admin-safeguarding-subview');
+    const auditView = document.getElementById('admin-audit-subview');
+
+    if (!requestsBtn || !safeguardingBtn || !auditBtn || !requestsView || !safeguardingView || !auditView) return;
+
+    requestsBtn.classList.remove('active');
+    safeguardingBtn.classList.remove('active');
+    auditBtn.classList.remove('active');
+    
+    requestsView.style.display = 'none';
+    safeguardingView.style.display = 'none';
+    auditView.style.display = 'none';
+
+    if (subtabName === 'requests') {
+      requestsBtn.classList.add('active');
+      requestsView.style.display = 'block';
+    } else if (subtabName === 'safeguarding') {
+      safeguardingBtn.classList.add('active');
+      safeguardingView.style.display = 'block';
+    } else if (subtabName === 'audit') {
+      auditBtn.classList.add('active');
+      auditView.style.display = 'block';
+    }
   }
 
   // Renders admin schools directory list
