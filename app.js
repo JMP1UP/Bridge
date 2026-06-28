@@ -2785,6 +2785,78 @@ class App {
     this.openModal('bulk-upload-modal');
   }
 
+  // Render a visual preview of the sent email in the student's local language
+  renderEmailPreview(student, inviteLink) {
+    const previewEl = document.getElementById('invite-email-preview');
+    if (!previewEl) return;
+
+    const lang = student.language || 'en';
+    const templates = {
+      en: {
+        subject: 'Bridge Invite: Collaborate with international classrooms!',
+        title: 'Bridge',
+        subtitle: 'Global Cultural Exchange',
+        greeting: `Hello ${student.name},`,
+        body1: 'Your teacher has invited you to join <strong>Bridge</strong>, our international classroom exchange platform!',
+        body2: 'Use Bridge to collaborate with classrooms worldwide, build shared project slide decks, chat with partners, and translate messages automatically.',
+        button: 'Join Your Classroom',
+        footer: `If the button above does not work, copy and paste this link into your browser:<br><a href="${inviteLink}" style="color: #3b82f6; word-break: break-all;">${inviteLink}</a>`
+      },
+      de: {
+        subject: 'Bridge Einladung: Arbeite mit internationalen Klassen zusammen!',
+        title: 'Bridge',
+        subtitle: 'Globaler Kulturaustausch',
+        greeting: `Hallo ${student.name},`,
+        body1: 'Dein Lehrer hat dich eingeladen, <strong>Bridge</strong> beizutreten, unserer Plattform für den internationalen Klassenaustausch!',
+        body2: 'Nutze Bridge, um mit Klassen weltweit zusammenzuarbeiten, gemeinsame Projekt-Präsentationen zu erstellen, mit Partnern zu chatten und Nachrichten automatisch zu übersetzen.',
+        button: 'Deiner Klasse beitreten',
+        footer: `Wenn die Schaltfläche oben nicht funktioniert, kopiere diesen Link in deinen Browser:<br><a href="${inviteLink}" style="color: #3b82f6; word-break: break-all;">${inviteLink}</a>`
+      },
+      fr: {
+        subject: 'Invitation Bridge : Collabore avec des classes internationales !',
+        title: 'Bridge',
+        subtitle: 'Échange Culturel Mondial',
+        greeting: `Bonjour ${student.name},`,
+        body1: "Ton enseignant t'a invité à rejoindre <strong>Bridge</strong>, notre plateforme d'échange scolaire international !",
+        body2: 'Utilise Bridge pour collaborer avec des classes du monde entier, créer des diaporamas de projet partagés, discuter avec tes partenaires et traduire automatiquement les messages.',
+        button: 'Rejoindre ta classe',
+        footer: `Si le bouton ci-dessus ne fonctionne pas, copie et colle ce lien dans ton navigateur :<br><a href="${inviteLink}" style="color: #3b82f6; word-break: break-all;">${inviteLink}</a>`
+      },
+      es: {
+        subject: 'Invitación de Bridge: ¡Colabora con clases internacionales!',
+        title: 'Bridge',
+        subtitle: 'Intercambio Cultural Global',
+        greeting: `Hola ${student.name},`,
+        body1: '¡Tu profesor te ha invitado a unirte a <strong>Bridge</strong>, nuestra plataforma de intercambio escolar internacional!',
+        body2: 'Utiliza Bridge para colaborar con clases de todo el mundo, crear presentaciones de proyectos compartidos, chatear con compañeros y traducir mensajes automáticamente.',
+        button: 'Unirse a tu clase',
+        footer: `Si el botón de arriba no funciona, copia y pega este enlace en tu navegador:<br><a href="${inviteLink}" style="color: #3b82f6; word-break: break-all;">${inviteLink}</a>`
+      }
+    };
+
+    const t = templates[lang.toLowerCase()] || templates.en;
+
+    previewEl.innerHTML = `
+      <div style="font-weight: 700; color: var(--primary); margin-bottom: 0.75rem; border-bottom: 1px dashed var(--panel-border); padding-bottom: 0.5rem; display: flex; justify-content: space-between; font-size: 0.8rem;">
+        <span>📧 SENT EMAIL PREVIEW (${lang.toUpperCase()})</span>
+        <span style="font-weight: 400; color: var(--text-secondary);">${student.email}</span>
+      </div>
+      <div style="background: white; color: #1a202c; border-radius: 8px; padding: 1.25rem; font-size: 0.8rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-family: sans-serif;">
+        <div style="text-align: center; margin-bottom: 1.25rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem;">
+          <h2 style="color: #3b82f6; margin: 0; font-size: 1.4rem; font-family: system-ui, sans-serif;">${t.title}</h2>
+          <p style="color: #4a5568; margin: 2px 0 0 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">${t.subtitle}</p>
+        </div>
+        <p style="font-size: 0.85rem; line-height: 1.5; font-weight: bold; margin: 0 0 0.75rem 0;">${t.greeting}</p>
+        <p style="font-size: 0.85rem; line-height: 1.5; margin: 0 0 0.75rem 0;">${t.body1}</p>
+        <p style="font-size: 0.85rem; line-height: 1.5; margin: 0 0 1.25rem 0;">${t.body2}</p>
+        <div style="text-align: center; margin: 1.5rem 0;">
+          <a href="${inviteLink}" target="_blank" style="background-color: #3b82f6; color: #ffffff; padding: 8px 16px; font-size: 0.85rem; font-weight: bold; text-decoration: none; border-radius: 6px; display: inline-block;">${t.button}</a>
+        </div>
+        <p style="font-size: 0.75rem; color: #718096; line-height: 1.4; margin: 1.25rem 0 0 0; border-top: 1px solid #e2e8f0; padding-top: 0.75rem;">${t.footer}</p>
+      </div>
+    `;
+  }
+
   // Single invitation creation handler
   handleInviteStudent(e) {
     e.preventDefault();
@@ -2820,8 +2892,14 @@ class App {
     document.getElementById('invite-link-input').value = inviteLink;
     document.getElementById('invite-result-area').style.display = 'block';
 
+    // Render localized email preview in UI
+    this.renderEmailPreview(newStudent, inviteLink);
+
     // Dispatch real email via Vercel serverless function
     this.sendInviteEmail(newStudent, inviteLink);
+
+    // Reset form inputs to clear them for next invite
+    document.getElementById('invite-student-form').reset();
 
     this.renderStudentRoster();
   }
@@ -2837,7 +2915,8 @@ class App {
         body: JSON.stringify({
           email: student.email,
           studentName: student.name,
-          inviteLink: inviteLink
+          inviteLink: inviteLink,
+          lang: student.language || 'en'
         })
       });
       const data = await response.json();
