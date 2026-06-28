@@ -7904,17 +7904,12 @@ class App {
 
     subtabDefs.forEach(t => {
       if (!t.btn) return;
+      t.btn.removeAttribute('style'); // Remove hardcoded inline styling
       if (this.projectsSubTab === t.name) {
-        t.btn.style.background = 'var(--secondary)';
-        t.btn.style.border = 'none';
-        t.btn.style.color = '#0b0f19';
-        t.btn.style.fontWeight = '700';
+        t.btn.classList.add('active');
         if (t.view) t.view.style.display = 'flex';
       } else {
-        t.btn.style.background = 'transparent';
-        t.btn.style.border = '1px solid var(--panel-border)';
-        t.btn.style.color = 'var(--text-secondary)';
-        t.btn.style.fontWeight = '500';
+        t.btn.classList.remove('active');
         if (t.view) t.view.style.display = 'none';
       }
     });
