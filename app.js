@@ -107,6 +107,23 @@ class App {
     return defaultText;
   }
 
+  translateGender(gender) {
+    if (!gender) return '';
+    const key = `gender_${gender.toLowerCase()}`;
+    return this.translate(key, gender);
+  }
+
+  translateYearGroup(yg) {
+    if (!yg) return '';
+    if (this.interfaceLang === 'de') {
+      return yg.replace(/Year/i, 'Klasse');
+    }
+    if (this.interfaceLang === 'fr') {
+      return yg.replace(/Year/i, 'Classe');
+    }
+    return yg;
+  }
+
   formatTeacherName(name) {
     if (!name) return '';
     if (name.startsWith('Teacher ')) {
@@ -713,7 +730,7 @@ class App {
       const stud = window.db.getStudent(this.currentStudentId);
       if (stud) {
         nameEl.textContent = stud.name;
-        roleEl.textContent = `${stud.yearGroup} • ${window.db.getSchool(stud.schoolId)?.name}`;
+        roleEl.textContent = `${this.translateYearGroup(stud.yearGroup)} • ${window.db.getSchool(stud.schoolId)?.name}`;
         avatarEl.textContent = stud.name.split(' ').map(n => n[0]).join('');
       }
     } else if (this.currentRole === 'teacher') {
@@ -2417,8 +2434,8 @@ class App {
           <span class="clickable-student-roster-name" style="cursor: pointer; text-decoration: underline; color: var(--secondary);" onclick="app.openTeacherStudentProfileModal('${stud.id}')">${stud.name}</span>
           <br><span style="font-size: 0.75rem; font-weight: normal; color: var(--text-secondary);">${stud.email}</span>
         </td>
-        <td>${stud.age} • ${stud.gender}</td>
-        <td>${stud.yearGroup}</td>
+        <td>${stud.age} • ${this.translateGender(stud.gender)}</td>
+        <td>${this.translateYearGroup(stud.yearGroup)}</td>
         <td>${statusBadge}</td>
         <td>
           <span style="font-size: 0.85rem;">${this.getLogonDisplay(stud.activityLevel)}</span>
@@ -2720,7 +2737,7 @@ class App {
               <span>${stud.name} (${stud.age} ${this.translate('years_old_suffix', 'y/o')})</span>
               <span class="badge ${badgeClass}" ${tooltipAttr} style="font-size: 0.65rem; padding: 0.1rem 0.35rem; border-radius: 4px; font-weight: 700; white-space: nowrap;">${matchStatusText}</span>
             </h4>
-            <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0.2rem 0 0 0;">${stud.gender} • ${stud.yearGroup}</p>
+            <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0.2rem 0 0 0;">${this.translateGender(stud.gender)} • ${this.translateYearGroup(stud.yearGroup)}</p>
           </div>
         `;
 
@@ -4508,7 +4525,7 @@ class App {
           <div class="panel-header" style="margin-bottom: 0.5rem;">
             <div>
               <h4 style="font-weight: 700; font-size: 0.95rem; margin: 0;">${stud.name}</h4>
-              <span style="font-size: 0.7rem; color: var(--text-secondary);">${stud.yearGroup} • ${school ? school.name : this.translate('unknown_school', 'Unknown School')}</span>
+              <span style="font-size: 0.7rem; color: var(--text-secondary);">${this.translateYearGroup(stud.yearGroup)} • ${school ? school.name : this.translate('unknown_school', 'Unknown School')}</span>
             </div>
             <span class="badge badge-warning">${this.translate('pending_review_status', 'Pending Review')}</span>
           </div>
@@ -5440,7 +5457,7 @@ class App {
                   <tr style="border-bottom: 1px solid var(--panel-border);">
                     <td style="padding: 0.5rem; font-weight: 600;">${displayName}</td>
                     <td style="padding: 0.5rem; color: var(--text-secondary);">${displayEmail}</td>
-                    <td style="padding: 0.5rem;">Age ${s.age} (${s.yearGroup})</td>
+                    <td style="padding: 0.5rem;">${this.translate('age_label', 'Age')} ${s.age} (${this.translateYearGroup(s.yearGroup)})</td>
                     <td style="padding: 0.5rem;"><span class="badge ${badgeClass}" ${tooltipAttr}>${matchStatusText}</span></td>
                   </tr>
                 `;
@@ -5611,7 +5628,7 @@ class App {
         </div>
         <div>
           <h4 style="font-weight: 700; font-size: 1.35rem; margin: 0; color: var(--text-primary);">${displayName}</h4>
-          <span class="badge badge-info" style="margin-top: 0.35rem;">${this.translate('age_label', 'Age')} ${student.age} • ${student.yearGroup}</span>
+          <span class="badge badge-info" style="margin-top: 0.35rem;">${this.translate('age_label', 'Age')} ${student.age} • ${this.translateYearGroup(student.yearGroup)}</span>
         </div>
       </div>
 
@@ -5691,12 +5708,12 @@ class App {
             <div style="border-right: 1px solid var(--panel-border);"></div>
             <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
               <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 500;">${this.translate('th_gender', 'Gender')}</span>
-              <span style="font-weight: bold; color: var(--text-primary); margin-top: 0.15rem;">${student.gender}</span>
+              <span style="font-weight: bold; color: var(--text-primary); margin-top: 0.15rem;">${this.translateGender(student.gender)}</span>
             </div>
             <div style="border-right: 1px solid var(--panel-border);"></div>
             <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
               <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 500;">${this.translate('th_year', 'Year')}</span>
-              <span style="font-weight: bold; color: var(--text-primary); margin-top: 0.15rem;">${student.yearGroup}</span>
+              <span style="font-weight: bold; color: var(--text-primary); margin-top: 0.15rem;">${this.translateYearGroup(student.yearGroup)}</span>
             </div>
           </div>
           
@@ -5814,7 +5831,7 @@ class App {
         <div>
           <h4 style="font-weight: 700; font-size: 1.2rem; margin: 0; color: var(--text-primary);">${student.name}</h4>
           <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem; font-weight: 500;">
-            ${student.email} • Age ${student.age} • ${student.gender} • ${student.yearGroup}
+            ${student.email} • ${this.translate('age_label', 'Age')} ${student.age} • ${this.translateGender(student.gender)} • ${this.translateYearGroup(student.yearGroup)}
           </div>
           <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem;">
             Last Logon: <strong>${this.getLogonDisplay(student.activityLevel)}</strong> | Status: <strong>${student.invitationStatus}</strong>
@@ -7393,7 +7410,7 @@ class App {
       if (subtabGallery) {
         subtabGallery.style.background = 'var(--secondary)';
         subtabGallery.style.border = 'none';
-        subtabGallery.style.color = '#fff';
+        subtabGallery.style.color = '#0b0f19';
         subtabGallery.style.fontWeight = '700';
       }
       if (subtabCancelled) {
@@ -7414,7 +7431,7 @@ class App {
       if (subtabCancelled) {
         subtabCancelled.style.background = 'var(--secondary)';
         subtabCancelled.style.border = 'none';
-        subtabCancelled.style.color = '#fff';
+        subtabCancelled.style.color = '#0b0f19';
         subtabCancelled.style.fontWeight = '700';
       }
       if (galleryView) galleryView.style.display = 'none';
@@ -8363,7 +8380,7 @@ class App {
       div.innerHTML = `
         <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.85rem; color: var(--text-primary);">
           <input type="checkbox" class="break-link-checkbox" value="${stud.id}" onclick="app.updateBreakLinksSubmitBtn()">
-          <strong>${stud.name}</strong> (${stud.yearGroup})
+          <strong>${stud.name}</strong> (${this.translateYearGroup(stud.yearGroup)})
         </label>
         <span style="font-size: 0.75rem; color: var(--text-secondary);">
           Matched with: ${partnerNamesList.join(', ')}
