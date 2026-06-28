@@ -831,11 +831,11 @@ class App {
       const template = window.translator.UI_TRANSLATIONS[this.interfaceLang].welcome_subtitle_student || "Welcome, {name}! Connect with your cultural exchange partner.";
       subtitleEl.textContent = template.replace('{name}', student?.name || 'Student');
     } else if (this.currentRole === 'teacher') {
-      subtitleEl.textContent = this.translate('teacher_portal_subtitle_desc', 'Staff Portal: Monitor safety, review student articles, and pair partners.');
+      subtitleEl.textContent = '';
     } else if (this.currentRole === 'admin') {
-      subtitleEl.textContent = this.translate('platform_admin_subtitle_desc', 'Platform Management Dashboard: Audit global actions and register schools.');
+      subtitleEl.textContent = '';
     } else if (this.currentRole === 'new-coordinator') {
-      subtitleEl.textContent = this.translate('coordinator_onboarding_subtitle_desc', 'Coordinator Onboarding: Connect your school to Bridge to participate.');
+      subtitleEl.textContent = '';
     }
 
     // Refresh dynamic views on switch
@@ -2111,10 +2111,21 @@ class App {
   // ================== TEACHER / STAFF PORTAL RENDERERS ==================
 
   renderTeacherDashboard() {
-    const students = window.db.getStudents();
+    const teacher = this.getLoggedTeacher();
+    const ownSchoolId = teacher ? teacher.schoolId : null;
+
+    const allStudents = window.db.getStudents();
+    const students = ownSchoolId ? allStudents.filter(s => s.schoolId === ownSchoolId) : allStudents;
     const unmatched = students.filter(s => s.matchStatus === 'unmatched');
-    const flags = window.db.getFlags().filter(f => f.status === 'Pending');
-    const pendingArticles = window.db.getArticles().filter(a => a.status === 'Pending');
+
+    const allFlags = window.db.getFlags().filter(f => f.status === 'Pending');
+    const flags = ownSchoolId ? allFlags.filter(f => {
+      const student = window.db.getStudent(f.studentId);
+      return student && student.schoolId === ownSchoolId;
+    }) : allFlags;
+
+    const allArticles = window.db.getArticles().filter(a => a.status === 'Pending');
+    const pendingArticles = ownSchoolId ? allArticles.filter(a => a.schoolId === ownSchoolId) : allArticles;
     const pendingBiogs = students.filter(s => s.personalBiogStatus === 'Pending');
 
     document.getElementById('stat-total-students').textContent = students.length;
@@ -4368,8 +4379,14 @@ class App {
     const container = document.getElementById('editorial-desk-list');
     if (!container) return;
 
-    const articles = window.db.getArticles();
-    const students = window.db.getStudents();
+    const teacher = this.getLoggedTeacher();
+    const ownSchoolId = teacher ? teacher.schoolId : null;
+
+    const allArticles = window.db.getArticles();
+    const articles = ownSchoolId ? allArticles.filter(a => a.schoolId === ownSchoolId) : allArticles;
+
+    const allStudents = window.db.getStudents();
+    const students = ownSchoolId ? allStudents.filter(s => s.schoolId === ownSchoolId) : allStudents;
     const pendingBiogs = students.filter(s => s.personalBiogStatus === 'Pending');
 
     // Draw main structural wrapper for Articles and Biographies
