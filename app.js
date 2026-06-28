@@ -365,6 +365,18 @@ class App {
       });
     }
 
+    // Coordinator conversation-translate initialization
+    this.teacherConversationTranslateEnabled = localStorage.getItem('bridge_teacher_conversation_translate') === 'true';
+    const teachConvToggle = document.getElementById('teacher-conversation-translate-toggle');
+    if (teachConvToggle) {
+      teachConvToggle.checked = this.teacherConversationTranslateEnabled;
+      teachConvToggle.addEventListener('change', (e) => {
+        this.teacherConversationTranslateEnabled = e.target.checked;
+        localStorage.setItem('bridge_teacher_conversation_translate', this.teacherConversationTranslateEnabled);
+        this.renderTeacherMessages();
+      });
+    }
+
 
     // Auto-translate toggle event listener
     this.autoTranslateEnabled = localStorage.getItem('bridge_auto_translate') === 'true';
@@ -2057,6 +2069,41 @@ class App {
     this.teacherAutoTranslateTimeout = setTimeout(() => {
       this.draftTeacherTranslation();
     }, 800);
+  }
+
+  async translateCoordinatorMessageOnTheFly(msg, sourceLang, targetLang) {
+    if (!this.currentlyTranslatingMsgIds) {
+      this.currentlyTranslatingMsgIds = new Set();
+    }
+    if (this.currentlyTranslatingMsgIds.has(msg.id)) return;
+    this.currentlyTranslatingMsgIds.add(msg.id);
+
+    try {
+      const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(msg.text)}&langpair=${sourceLang}|${targetLang}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      const translated = data.responseData?.translatedText || msg.text;
+
+      const allMsgs = window.db.getCoordinatorMessages();
+      const dbMsg = allMsgs.find(m => m.id === msg.id);
+      if (dbMsg) {
+        dbMsg.translation = translated;
+        window.db.saveTable('coordinatorMessages', allMsgs);
+        this.renderTeacherMessages();
+      }
+    } catch (err) {
+      console.error("On-the-fly translation failed, using mock:", err);
+      const translated = window.translator.mockTranslate(msg.text, sourceLang, targetLang);
+      const allMsgs = window.db.getCoordinatorMessages();
+      const dbMsg = allMsgs.find(m => m.id === msg.id);
+      if (dbMsg) {
+        dbMsg.translation = translated;
+        window.db.saveTable('coordinatorMessages', allMsgs);
+        this.renderTeacherMessages();
+      }
+    } finally {
+      this.currentlyTranslatingMsgIds.delete(msg.id);
+    }
   }
 
   // Send message implementation
@@ -7163,8 +7210,17 @@ class App {
         row.className = `message-row ${isSent ? 'sent' : 'received'}`;
         
         let transRow = '';
-        if (msg.translation && translationEnabled && this.teacherAutoTranslateEnabled) {
+        if (msg.translation && translationEnabled && this.teacherConversationTranslateEnabled) {
           transRow = `<div class="message-translation" style="font-size: 0.82rem; color: var(--secondary); margin-top: 0.25rem; font-style: italic; border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 0.25rem;">📝 ${msg.translation}</div>`;
+        } else if (!isSent && !msg.translation && translationEnabled && this.teacherConversationTranslateEnabled) {
+          const ownSchool = window.db.getSchool(teacher.schoolId);
+          const myLang = ownSchool ? (ownSchool.country.toLowerCase().includes('germany') ? 'de' : ownSchool.country.toLowerCase().includes('france') ? 'fr' : 'en') : 'en';
+          const partnerSchool = window.db.getSchool(activeCoord.schoolId);
+          const partnerLang = partnerSchool ? (partnerSchool.country.toLowerCase().includes('germany') ? 'de' : partnerSchool.country.toLowerCase().includes('france') ? 'fr' : 'en') : 'en';
+          if (myLang !== partnerLang) {
+            transRow = `<div class="message-translation" style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.25rem; font-style: italic; border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 0.25rem;">⏳ Translating...</div>`;
+            this.translateCoordinatorMessageOnTheFly(msg, partnerLang, myLang);
+          }
         }
 
         row.innerHTML = `
