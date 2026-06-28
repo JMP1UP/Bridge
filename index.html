@@ -1222,6 +1222,9 @@
           <button type="button" class="subtab-btn" id="subtab-btn-settings-preferences" onclick="app.switchSettingsSubtab('preferences')">
             ⚙️ <span data-localize="settings_preferences_subtab">SafeGuard Preferences</span>
           </button>
+          <button type="button" class="subtab-btn" id="subtab-btn-settings-directory" onclick="app.switchSettingsSubtab('directory')">
+            👥 <span data-localize="settings_directory_subtab">Staff Directory</span>
+          </button>
         </div>
 
         <!-- School Profile Editor Card -->
@@ -1330,7 +1333,7 @@
         </div>
 
         <!-- School Staff Directory Panel -->
-        <div class="panel" style="margin-top: 1.5rem;" id="school-staff-directory-panel">
+        <div class="panel" id="school-staff-directory-panel" style="display: none; margin-top: 0;">
           <!-- Populated dynamically by JS -->
         </div>
       </section>

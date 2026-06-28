@@ -5093,17 +5093,21 @@ class App {
     this.settingsSubTab = subtabName;
     const profileBtn = document.getElementById('subtab-btn-settings-profile');
     const preferencesBtn = document.getElementById('subtab-btn-settings-preferences');
+    const directoryBtn = document.getElementById('subtab-btn-settings-directory');
     
     const profileView = document.getElementById('settings-profile-subview');
     const preferencesView = document.getElementById('settings-preferences-subview');
+    const directoryView = document.getElementById('school-staff-directory-panel');
 
-    if (!profileBtn || !preferencesBtn || !profileView || !preferencesView) return;
+    if (!profileBtn || !preferencesBtn || !directoryBtn || !profileView || !preferencesView || !directoryView) return;
 
     profileBtn.classList.remove('active');
     preferencesBtn.classList.remove('active');
+    directoryBtn.classList.remove('active');
     
     profileView.style.display = 'none';
     preferencesView.style.display = 'none';
+    directoryView.style.display = 'none';
 
     if (subtabName === 'profile') {
       profileBtn.classList.add('active');
@@ -5111,6 +5115,9 @@ class App {
     } else if (subtabName === 'preferences') {
       preferencesBtn.classList.add('active');
       preferencesView.style.display = 'block';
+    } else if (subtabName === 'directory') {
+      directoryBtn.classList.add('active');
+      directoryView.style.display = 'block';
     }
   }
 
