@@ -3747,28 +3747,28 @@ class App {
       const row = document.createElement('tr');
       row.innerHTML = `
         <td style="padding: 0.5rem;"><input type="checkbox" class="match-select-checkbox" value="${match.id}" onclick="app.updateBulkActiveMatchesState()"></td>
-        <td style="font-weight: 600;">
+        <td style="font-weight: 600; font-size: 1rem; vertical-align: middle;">
           ${myStudent ? myStudent.name : 'Unknown'}<br>
-          <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: normal;">${myStudent?.gender} • ${myStudent?.age} ${this.translate('years_old_suffix', 'y/o')}</span>
+          <span style="font-size: 0.95rem; color: var(--text-secondary); font-weight: normal;">${myStudent?.gender} • ${myStudent?.age} ${this.translate('years_old_suffix', 'y/o')}</span>
         </td>
-        <td>
-          <div style="display: flex; align-items: center; justify-content: space-between; max-width: 220px;">
+        <td style="vertical-align: middle;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
             <div>
-              <strong style="color: var(--text-primary); font-size: 0.9rem;">${partnerFirstName}</strong>
-              <span style="font-size: 0.75rem; color: var(--text-secondary); margin-left: 0.25rem;">(${partnerStudent?.gender} • ${partnerStudent?.age} ${this.translate('years_old_suffix', 'y/o')})</span>
+              <strong style="color: var(--text-primary); font-size: 1rem; display: block;">${partnerFirstName}</strong>
+              <span style="font-size: 0.95rem; color: var(--text-secondary); font-weight: normal; display: block; white-space: nowrap;">${partnerStudent?.gender} • ${partnerStudent?.age} ${this.translate('years_old_suffix', 'y/o')}</span>
             </div>
-            <button class="btn btn-secondary btn-small" onclick="app.openBioModal('${partnerStudentId}')" style="padding: 0.2rem 0.5rem; font-size: 0.7rem; font-weight: 600; border-radius: 6px;">${this.translate('read_bio_btn', '📖 Read Bio')}</button>
+            <button class="btn btn-secondary" onclick="app.openBioModal('${partnerStudentId}')" style="padding: 0.4rem 0.75rem; font-size: 0.95rem; font-weight: 600; border-radius: 6px; white-space: nowrap; flex-shrink: 0;">📖 ${this.translate('read_bio_btn', 'Read Bio')}</button>
           </div>
         </td>
-        <td>
+        <td style="vertical-align: middle; font-size: 1rem;">
           <div style="font-weight: 600;">
             ${partnerSchool ? `${this.getSchoolFlag(partnerSchool.country)} ${partnerSchool.name}` : this.translate('matching_partner_school', 'Partner School')}
           </div>
-          <span style="font-size: 0.75rem; color: var(--text-muted);">${partnerSchool ? partnerSchool.city + ', ' + partnerSchool.country : ''}</span>
+          <span style="font-size: 0.95rem; color: var(--text-muted);">${partnerSchool ? partnerSchool.city + ', ' + partnerSchool.country : ''}</span>
         </td>
-        <td>${dateStr}</td>
-        <td>
-          <button class="btn btn-secondary btn-small" onclick="app.deleteActiveMatch('${match.id}')" style="color: var(--danger); border-color: var(--danger); font-weight: 600;">${this.translate('disband_match_btn', 'Disband Match')}</button>
+        <td style="vertical-align: middle; font-size: 1rem; color: var(--text-secondary);">${dateStr}</td>
+        <td style="vertical-align: middle;">
+          <button class="btn btn-secondary" onclick="app.deleteActiveMatch('${match.id}')" style="color: var(--danger); border-color: var(--danger); font-weight: 600; font-size: 0.95rem; padding: 0.4rem 0.75rem; white-space: nowrap;">${this.translate('disband_match_btn', 'Break Connection')}</button>
         </td>
       `;
       tbody.appendChild(row);
