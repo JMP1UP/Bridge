@@ -8272,17 +8272,30 @@ class App {
     if (!teacher) return;
     const schoolId = teacher.schoolId;
 
-    // 1. Populate partner school select in Launch Project Form
-    const partnerSchoolSelect = document.getElementById('launch-proj-school');
-    if (partnerSchoolSelect) {
-      partnerSchoolSelect.innerHTML = '';
+    // 1. Populate partner schools checklist in Launch Project Form
+    const partnerSchoolsList = document.getElementById('launch-proj-schools-list');
+    if (partnerSchoolsList) {
+      partnerSchoolsList.innerHTML = '';
       const schools = window.db.getSchools().filter(s => s.id !== schoolId);
-      schools.forEach(s => {
-        const opt = document.createElement('option');
-        opt.value = s.id;
-        opt.textContent = `${s.name} (${s.city}, ${s.country})`;
-        partnerSchoolSelect.appendChild(opt);
-      });
+      if (schools.length === 0) {
+        partnerSchoolsList.innerHTML = `<span style="font-size: 0.8rem; color: var(--text-muted); padding: 0.5rem; display: block;">No partner schools connected.</span>`;
+      } else {
+        schools.forEach(s => {
+          const flag = this.getSchoolFlag(s.country);
+          const div = document.createElement('div');
+          div.style.display = 'flex';
+          div.style.alignItems = 'center';
+          div.style.gap = '0.5rem';
+          div.style.padding = '0.2rem 0';
+          div.innerHTML = `
+            <input type="checkbox" name="launch-school" value="${s.id}" id="chk-launch-school-${s.id}" style="cursor: pointer;">
+            <label for="chk-launch-school-${s.id}" style="font-size: 0.8rem; cursor: pointer; color: var(--text-primary); margin: 0;">
+              ${flag} ${s.name} (${s.city}, ${s.country})
+            </label>
+          `;
+          partnerSchoolsList.appendChild(div);
+        });
+      }
     }
 
     // 2. Populate student checkbox list in Launch Project Form
@@ -8314,7 +8327,7 @@ class App {
     const proposalsTbody = document.getElementById('teach-pending-projects-tbody');
     if (proposalsTbody) {
       proposalsTbody.innerHTML = '';
-      const proposals = window.db.getProjects().filter(p => p.status === 'Proposed' && p.targetSchoolId === schoolId);
+      const proposals = window.db.getProjects().filter(p => p.status === 'Proposed' && (p.targetSchoolId === schoolId || (p.targetSchoolIds && p.targetSchoolIds.includes(schoolId))));
       
       if (proposals.length === 0) {
         proposalsTbody.innerHTML = `
@@ -8490,7 +8503,7 @@ class App {
     });
 
     // Update pending proposals count badge on proposals subtab button
-    const proposals = window.db.getProjects().filter(p => p.status === 'Proposed' && p.targetSchoolId === schoolId);
+    const proposals = window.db.getProjects().filter(p => p.status === 'Proposed' && (p.targetSchoolId === schoolId || (p.targetSchoolIds && p.targetSchoolIds.includes(schoolId))));
     const badgeEl = document.getElementById('proposals-badge');
     if (badgeEl) {
       if (proposals.length > 0) {
@@ -8509,8 +8522,11 @@ class App {
       const schoolFilterSelect = document.getElementById('proj-filter-school');
       if (schoolFilterSelect && (!schoolFilterSelect.dataset.initialized || schoolFilterSelect.dataset.lastTeacherId !== teacher.id)) {
         const currentVal = schoolFilterSelect.value;
-        const allProjs = window.db.getProjects().filter(p => (p.creatorSchoolId === schoolId || p.targetSchoolId === schoolId) && p.status !== 'Cancelled');
-        const partnerSchoolIds = Array.from(new Set(allProjs.map(p => p.creatorSchoolId === schoolId ? p.targetSchoolId : p.creatorSchoolId)));
+        const allProjs = window.db.getProjects().filter(p => (p.creatorSchoolId === schoolId || p.targetSchoolId === schoolId || (p.targetSchoolIds && p.targetSchoolIds.includes(schoolId))) && p.status !== 'Cancelled');
+        const partnerSchoolIds = Array.from(new Set(allProjs.flatMap(p => {
+          const targets = p.targetSchoolIds || (p.targetSchoolId ? [p.targetSchoolId] : []);
+          return [p.creatorSchoolId, ...targets].filter(sid => sid !== schoolId);
+        })));
         
         schoolFilterSelect.innerHTML = `<option value="all">All Schools</option>`;
         partnerSchoolIds.forEach(psId => {
@@ -8537,17 +8553,16 @@ class App {
       const filterStatus = document.getElementById('proj-filter-status')?.value || 'all';
 
       let activeProjects = window.db.getProjects()
-        .filter(p => (p.creatorSchoolId === schoolId || p.targetSchoolId === schoolId) && p.status !== 'Cancelled');
+        .filter(p => (p.creatorSchoolId === schoolId || p.targetSchoolId === schoolId || (p.targetSchoolIds && p.targetSchoolIds.includes(schoolId))) && p.status !== 'Cancelled');
 
       // Filter by search query (title, partner school, brief text)
       if (searchQuery) {
         activeProjects = activeProjects.filter(p => {
-          const isCreator = p.creatorSchoolId === schoolId;
-          const partnerSchoolId = isCreator ? p.targetSchoolId : p.creatorSchoolId;
-          const partnerSchool = window.db.getSchool(partnerSchoolId);
-          const partnerName = partnerSchool ? partnerSchool.name.toLowerCase() : '';
+          const targets = p.targetSchoolIds || (p.targetSchoolId ? [p.targetSchoolId] : []);
+          const allPartners = [p.creatorSchoolId, ...targets].filter(sid => sid !== schoolId);
+          const partnerNames = allPartners.map(sid => window.db.getSchool(sid)?.name.toLowerCase() || '');
           return p.title.toLowerCase().includes(searchQuery) ||
-                 partnerName.includes(searchQuery) ||
+                 partnerNames.some(name => name.includes(searchQuery)) ||
                  p.brief.toLowerCase().includes(searchQuery);
         });
       }
@@ -8562,9 +8577,8 @@ class App {
       // Filter by partner school
       if (filterSchool !== 'all') {
         activeProjects = activeProjects.filter(p => {
-          const isCreator = p.creatorSchoolId === schoolId;
-          const partnerSchoolId = isCreator ? p.targetSchoolId : p.creatorSchoolId;
-          return partnerSchoolId === filterSchool;
+          const targets = p.targetSchoolIds || (p.targetSchoolId ? [p.targetSchoolId] : []);
+          return p.creatorSchoolId === filterSchool || targets.includes(filterSchool);
         });
       }
 
@@ -8581,7 +8595,8 @@ class App {
       activeProjects.sort((a, b) => {
         const getWeight = (x) => {
           if (x.status === 'Proposed') {
-            return x.targetSchoolId === schoolId ? 0 : 3;
+            const targets = x.targetSchoolIds || (x.targetSchoolId ? [x.targetSchoolId] : []);
+            return (x.targetSchoolId === schoolId || targets.includes(schoolId)) ? 0 : 3;
           }
           return x.paused ? 2 : 1;
         };
@@ -8642,9 +8657,22 @@ class App {
       } else {
         activeProjects.forEach(p => {
           const isCreator = p.creatorSchoolId === schoolId;
-          const partnerSchoolId = isCreator ? p.targetSchoolId : p.creatorSchoolId;
-          const partnerSchool = window.db.getSchool(partnerSchoolId);
           const isSelected = this.selectedProjectBroadcastIds.includes(p.id);
+
+          // Get target schools array safely
+          const targets = p.targetSchoolIds || (p.targetSchoolId ? [p.targetSchoolId] : []);
+          let partnerSchoolIds = [];
+          if (isCreator) {
+            partnerSchoolIds = targets;
+          } else {
+            partnerSchoolIds = [p.creatorSchoolId, ...targets.filter(tid => tid !== schoolId)];
+          }
+
+          const partnerSchoolsList = partnerSchoolIds.map(tid => window.db.getSchool(tid)).filter(Boolean);
+          const partnerSchoolsHTML = partnerSchoolsList.map(sch => {
+            const flag = this.getSchoolFlag(sch.country);
+            return `${flag} ${sch.name}`;
+          }).join(', ');
 
           let localStudentNames = '';
           let partnerStudentNames = '';
@@ -8653,19 +8681,33 @@ class App {
 
           if (p.isStaffProject) {
             const creatorSchoolCoords = window.db.getCoordinators().filter(c => c.schoolId === p.creatorSchoolId);
-            const creatorStaffNames = creatorSchoolCoords.map(c => c.name).join(', ');
-            const targetSchoolCoords = window.db.getCoordinators().filter(c => c.schoolId === p.targetSchoolId);
-            const targetStaffNames = targetSchoolCoords.map(c => c.name).join(', ');
+            const targetSchoolCoords = window.db.getCoordinators().filter(c => targets.includes(c.schoolId));
 
-            myStaffNames = isCreator ? creatorStaffNames : targetStaffNames;
-            partnerStaffNames = isCreator ? targetStaffNames : creatorStaffNames;
+            if (isCreator) {
+              myStaffNames = creatorSchoolCoords.map(c => c.name).join(', ');
+              partnerStaffNames = targetSchoolCoords.map(c => c.name).join(', ');
+            } else {
+              myStaffNames = window.db.getCoordinators().filter(c => c.schoolId === schoolId).map(c => c.name).join(', ');
+              partnerStaffNames = [
+                ...creatorSchoolCoords.map(c => c.name),
+                ...window.db.getCoordinators().filter(c => targets.includes(c.schoolId) && c.schoolId !== schoolId).map(c => c.name)
+              ].join(', ');
+            }
           } else {
-            localStudentNames = (isCreator ? p.creatorSchoolStudentIds : p.targetSchoolStudentIds)
-              .map(sid => window.db.getStudent(sid)?.name || 'Unknown')
-              .join(', ');
-            partnerStudentNames = (isCreator ? p.targetSchoolStudentIds : p.creatorSchoolStudentIds)
-              .map(sid => window.db.getStudent(sid)?.name || 'Unknown')
-              .join(', ');
+            // Local students (our school)
+            localStudentNames = (isCreator ? p.creatorSchoolStudentIds : p.targetSchoolStudentIds.filter(sid => {
+              const stud = window.db.getStudent(sid);
+              return stud && stud.schoolId === schoolId;
+            })).map(sid => window.db.getStudent(sid)?.name || 'Unknown').join(', ');
+
+            // Partner students (all other participant schools)
+            partnerStudentNames = (isCreator ? p.targetSchoolStudentIds : [
+              ...p.creatorSchoolStudentIds,
+              ...p.targetSchoolStudentIds.filter(sid => {
+                const stud = window.db.getStudent(sid);
+                return stud && stud.schoolId !== schoolId;
+              })
+            ]).map(sid => window.db.getStudent(sid)?.name || 'Unknown').join(', ');
 
             if (p.status === 'Proposed') {
               if (isCreator) {
@@ -8764,7 +8806,7 @@ class App {
                 <span class="badge" style="font-size: 0.72rem; padding: 0.15rem 0.45rem; font-weight: 700; color: #60a5fa; background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.25); border-radius: 4px;">👥 Student Exchange</span>
               `}
               <h4 style="font-size: 1.15rem; font-weight: 800; margin: 0; color: var(--text-primary);">${p.title}</h4>
-              <span style="font-size: 1rem; color: var(--text-muted);">${this.translate('partner_label', 'Partner')}: ${partnerSchool ? `${this.getSchoolFlag(partnerSchool.country)} ${partnerSchool.name}` : this.translate('unknown_school', 'Unknown School')}</span>
+              <span style="font-size: 1rem; color: var(--text-muted);">${this.translate('partner_label', 'Partner')}: ${partnerSchoolsHTML || this.translate('unknown_school', 'Unknown School')}</span>
             </div>
 
             <p style="font-size: 1rem; color: var(--text-secondary); margin: 0; line-height: 1.45;">
@@ -9259,10 +9301,18 @@ class App {
 
     const titleInput = document.getElementById('launch-proj-title');
     const briefInput = document.getElementById('launch-proj-brief');
-    const targetSchoolSelect = document.getElementById('launch-proj-school');
     const projTypeSelect = document.getElementById('launch-proj-type');
 
-    if (!titleInput || !briefInput || !targetSchoolSelect) return;
+    if (!titleInput || !briefInput) return;
+
+    // Get checked target partner schools
+    const checkedSchools = document.querySelectorAll('#launch-proj-schools-list input[name="launch-school"]:checked');
+    const selectedSchoolIds = Array.from(checkedSchools).map(cb => cb.value);
+
+    if (selectedSchoolIds.length === 0) {
+      alert(this.translate('select_school_launch_project_warning', 'Please select at least one target partner school to launch the project.'));
+      return;
+    }
 
     const isStaffProj = projTypeSelect ? projTypeSelect.value === 'staff' : false;
 
@@ -9281,7 +9331,8 @@ class App {
       title: titleInput.value.trim(),
       brief: briefInput.value.trim(),
       creatorSchoolId: teacher.schoolId,
-      targetSchoolId: targetSchoolSelect.value,
+      targetSchoolId: selectedSchoolIds[0], // backward compatibility
+      targetSchoolIds: selectedSchoolIds,  // new array field supporting multi-school scaling
       creatorSchoolStudentIds: selectedStudentIds,
       targetSchoolStudentIds: [],
       isStaffProject: isStaffProj,
@@ -9324,8 +9375,11 @@ class App {
       }
     }
 
+    const currentStudents = project.targetSchoolStudentIds || [];
+    const updatedStudents = Array.from(new Set([...currentStudents, ...selectedStudentIds]));
+
     window.db.updateProject(projectId, {
-      targetSchoolStudentIds: selectedStudentIds,
+      targetSchoolStudentIds: updatedStudents,
       status: 'Active'
     });
 
