@@ -1576,6 +1576,28 @@
                 </table>
               </div>
             </div>
+
+            <!-- Sent Project Proposals Panel -->
+            <div class="panel" id="teach-sent-projects-panel" style="padding: 1.25rem;">
+              <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0 0 1rem 0; border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
+                <span>📤</span> <span data-localize="sent_project_proposals_title">Our Sent Proposals (Awaiting Partner Review)</span>
+              </h3>
+              <div class="table-container">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                  <thead>
+                    <tr style="border-bottom: 1px solid var(--panel-border); background: rgba(255,255,255,0.01);">
+                      <th style="padding: 0.5rem; text-align: left;" data-localize="th_project_details">Project Details</th>
+                      <th style="padding: 0.5rem; text-align: left;" data-localize="th_target_partner_school">Target Partner School</th>
+                      <th style="padding: 0.5rem; text-align: left;" data-localize="th_members_added">Members Added</th>
+                      <th style="padding: 0.5rem; text-align: left;" data-localize="th_proposal_status">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="teach-sent-projects-tbody">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
 
           <!-- 3. Launch Project Subview Container -->

@@ -33,10 +33,10 @@
 
     content.innerHTML = `
       <div style="font-size: 2.75rem; margin-bottom: 1rem; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));">${icon}</div>
-      <h3 style="font-family: var(--font-title); font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">${this.translate('system_notification', 'System Notification')}</h3>
+      <h3 style="font-family: var(--font-title); font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">${(window.app && window.app.translate) ? window.app.translate('system_notification', 'System Notification') : 'System Notification'}</h3>
       <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.75rem; font-family: var(--font-body);">${message}</p>
       <div style="display: flex; justify-content: center;">
-        <button class="btn btn-primary" style="padding: 0.65rem 2.5rem; min-width: 120px; border-radius: 10px; font-weight: 600;">${this.translate('dismiss_btn', 'Dismiss')}</button>
+        <button class="btn btn-primary" style="padding: 0.65rem 2.5rem; min-width: 120px; border-radius: 10px; font-weight: 600;">${(window.app && window.app.translate) ? window.app.translate('dismiss_btn', 'Dismiss') : 'Dismiss'}</button>
       </div>
     `;
 
@@ -8395,6 +8395,65 @@ class App {
       }
     }
 
+    // 3.5. Populate Outgoing Project Proposals
+    const sentTbody = document.getElementById('teach-sent-projects-tbody');
+    if (sentTbody) {
+      sentTbody.innerHTML = '';
+      const sentProposals = window.db.getProjects().filter(p => p.status === 'Proposed' && p.creatorSchoolId === schoolId);
+      
+      if (sentProposals.length === 0) {
+        sentTbody.innerHTML = `
+          <tr>
+            <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+              ${this.translate('no_sent_project_proposals', 'No outgoing project proposals sent by your school.')}
+            </td>
+          </tr>
+        `;
+      } else {
+        sentProposals.forEach(p => {
+          const targetSchool = window.db.getSchool(p.targetSchoolId);
+          let participantsText = '';
+          if (p.isStaffProject) {
+            const creatorCoords = window.db.getCoordinators().filter(c => c.schoolId === p.creatorSchoolId);
+            participantsText = `${this.translate('creator_staff_label', 'Staff')}: ${creatorCoords.map(c => c.name).join(', ')}`;
+          } else {
+            const creatorStudents = p.creatorSchoolStudentIds.map(sid => window.db.getStudent(sid)?.name || 'Unknown').join(', ');
+            participantsText = `${this.translate('students_label', 'Students')}: ${creatorStudents}`;
+          }
+
+          const tr = document.createElement('tr');
+          tr.style.borderBottom = '1px solid var(--panel-border)';
+          tr.innerHTML = `
+            <td style="padding: 0.75rem; vertical-align: top; font-size: 1rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                ${p.isStaffProject ? `
+                  <span class="badge" style="font-size: 0.65rem; padding: 0.15rem 0.35rem; font-weight: 700; color: var(--accent-light, #a78bfa); background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.25); border-radius: 4px;">🟣 Staff Collaboration</span>
+                ` : `
+                  <span class="badge" style="font-size: 0.65rem; padding: 0.15rem 0.35rem; font-weight: 700; color: #60a5fa; background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.25); border-radius: 4px;">👥 Student Exchange</span>
+                `}
+              </div>
+              <div style="font-weight: 700; color: var(--text-primary); font-size: 1.05rem;">${p.title}</div>
+              <div style="font-size: 1rem; color: var(--text-muted); margin-top: 0.2rem; line-height: 1.4; max-width: 250px;">
+                ${p.brief}
+              </div>
+            </td>
+            <td style="padding: 0.75rem; vertical-align: top; font-size: 1rem;">
+              <div style="font-weight: 600; color: var(--secondary); font-size: 1rem;">${targetSchool?.name || 'Partner School'}</div>
+            </td>
+            <td style="padding: 0.75rem; vertical-align: top; font-size: 1rem;">
+              <div style="font-size: 1rem; color: var(--text-secondary);">
+                ${participantsText}
+              </div>
+            </td>
+            <td style="padding: 0.75rem; vertical-align: middle; font-size: 1rem;">
+              <span class="badge badge-warning" style="font-size: 0.8rem; padding: 0.25rem 0.5rem; font-weight: 700; color: #fbbf24; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25);">⏳ Awaiting Approval</span>
+            </td>
+          `;
+          sentTbody.appendChild(tr);
+        });
+      }
+    }
+
     // 4. Update Projects Subtabs UI and Render Lists
     const subtabGallery = document.getElementById('subtab-btn-gallery');
     const subtabProposals = document.getElementById('subtab-btn-proposals');
@@ -8983,8 +9042,8 @@ class App {
     document.getElementById('launch-project-form').reset();
     this.handleProjectTypeChange('student');
     
-    alert(this.translate('project_proposal_launched_success', 'Project proposal launched successfully! Sent to target partner school for review.'));
-    this.projectsSubTab = 'gallery';
+    alert(this.translate('project_proposal_launched_success', 'Project proposal launched successfully! It has been sent to the partner school for review and can be tracked in the Proposals tab under "Our Sent Proposals".'));
+    this.projectsSubTab = 'proposals';
     this.refreshUI();
   }
 
