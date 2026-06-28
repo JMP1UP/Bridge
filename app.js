@@ -5307,8 +5307,8 @@ class App {
       <div class="panel-header" style="border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
         <h2 class="panel-title" style="font-size: 1.1rem; font-weight: 700;">👥 ${this.translate('school_staff_directory_title', 'School Staff Directory')}</h2>
       </div>
-      <span style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem; display: block;">
-        ${this.translate('invite_manage_coordinators_desc', 'Invite and manage other coordinators for your school.')}
+      <span style="font-size: 1rem; color: var(--text-secondary); margin-bottom: 1rem; display: block;">
+        ${this.translate('invite_manage_coordinators_desc', 'Invite and manage other staff members for your school.')}
       </span>
 
       <div style="overflow-x: auto; margin-bottom: 1.5rem;">
