@@ -1371,6 +1371,18 @@
                   <textarea class="chat-input" id="teacher-chat-textarea" placeholder="Type your message here..." data-localize="type_message_placeholder"></textarea>
                   <button class="btn btn-primary" id="teacher-chat-send-btn" data-localize="send">Send</button>
                 </div>
+                <div class="chat-input-controls" style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.5rem;">
+                  <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                    <div class="translation-bar" style="display: flex; gap: 0.5rem; align-items: center;">
+                      <button class="btn btn-secondary btn-small" id="teacher-translate-compose-btn" style="padding: 0.35rem 0.75rem; border: none; background: transparent;">📝 <span data-localize="translate">Draft Translation</span></button>
+                      <label style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; cursor: pointer; user-select: none; color: var(--text-secondary); margin-left: 0.25rem; border-left: 1px solid rgba(255,255,255,0.15); padding-left: 0.5rem;">
+                        <input type="checkbox" id="teacher-auto-translate-toggle" style="cursor: pointer; width: 14px; height: 14px; accent-color: var(--primary);">
+                        <span data-localize="auto_translate">Auto</span>
+                      </label>
+                      <span id="teacher-compose-translation-preview" style="font-style: italic; color: var(--text-secondary); max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

@@ -316,10 +316,52 @@ class App {
           this.sendTeacherMessage();
         }
       });
+      teachTextarea.addEventListener('input', () => {
+        if (this.teacherAutoTranslateEnabled) {
+          this.handleTeacherAutoTranslate();
+        }
+      });
     }
 
     // Translation helper draft compose
     document.getElementById('translate-compose-btn').addEventListener('click', () => this.draftTranslation());
+
+    // Coordinator translation helper draft compose
+    const teachTranslateBtn = document.getElementById('teacher-translate-compose-btn');
+    if (teachTranslateBtn) {
+      teachTranslateBtn.addEventListener('click', () => this.draftTeacherTranslation());
+    }
+
+    // Coordinator auto-translate initialization
+    this.teacherAutoTranslateEnabled = localStorage.getItem('bridge_teacher_auto_translate') === 'true';
+    const teachAutoToggle = document.getElementById('teacher-auto-translate-toggle');
+    if (teachAutoToggle) {
+      teachAutoToggle.checked = this.teacherAutoTranslateEnabled;
+      if (teachTranslateBtn) {
+        teachTranslateBtn.disabled = this.teacherAutoTranslateEnabled;
+        teachTranslateBtn.style.opacity = this.teacherAutoTranslateEnabled ? '0.4' : '1';
+        teachTranslateBtn.style.cursor = this.teacherAutoTranslateEnabled ? 'not-allowed' : 'pointer';
+      }
+      teachAutoToggle.addEventListener('change', (e) => {
+        this.teacherAutoTranslateEnabled = e.target.checked;
+        localStorage.setItem('bridge_teacher_auto_translate', this.teacherAutoTranslateEnabled);
+        if (teachTranslateBtn) {
+          teachTranslateBtn.disabled = this.teacherAutoTranslateEnabled;
+          teachTranslateBtn.style.opacity = this.teacherAutoTranslateEnabled ? '0.4' : '1';
+          teachTranslateBtn.style.cursor = this.teacherAutoTranslateEnabled ? 'not-allowed' : 'pointer';
+        }
+        if (this.teacherAutoTranslateEnabled) {
+          this.handleTeacherAutoTranslate();
+        } else {
+          const previewSpan = document.getElementById('teacher-compose-translation-preview');
+          if (previewSpan) {
+            previewSpan.textContent = '';
+            previewSpan.removeAttribute('data-draft');
+          }
+        }
+      });
+    }
+
 
     // Auto-translate toggle event listener
     this.autoTranslateEnabled = localStorage.getItem('bridge_auto_translate') === 'true';
@@ -1917,6 +1959,73 @@ class App {
 
     this.autoTranslateTimeout = setTimeout(() => {
       this.draftTranslation();
+    }, 800);
+  }
+
+  async draftTeacherTranslation() {
+    const textarea = document.getElementById('teacher-chat-textarea');
+    const previewSpan = document.getElementById('teacher-compose-translation-preview');
+    const teacher = this.getLoggedTeacher();
+    
+    if (!textarea || !textarea.value.trim() || !teacher || !this.activeCoordinatorId) return;
+
+    const text = textarea.value.trim();
+    const ownSchool = window.db.getSchool(teacher.schoolId);
+    const sourceLang = ownSchool ? (ownSchool.country.toLowerCase().includes('germany') ? 'de' : ownSchool.country.toLowerCase().includes('france') ? 'fr' : 'en') : 'en';
+
+    const activeCoord = window.db.getCoordinators().find(c => c.id === this.activeCoordinatorId);
+    const partnerSchool = activeCoord ? window.db.getSchool(activeCoord.schoolId) : null;
+    const targetLang = partnerSchool ? (partnerSchool.country.toLowerCase().includes('germany') ? 'de' : partnerSchool.country.toLowerCase().includes('france') ? 'fr' : 'en') : 'en';
+
+    if (sourceLang === targetLang) {
+      previewSpan.textContent = '';
+      previewSpan.removeAttribute('data-draft');
+      return;
+    }
+
+    previewSpan.textContent = this.interfaceLang === 'de' ? 'Übersetze...' : 'Translating...';
+    previewSpan.removeAttribute('data-draft');
+    previewSpan.title = '';
+
+    try {
+      const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|${targetLang}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      const translated = data.responseData?.translatedText || text;
+
+      previewSpan.textContent = `Draft: ${translated}`;
+      previewSpan.setAttribute('data-draft', translated);
+      previewSpan.title = translated;
+    } catch (err) {
+      console.error("Real translation failed, falling back to mock:", err);
+      const translated = window.translator.mockTranslate(text, sourceLang, targetLang);
+      previewSpan.textContent = `Draft: ${translated}`;
+      previewSpan.setAttribute('data-draft', translated);
+      previewSpan.title = translated;
+    }
+  }
+
+  handleTeacherAutoTranslate() {
+    if (!this.teacherAutoTranslateEnabled) return;
+
+    const textarea = document.getElementById('teacher-chat-textarea');
+    const previewSpan = document.getElementById('teacher-compose-translation-preview');
+    if (!textarea || !previewSpan) return;
+
+    if (this.teacherAutoTranslateTimeout) {
+      clearTimeout(this.teacherAutoTranslateTimeout);
+    }
+
+    const text = textarea.value.trim();
+    if (!text) {
+      previewSpan.textContent = '';
+      previewSpan.removeAttribute('data-draft');
+      previewSpan.title = '';
+      return;
+    }
+
+    this.teacherAutoTranslateTimeout = setTimeout(() => {
+      this.draftTeacherTranslation();
     }, 800);
   }
 
@@ -6638,6 +6747,12 @@ class App {
       chatEmptyState.style.display = 'none';
       chatActiveState.style.display = 'flex';
 
+      const previewSpan = document.getElementById('teacher-compose-translation-preview');
+      if (previewSpan) {
+        previewSpan.textContent = '';
+        previewSpan.removeAttribute('data-draft');
+      }
+
       const partnerSchool = window.db.getSchool(activeCoord.schoolId);
       document.getElementById('teacher-chat-partner-avatar').textContent = activeCoord.name.split(' ').map(n => n[0]).join('') || '?';
       document.getElementById('teacher-chat-partner-name').textContent = activeCoord.name;
@@ -6673,9 +6788,15 @@ class App {
         const isSent = msg.senderId === myId;
         row.className = `message-row ${isSent ? 'sent' : 'received'}`;
         
+        let transRow = '';
+        if (msg.translation) {
+          transRow = `<div class="message-translation" style="font-size: 0.82rem; color: var(--secondary); margin-top: 0.25rem; font-style: italic; border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 0.25rem;">📝 ${msg.translation}</div>`;
+        }
+
         row.innerHTML = `
           <div class="message-bubble">
             <div>${msg.text}</div>
+            ${transRow}
           </div>
           <div class="message-meta">
             ${new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -6690,14 +6811,23 @@ class App {
 
   sendTeacherMessage() {
     const textarea = document.getElementById('teacher-chat-textarea');
+    const previewSpan = document.getElementById('teacher-compose-translation-preview');
     if (!textarea || !textarea.value.trim() || !this.activeCoordinatorId) return;
 
     const teacher = this.getLoggedTeacher();
     const myId = teacher ? teacher.id : 'coord_1';
     const text = textarea.value.trim();
+    const draftTranslation = previewSpan ? (previewSpan.getAttribute('data-draft') || '') : '';
 
-    window.db.addCoordinatorMessage(myId, this.activeCoordinatorId, text);
+    window.db.addCoordinatorMessage(myId, this.activeCoordinatorId, text, draftTranslation);
     textarea.value = '';
+    
+    if (previewSpan) {
+      previewSpan.textContent = '';
+      previewSpan.removeAttribute('data-draft');
+      previewSpan.title = '';
+    }
+    
     this.renderTeacherMessages();
   }
 

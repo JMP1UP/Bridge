@@ -853,13 +853,14 @@ class LocalDB {
     this.addLog('Settings Updated', `System configuration modified.`, 'Admin');
   }
   
-  addCoordinatorMessage(senderId, receiverId, text) {
+  addCoordinatorMessage(senderId, receiverId, text, translation = '') {
     const list = this.getCoordinatorMessages();
     const newMsg = {
       id: 'cmsg_' + Date.now(),
       senderId,
       receiverId,
       text,
+      translation,
       timestamp: new Date().toISOString(),
       read: false
     };
