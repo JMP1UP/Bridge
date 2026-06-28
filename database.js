@@ -329,7 +329,7 @@ class LocalDB {
         city: req.city,
         language: req.language,
         code: req.code,
-        description: `${req.name} is a newly registered partner school in ${req.city}, ${req.country}.`,
+        description: req.description || `${req.name} is a newly registered partner school in ${req.city}, ${req.country}.`,
         photoUrl: '',
         logoUrl: ''
       };

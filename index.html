@@ -49,7 +49,91 @@
             </select>
           </div>
           <button class="btn btn-primary" id="login-staff-btn" style="width: 100%; margin-top: 1rem; padding: 0.65rem 1rem; background: rgba(6, 182, 212, 0.15); border-color: rgba(6, 182, 212, 0.35); color: var(--secondary);">Enter Staff Portal</button>
+          <div style="margin-top: 1.25rem; font-size: 0.8rem; color: var(--text-muted);">
+            Don't see your school? <a href="#" id="login-show-register-btn" style="color: var(--secondary); text-decoration: underline; font-weight: 600;">Register your school</a>
+          </div>
         </div>
+      </div>
+
+      <!-- Register School Card (Initially Hidden) -->
+      <div id="login-register-section" style="display: none; width: 100%; animation: fadeIn 0.4s ease-out;">
+        <div style="text-align: center; margin-bottom: 2rem;">
+          <h2 style="font-family: var(--font-title); font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, var(--text-primary) 30%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem; letter-spacing: -0.5px;">Register Your School</h2>
+          <p style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; margin: 0;">Lead Cultural Collaborations with Bridge</p>
+        </div>
+
+        <form id="request-school-registration-form" style="display: flex; flex-direction: column; gap: 1.5rem; width: 100%;">
+          <!-- Section 1: School Information -->
+          <div class="register-section-wrapper">
+            <h3 class="register-section-header">School Information</h3>
+            
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label for="req-school-name">School Name</label>
+                <input type="text" id="req-school-name" class="form-control" placeholder="e.g. Oakridge Academy" required>
+              </div>
+              <div class="form-group">
+                <label for="req-school-code">School Code (Unique)</label>
+                <input type="text" id="req-school-code" class="form-control" placeholder="e.g. OAK-UK" required>
+              </div>
+            </div>
+
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label for="req-school-country">Country</label>
+                <select id="req-school-country" class="form-control" required style="background: rgba(0, 0, 0, 0.25); color: var(--text-primary);">
+                  <option value="" disabled selected>Select country</option>
+                  <option value="United Kingdom">United Kingdom</option>
+                  <option value="Germany">Germany</option>
+                  <option value="France">France</option>
+                  <option value="Spain">Spain</option>
+                  <option value="United States">United States</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="req-school-city">City</label>
+                <input type="text" id="req-school-city" class="form-control" placeholder="e.g. London" required>
+              </div>
+              <div class="form-group">
+                <label for="req-school-lang">Primary Language</label>
+                <select id="req-school-lang" class="form-control" required style="background: rgba(0, 0, 0, 0.25); color: var(--text-primary);">
+                  <option value="en">English (EN)</option>
+                  <option value="de">German (DE)</option>
+                  <option value="fr">French (FR)</option>
+                  <option value="es">Spanish (ES)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="req-school-desc">School Description</label>
+              <textarea id="req-school-desc" class="form-control" style="height: 100px; resize: vertical;" placeholder="Introduce your school, academic focus, or target exchange program interests..." required></textarea>
+            </div>
+          </div>
+
+          <!-- Section 2: Coordinator Details -->
+          <div class="register-section-wrapper">
+            <h3 class="register-section-header">Coordinator Details</h3>
+            
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label for="req-coord-name">Coordinator Name</label>
+                <input type="text" id="req-coord-name" class="form-control" placeholder="e.g. Mr. David Green" required>
+              </div>
+              <div class="form-group">
+                <label for="req-coord-email">Coordinator Email</label>
+                <input type="email" id="req-coord-email" class="form-control" placeholder="e.g. david@oakridge.edu" required>
+              </div>
+            </div>
+          </div>
+
+          <!-- Buttons -->
+          <div class="register-button-group">
+            <button type="button" class="btn btn-secondary" id="login-register-cancel-btn" style="flex: 1; padding: 0.75rem 1rem;">Cancel</button>
+            <button type="submit" class="btn btn-primary" style="flex: 2; padding: 0.75rem 1.5rem; background: var(--primary); border-color: var(--primary);">Submit School Registration</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -1422,56 +1506,28 @@
           </p>
 
           <div class="onboarding-grid" style="display: grid; gap: 2rem;">
-            <!-- Register School Form -->
-            <div class="panel" style="background: rgba(255,255,255,0.01); border-color: var(--panel-border);">
-              <h3 style="font-weight: 700; font-size: 1.1rem; margin-bottom: 1rem;" data-localize="request_new_school_reg_title">Request New School Registration</h3>
-              <form id="request-school-registration-form">
-                <div class="form-group">
-                  <label for="req-school-name" data-localize="school_name_label">School Name</label>
-                  <input type="text" id="req-school-name" class="form-control" placeholder="e.g. Oakridge Academy" required data-localize="req_school_name_placeholder">
+            <!-- Registration Status Panel -->
+            <div class="panel" style="background: rgba(255,255,255,0.015); border-color: var(--panel-border); display: flex; flex-direction: column; gap: 1.5rem; padding: 2rem;">
+              <h3 style="font-weight: 700; font-size: 1.25rem; font-family: var(--font-title); color: var(--text-primary); margin: 0;" data-localize="onboarding_status_title">School Registration Status</h3>
+              
+              <div style="display: flex; align-items: center; gap: 1rem; padding: 1.25rem; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 12px;">
+                <span style="font-size: 2rem;">⏳</span>
+                <div>
+                  <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--warning); margin-bottom: 0.2rem;" data-localize="status_pending_review">Registration Pending Review</h4>
+                  <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;" data-localize="status_pending_desc">Your application is currently being reviewed by the platform administrators. You will receive an activation email once approved.</p>
                 </div>
-                <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                  <div>
-                    <label for="req-school-country" data-localize="country_label">Country</label>
-                    <input type="text" id="req-school-country" class="form-control" placeholder="e.g. United Kingdom" required data-localize="req_school_country_placeholder">
-                  </div>
-                  <div>
-                    <label for="req-school-city" data-localize="city_label">City</label>
-                    <input type="text" id="req-school-city" class="form-control" placeholder="e.g. London" required data-localize="req_school_city_placeholder">
-                  </div>
-                </div>
-                <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                  <div>
-                    <label for="req-school-lang" data-localize="primary_lang_label">Primary Language</label>
-                    <select id="req-school-lang" class="form-control">
-                      <option value="en">English (EN)</option>
-                      <option value="de">German (DE)</option>
-                      <option value="fr">French (FR)</option>
-                      <option value="es">Spanish (ES)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label for="req-school-code" data-localize="desired_code_id_label">Desired Code ID</label>
-                    <input type="text" id="req-school-code" class="form-control" placeholder="e.g. OAK-UK" required data-localize="req_school_code_placeholder">
-                  </div>
-                </div>
-                
-                <h4 style="font-size: 0.9rem; font-weight: 700; color: var(--text-secondary); margin-top: 1.25rem; margin-bottom: 0.5rem; border-top: 1px solid var(--panel-border); padding-top: 1rem;" data-localize="coord_account_info_header">
-                  Coordinator Account Info
-                </h4>
-                <div class="form-group">
-                  <label for="req-coord-name" data-localize="your_full_name_label">Your Full Name</label>
-                  <input type="text" id="req-coord-name" class="form-control" placeholder="e.g. Mr. David Green" required data-localize="req_coord_name_placeholder">
-                </div>
-                <div class="form-group">
-                  <label for="req-coord-email" data-localize="your_email_address_label">Your Email Address</label>
-                  <input type="email" id="req-coord-email" class="form-control" placeholder="e.g. david@oakridge.edu" required data-localize="req_coord_email_placeholder">
-                </div>
+              </div>
 
-                <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem;">
-                  <button type="submit" class="btn btn-primary" style="width: 100%;" data-localize="submit_reg_request_btn">Submit Registration Request</button>
+              <div style="padding: 1.25rem; border-radius: 12px; background: rgba(255,255,255,0.01); border: 1px solid var(--panel-border);">
+                <h4 style="font-size: 0.9rem; font-weight: 700; color: var(--secondary); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Submitted Application Summary</h4>
+                <div style="display: flex; flex-direction: column; gap: 0.65rem; font-size: 0.85rem;">
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">School Name:</span> <span style="font-weight: 600;" id="onboard-summary-school-name">-</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Desired Code ID:</span> <span style="font-weight: 600; font-family: monospace;" id="onboard-summary-school-code">-</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Location:</span> <span style="font-weight: 600;" id="onboard-summary-school-loc">-</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Coordinator:</span> <span style="font-weight: 600;" id="onboard-summary-coord-name">-</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Coordinator Email:</span> <span style="font-weight: 600;" id="onboard-summary-coord-email">-</span></div>
                 </div>
-              </form>
+              </div>
             </div>
 
             <!-- Onboarding Info/Checklist -->

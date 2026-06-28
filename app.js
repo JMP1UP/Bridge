@@ -512,6 +512,26 @@ class App {
     document.getElementById('admin-add-school-btn').addEventListener('click', () => this.openModal('add-school-modal'));
     document.getElementById('add-school-form').addEventListener('submit', (e) => this.handleAddSchool(e));
 
+    // Toggle login screen sections for registration
+    const showRegisterBtn = document.getElementById('login-show-register-btn');
+    const cancelRegisterBtn = document.getElementById('login-register-cancel-btn');
+    const loginPortalSections = document.getElementById('login-portal-sections');
+    const loginRegisterSection = document.getElementById('login-register-section');
+
+    if (showRegisterBtn && cancelRegisterBtn && loginPortalSections && loginRegisterSection) {
+      showRegisterBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        loginPortalSections.style.display = 'none';
+        loginRegisterSection.style.display = 'block';
+      });
+
+      cancelRegisterBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        loginRegisterSection.style.display = 'none';
+        loginPortalSections.style.display = 'grid';
+      });
+    }
+
     // Onboarding school request form listener
     document.getElementById('request-school-registration-form').addEventListener('submit', (e) => this.handleSchoolRegistrationRequest(e));
 
@@ -553,6 +573,7 @@ class App {
       };
       reqSchoolName.addEventListener('input', updateGeneratedCode);
       reqSchoolCountry.addEventListener('input', updateGeneratedCode);
+      reqSchoolCountry.addEventListener('change', updateGeneratedCode);
     }
 
     // Approved schools directory search & expand listeners
@@ -5066,11 +5087,31 @@ class App {
       `;
       listEl.appendChild(item);
     });
+
+    // Populate registration application summary if elements exist
+    const sumName = document.getElementById('onboard-summary-school-name');
+    const sumCode = document.getElementById('onboard-summary-school-code');
+    const sumLoc = document.getElementById('onboard-summary-school-loc');
+    const sumCoord = document.getElementById('onboard-summary-coord-name');
+    const sumEmail = document.getElementById('onboard-summary-coord-email');
+    if (sumName && sumCode && sumLoc && sumCoord && sumEmail) {
+      const requests = window.db.getSchoolRequests();
+      // Find the most recent pending request, or fallback to the latest request
+      const pendingReq = requests.filter(r => r.status === 'Pending').pop() || requests[requests.length - 1];
+      if (pendingReq) {
+        sumName.textContent = pendingReq.name;
+        sumCode.textContent = pendingReq.code;
+        sumLoc.textContent = `${pendingReq.city}, ${pendingReq.country}`;
+        sumCoord.textContent = pendingReq.coordinatorName;
+        sumEmail.textContent = pendingReq.coordinatorEmail;
+      }
+    }
   }
 
   // Form submit handler for coordinator requesting school registration
   handleSchoolRegistrationRequest(e) {
     e.preventDefault();
+    const descEl = document.getElementById('req-school-desc');
     const req = {
       name: document.getElementById('req-school-name').value.trim(),
       country: document.getElementById('req-school-country').value.trim(),
@@ -5078,7 +5119,8 @@ class App {
       language: document.getElementById('req-school-lang').value,
       code: document.getElementById('req-school-code').value.trim().toUpperCase(),
       coordinatorName: document.getElementById('req-coord-name').value.trim(),
-      coordinatorEmail: document.getElementById('req-coord-email').value.trim()
+      coordinatorEmail: document.getElementById('req-coord-email').value.trim(),
+      description: descEl ? descEl.value.trim() : ''
     };
 
     const schools = window.db.getSchools();
@@ -5096,6 +5138,15 @@ class App {
     window.db.addSchoolRequest(req);
     document.getElementById('request-school-registration-form').reset();
     alert(this.translate('registration_submitted_success', 'Your school registration request has been submitted successfully! The System Admin will review it shortly.'));
+    
+    // Switch login screen back to portal select view
+    const loginPortalSections = document.getElementById('login-portal-sections');
+    const loginRegisterSection = document.getElementById('login-register-section');
+    if (loginPortalSections && loginRegisterSection) {
+      loginRegisterSection.style.display = 'none';
+      loginPortalSections.style.display = 'grid';
+    }
+
     this.refreshUI();
   }
 
