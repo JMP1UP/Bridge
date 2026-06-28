@@ -22,37 +22,42 @@
       <p class="login-subtitle" data-localize="login_subtitle_exchange">GLOBAL CULTURAL EXCHANGE</p>
       <p class="login-desc" style="max-width: 580px; text-align: center; font-size: 0.95rem; line-height: 1.6; color: var(--text-secondary); margin: 0 auto 2.25rem auto; font-weight: 400;" data-localize="login_description">Connecting classrooms worldwide through shared project slide decks, automated safe translations, and teacher-guided matchmaking.</p>
 
-      <div class="login-sections">
-        <!-- Student Selection Card -->
-        <div class="login-section-card">
-          <div class="login-section-icon">🎓</div>
-          <h3>Student Portal</h3>
-          <p>Chat with your pen pal, write articles, and build project slide decks.</p>
-          <div class="form-group" style="width: 100%; margin-bottom: 1rem;">
-            <select id="login-student-select" class="form-control login-select">
-              <!-- Dynamically populated by JS -->
-            </select>
+      <!-- Wrapper for login portals and registration link (to toggle visibility together) -->
+      <div id="login-portal-sections" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+        <div class="login-sections">
+          <!-- Student Selection Card -->
+          <div class="login-section-card">
+            <div class="login-section-icon">🎓</div>
+            <h3>Student Portal</h3>
+            <p>Chat with your pen pal, write articles, and build project slide decks.</p>
+            <div class="form-group" style="width: 100%; margin-bottom: 1rem;">
+              <select id="login-student-select" class="form-control login-select">
+                <!-- Dynamically populated by JS -->
+              </select>
+            </div>
+            <button class="btn btn-primary" id="login-student-btn" style="width: 100%; margin-top: 0.75rem; padding: 0.55rem 1rem; background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 700; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);">Enter Student Portal</button>
           </div>
-          <button class="btn btn-primary" id="login-student-btn" style="width: 100%; margin-top: 0.75rem; padding: 0.55rem 1rem;">Enter Student Portal</button>
+
+          <!-- Coordinator/Admin Selection Card -->
+          <div class="login-section-card">
+            <div class="login-section-icon">🏫</div>
+            <h3>Staff & Coordinator Portal</h3>
+            <p>Manage student pairings, approve articles, and review school requests.</p>
+            <div class="form-group" style="width: 100%; margin-bottom: 1rem;">
+              <select id="login-staff-select" class="form-control login-select">
+                <option value="coord_1">Mrs. Smith (Languages Coordinator & School Admin - UK)</option>
+                <option value="coord_2">Herr Wagner (Languages Coordinator - Germany)</option>
+                <option value="coord_3">Monsieur Dupont (Languages Coordinator - France)</option>
+                <option value="admin">System Admin (Platform Administrator)</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" id="login-staff-btn" style="width: 100%; margin-top: 0.75rem; padding: 0.55rem 1rem; background: var(--secondary); border-color: var(--secondary); color: #0b0f19; font-weight: 700; box-shadow: 0 4px 14px rgba(6, 182, 212, 0.3);">Enter Staff Portal</button>
+          </div>
         </div>
 
-        <!-- Coordinator/Admin Selection Card -->
-        <div class="login-section-card">
-          <div class="login-section-icon">🏫</div>
-          <h3>Staff & Coordinator Portal</h3>
-          <p>Manage student pairings, approve articles, and review school requests.</p>
-          <div class="form-group" style="width: 100%; margin-bottom: 1rem;">
-            <select id="login-staff-select" class="form-control login-select">
-              <option value="coord_1">Mrs. Smith (Languages Coordinator & School Admin - UK)</option>
-              <option value="coord_2">Herr Wagner (Languages Coordinator - Germany)</option>
-              <option value="coord_3">Monsieur Dupont (Languages Coordinator - France)</option>
-              <option value="admin">System Admin (Platform Administrator)</option>
-            </select>
-          </div>
-          <button class="btn btn-primary" id="login-staff-btn" style="width: 100%; margin-top: 0.75rem; padding: 0.55rem 1rem; background: rgba(6, 182, 212, 0.15); border-color: rgba(6, 182, 212, 0.35); color: var(--secondary);">Enter Staff Portal</button>
-          <div style="margin-top: 1rem; font-size: 0.95rem; color: var(--text-muted);">
-            Don't see your school? <a href="#" id="login-show-register-btn" style="color: var(--secondary); text-decoration: underline; font-weight: 600;">Register your school</a>
-          </div>
+        <!-- Register School Link (Centered Below Cards) -->
+        <div style="margin-top: 1.75rem; text-align: center; font-size: 0.95rem; color: var(--text-muted); animation: fadeIn 0.4s ease-out;">
+          Don't see your school? <a href="#" id="login-show-register-btn" style="color: var(--secondary); text-decoration: underline; font-weight: 600; transition: color 0.2s;" onmouseenter="this.style.color='#0891b2'" onmouseleave="this.style.color='var(--secondary)'">Register your school</a>
         </div>
       </div>
 

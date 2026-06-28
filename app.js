@@ -528,7 +528,7 @@ class App {
       cancelRegisterBtn.addEventListener('click', (e) => {
         e.preventDefault();
         loginRegisterSection.style.display = 'none';
-        loginPortalSections.style.display = 'grid';
+        loginPortalSections.style.display = 'flex';
       });
     }
 
@@ -5144,7 +5144,7 @@ class App {
     const loginRegisterSection = document.getElementById('login-register-section');
     if (loginPortalSections && loginRegisterSection) {
       loginRegisterSection.style.display = 'none';
-      loginPortalSections.style.display = 'grid';
+      loginPortalSections.style.display = 'flex';
     }
 
     this.refreshUI();
