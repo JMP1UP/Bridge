@@ -2820,7 +2820,35 @@ class App {
     document.getElementById('invite-link-input').value = inviteLink;
     document.getElementById('invite-result-area').style.display = 'block';
 
+    // Dispatch real email via Vercel serverless function
+    this.sendInviteEmail(newStudent, inviteLink);
+
     this.renderStudentRoster();
+  }
+
+  // Dispatch secure invite signup email to student using Vercel Resend API
+  async sendInviteEmail(student, inviteLink) {
+    try {
+      const response = await fetch('/api/send-invite', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: student.email,
+          studentName: student.name,
+          inviteLink: inviteLink
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        console.error('Failed to dispatch invite email:', data.error);
+      } else {
+        console.log('Invite email successfully dispatched via Resend API:', data.id);
+      }
+    } catch (err) {
+      console.error('Error dispatching invite email:', err);
+    }
   }
 
   // Copy invitation link to clipboard
@@ -2861,6 +2889,8 @@ class App {
         invitationStatus: 'Invited'
       };
       window.db.addStudent(newStudent);
+      const inviteLink = `${window.location.origin}/signup?token=welcome_${newStudent.id}`;
+      this.sendInviteEmail(newStudent, inviteLink);
     });
 
     this.closeModal('bulk-upload-modal');
@@ -2874,6 +2904,8 @@ class App {
     const stud = window.db.getStudent(studentId);
     if (stud) {
       window.db.updateStudent(studentId, { invitationStatus: 'Invited' });
+      const inviteLink = `${window.location.origin}/signup?token=welcome_${stud.id}`;
+      this.sendInviteEmail(stud, inviteLink);
       window.db.addLog('Invitation Resent', `Resent sign-up email invitation to ${stud.name}.`, 'Teacher');
       this.refreshUI();
       alert(`Invitation link successfully resent to ${stud.email}`);
@@ -2884,6 +2916,8 @@ class App {
   simulateResetPassword(studentId) {
     const stud = window.db.getStudent(studentId);
     if (stud) {
+      const inviteLink = `${window.location.origin}/signup?token=welcome_${stud.id}`;
+      this.sendInviteEmail(stud, inviteLink);
       window.db.addLog('Password Reset Initiated', `Resent password reset invitation link to student ${stud.name}.`, 'Teacher');
       alert(`Password reset invitation link successfully resent to ${stud.email}`);
     }
