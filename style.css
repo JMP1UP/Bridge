@@ -1224,7 +1224,7 @@ tr:hover td {
 .login-screen-container {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start; /* Prevents overflow clipping and allows scrolling */
   width: 100%;
   min-height: 100vh;
   background: radial-gradient(circle at center, #1b1d30 0%, #0c0d12 100%);
@@ -1242,7 +1242,7 @@ tr:hover td {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 3.5rem 3rem;
+  padding: 2.5rem 2.25rem; /* Compact card padding */
   border-radius: 28px;
   max-width: 900px;
   width: 100%;
@@ -1251,16 +1251,17 @@ tr:hover td {
   align-items: center;
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
   box-sizing: border-box;
+  margin: auto; /* Centers card vertically when it fits, enables scrolling when it overflows */
 }
 
 .login-logo-container {
-  margin-bottom: 1.75rem;
+  margin-bottom: 1.25rem;
 }
 
 .login-logo {
-  width: 120px;
-  height: 120px;
-  border-radius: 28px;
+  width: 110px; /* Slightly more compact logo */
+  height: 110px;
+  border-radius: 26px;
   box-shadow: 0 8px 30px rgba(6, 182, 212, 0.35);
 }
 
@@ -1281,7 +1282,7 @@ tr:hover td {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 2px;
-  margin: 0.35rem 0 1.25rem 0;
+  margin: 0.35rem 0 0.85rem 0; /* Reduced spacing */
 }
 
 .login-sections {
