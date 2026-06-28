@@ -1001,6 +1001,22 @@ class App {
       });
     }
 
+    // Check if session exists in localStorage (Remember Me)
+    const savedSession = localStorage.getItem('bridge_remember_me');
+    if (savedSession) {
+      try {
+        const session = JSON.parse(savedSession);
+        if (session && session.role && session.id) {
+          this.isLoggedIn = true;
+          this.switchRole(session.role, session.role === 'student' ? session.id : null, session.role === 'teacher' ? session.id : null);
+          document.getElementById('login-screen').style.display = 'none';
+          document.querySelector('.app-container').style.setProperty('display', 'flex', 'important');
+        }
+      } catch (e) {
+        localStorage.removeItem('bridge_remember_me');
+      }
+    }
+
     // Load UI data
     this.refreshUI();
   }
@@ -10285,6 +10301,15 @@ class App {
       alert(this.translate('incorrect_password_alert', 'Incorrect password. Please try again.'));
       return;
     }
+    
+    // Remember Me support
+    const rememberMe = document.getElementById('login-remember-me')?.checked;
+    if (rememberMe) {
+      localStorage.setItem('bridge_remember_me', JSON.stringify({ role: 'student', id: student.id }));
+    } else {
+      localStorage.removeItem('bridge_remember_me');
+    }
+
     this.isLoggedIn = true;
     this.switchRole('student', student.id);
     document.getElementById('login-screen').style.display = 'none';
@@ -10293,11 +10318,20 @@ class App {
 
   loginAsStaff(identifier, password) {
     const cleanInput = identifier.toLowerCase().trim();
+    const rememberMe = document.getElementById('login-remember-me')?.checked;
+
     if (cleanInput === 'admin' || cleanInput === 'admin@school-bridge.org') {
       if (password !== undefined && password !== 'admin123') {
         alert(this.translate('incorrect_password_alert', 'Incorrect password. Please try again.'));
         return;
       }
+      
+      if (rememberMe) {
+        localStorage.setItem('bridge_remember_me', JSON.stringify({ role: 'admin', id: 'admin' }));
+      } else {
+        localStorage.removeItem('bridge_remember_me');
+      }
+
       this.isLoggedIn = true;
       this.switchRole('admin');
     } else {
@@ -10316,6 +10350,13 @@ class App {
         alert(this.translate('incorrect_password_alert', 'Incorrect password. Please try again.'));
         return;
       }
+
+      if (rememberMe) {
+        localStorage.setItem('bridge_remember_me', JSON.stringify({ role: 'teacher', id: coord.id }));
+      } else {
+        localStorage.removeItem('bridge_remember_me');
+      }
+
       this.isLoggedIn = true;
       this.switchRole('teacher', null, coord.id);
     }
