@@ -8507,11 +8507,20 @@ class App {
       galleryGrid.innerHTML = '';
       
       const activeProjects = window.db.getProjects()
-        .filter(p => (p.creatorSchoolId === schoolId || p.targetSchoolId === schoolId) && p.status !== 'Cancelled' && p.status !== 'Proposed')
+        .filter(p => (p.creatorSchoolId === schoolId || p.targetSchoolId === schoolId) && p.status !== 'Cancelled')
         .sort((a, b) => {
-          const aPaused = a.paused ? 1 : 0;
-          const bPaused = b.paused ? 1 : 0;
-          return bPaused - aPaused; // Sort suspended projects to top
+          // Sort order weight:
+          // 0: Proposed incoming (Action Required)
+          // 1: Active
+          // 2: Suspended (Paused)
+          // 3: Proposed outgoing (Awaiting partner approval)
+          const getWeight = (x) => {
+            if (x.status === 'Proposed') {
+              return x.targetSchoolId === schoolId ? 0 : 3;
+            }
+            return x.paused ? 2 : 1;
+          };
+          return getWeight(a) - getWeight(b);
         });
 
       // Update Broadcast Targeting UI elements
@@ -8592,6 +8601,14 @@ class App {
             partnerStudentNames = (isCreator ? p.targetSchoolStudentIds : p.creatorSchoolStudentIds)
               .map(sid => window.db.getStudent(sid)?.name || 'Unknown')
               .join(', ');
+
+            if (p.status === 'Proposed') {
+              if (isCreator) {
+                partnerStudentNames = this.translate('awaiting_partner_selection_status', 'Awaiting partner assignment');
+              } else {
+                localStudentNames = this.translate('awaiting_your_selection_status', 'Awaiting your assignment');
+              }
+            }
           }
 
           const card = document.createElement('div');
@@ -8601,8 +8618,15 @@ class App {
           card.style.flexDirection = 'column';
           card.style.gap = '0.75rem';
           card.style.position = 'relative';
-          card.style.border = p.paused ? '1px solid rgba(245,158,11,0.3)' : '1px solid var(--panel-border)';
-          card.style.background = p.paused ? 'rgba(245,158,11,0.02)' : 'var(--panel-bg)';
+          
+          if (p.status === 'Proposed') {
+            card.style.opacity = '0.65';
+            card.style.border = '1px dashed var(--panel-border)';
+            card.style.background = 'rgba(255,255,255,0.01)';
+          } else {
+            card.style.border = p.paused ? '1px solid rgba(245,158,11,0.3)' : '1px solid var(--panel-border)';
+            card.style.background = p.paused ? 'rgba(245,158,11,0.02)' : 'var(--panel-bg)';
+          }
 
           let participantsHTML = '';
           if (p.isStaffProject) {
@@ -8617,9 +8641,54 @@ class App {
             `;
           }
 
+          let statusBadgeHTML = '';
+          if (p.status === 'Proposed') {
+            if (isCreator) {
+              statusBadgeHTML = `<span class="badge" style="font-size: 0.85rem; padding: 0.25rem 0.5rem; font-weight: 700; color: #9ca3af; background: rgba(156,163,175,0.1); border: 1px solid rgba(156,163,175,0.25);">⏳ ${this.translate('awaiting_approval_status', 'Awaiting Approval')}</span>`;
+            } else {
+              statusBadgeHTML = `<span class="badge badge-warning" style="font-size: 0.85rem; padding: 0.25rem 0.5rem; font-weight: 700; color: #fbbf24; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25);">📥 ${this.translate('action_required_status', 'Action Required')}</span>`;
+            }
+          } else if (p.paused) {
+            statusBadgeHTML = `<span class="badge badge-warning" style="font-size: 0.85rem; padding: 0.25rem 0.5rem; font-weight: 700; color: #fbbf24; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25);">🔒 ${this.translate('suspended_status', 'Suspended')}</span>`;
+          } else {
+            statusBadgeHTML = `<span class="badge badge-success" style="font-size: 0.85rem; padding: 0.25rem 0.5rem; font-weight: 700; color: #34d399; background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.25);">✓ ${this.translate('active_status', 'Active')}</span>`;
+          }
+
+          let actionButtonsHTML = '';
+          if (p.status === 'Proposed') {
+            if (!isCreator) {
+              actionButtonsHTML = `
+                <button class="btn btn-primary" onclick="app.acceptProject('${p.id}')" style="grid-column: span 2; font-size: 0.95rem; justify-content: center; display: flex; padding: 0.5rem 1rem; font-weight: 700;">
+                  📥 ${this.translate('accept_proposal_btn', 'Accept Proposal')}
+                </button>
+                <button class="btn btn-secondary" onclick="app.cancelProject('${p.id}')" style="grid-column: span 2; font-size: 0.95rem; color: var(--danger); border-color: rgba(239,68,68,0.2); padding: 0.4rem 0.75rem; justify-content: center; display: flex;">
+                  🚫 ${this.translate('reject_proposal_btn', 'Reject Proposal')}
+                </button>
+              `;
+            } else {
+              actionButtonsHTML = `
+                <button class="btn btn-secondary" onclick="app.cancelProject('${p.id}')" style="grid-column: span 2; font-size: 0.95rem; color: var(--danger); border-color: rgba(239,68,68,0.2); padding: 0.5rem 1rem; justify-content: center; display: flex;">
+                  🚫 ${this.translate('withdraw_proposal_btn', 'Withdraw Proposal')}
+                </button>
+              `;
+            }
+          } else {
+            actionButtonsHTML = `
+              <button class="btn btn-secondary" onclick="app.toggleSuspendProject('${p.id}', ${!!p.paused})" style="font-size: 0.95rem; color: ${p.paused ? 'var(--text-primary)' : '#f59e0b'}; border-color: ${p.paused ? 'rgba(59,130,246,0.2)' : 'rgba(245,158,11,0.2)'}; padding: 0.4rem 0.75rem;">
+                ${p.paused ? this.translate('unsuspend_btn', 'Unsuspend') : this.translate('suspend_btn', 'Suspend')}
+              </button>
+              <button class="btn btn-secondary" onclick="app.cancelProject('${p.id}')" style="font-size: 0.95rem; color: var(--danger); border-color: rgba(239,68,68,0.2); padding: 0.4rem 0.75rem;">
+                🚫 ${this.translate('cancel_btn', 'Cancel')}
+              </button>
+              <button class="btn btn-primary" onclick="app.openProjectModerationChat('${p.id}')" style="grid-column: span 2; font-size: 0.95rem; justify-content: center; display: flex; padding: 0.5rem 1rem;">
+                💬 ${this.translate('moderate_chat_cards_btn', 'Moderate Chat & Cards')}
+              </button>
+            `;
+          }
+
           card.innerHTML = `
             <!-- Broadcast Checkbox -->
-            <div style="position: absolute; top: 1rem; right: 1rem;">
+            <div style="position: absolute; top: 1rem; right: 1rem; display: ${p.status === 'Proposed' ? 'none' : 'block'};">
               <input type="checkbox" id="chk-broadcast-${p.id}" style="width: 16px; height: 16px; cursor: ${this.broadcastTarget === 'all' ? 'not-allowed' : 'pointer'}; opacity: ${this.broadcastTarget === 'all' ? 0.6 : 1};" ${(this.broadcastTarget === 'all' || isSelected) ? 'checked' : ''} ${this.broadcastTarget === 'all' ? 'disabled' : ''} onclick="app.toggleProjectBroadcastSelect('${p.id}')">
             </div>
 
@@ -8642,24 +8711,12 @@ class App {
             </div>
 
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 0.75rem; margin-top: auto;">
-              ${p.paused ? `
-                <span class="badge badge-warning" style="font-size: 0.85rem; padding: 0.25rem 0.5rem; font-weight: 700; color: #fbbf24; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25);">🔒 ${this.translate('suspended_status', 'Suspended')}</span>
-              ` : `
-                <span class="badge badge-success" style="font-size: 0.85rem; padding: 0.25rem 0.5rem; font-weight: 700; color: #34d399; background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.25);">✓ ${this.translate('active_status', 'Active')}</span>
-              `}
+              ${statusBadgeHTML}
               <span style="font-size: 0.95rem; color: var(--text-muted);">${this.translate('cards_count_label', 'Cards:')} ${p.slides ? p.slides.length : 0}</span>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem;">
-              <button class="btn btn-secondary" onclick="app.toggleSuspendProject('${p.id}', ${!!p.paused})" style="font-size: 0.95rem; color: ${p.paused ? 'var(--text-primary)' : '#f59e0b'}; border-color: ${p.paused ? 'rgba(59,130,246,0.2)' : 'rgba(245,158,11,0.2)'}; padding: 0.4rem 0.75rem;">
-                ${p.paused ? this.translate('unsuspend_btn', 'Unsuspend') : this.translate('suspend_btn', 'Suspend')}
-              </button>
-              <button class="btn btn-secondary" onclick="app.cancelProject('${p.id}')" style="font-size: 0.95rem; color: var(--danger); border-color: rgba(239,68,68,0.2); padding: 0.4rem 0.75rem;">
-                🚫 ${this.translate('cancel_btn', 'Cancel')}
-              </button>
-              <button class="btn btn-primary" onclick="app.openProjectModerationChat('${p.id}')" style="grid-column: span 2; font-size: 0.95rem; justify-content: center; display: flex; padding: 0.5rem 1rem;">
-                💬 ${this.translate('moderate_chat_cards_btn', 'Moderate Chat & Cards')}
-              </button>
+              ${actionButtonsHTML}
             </div>
           `;
           galleryGrid.appendChild(card);
