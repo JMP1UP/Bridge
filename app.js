@@ -2661,8 +2661,35 @@ class App {
       }
     }
 
-    // Show all local students (matched and unmatched) sorted: unmatched first, then alphabetically
-    const myStudents = students.filter(s => s.schoolId === schoolId).sort((a, b) => {
+    // Populate the year filter select options
+    const yearFilterSelect = document.getElementById('match-year-filter');
+    let selectedYear = 'all';
+    if (yearFilterSelect) {
+      const currentSelected = yearFilterSelect.value || 'all';
+      const schoolStudents = students.filter(s => s.schoolId === schoolId);
+      const uniqueYears = [...new Set(schoolStudents.map(s => s.yearGroup).filter(Boolean))].sort();
+      
+      let optionsHtml = `<option value="all">${this.translate('all_years_filter', 'All Years')}</option>`;
+      uniqueYears.forEach(yg => {
+        const localizedYG = this.translateYearGroup(yg);
+        optionsHtml += `<option value="${yg}">${localizedYG}</option>`;
+      });
+      yearFilterSelect.innerHTML = optionsHtml;
+      
+      // Try to restore selection, default to 'all' if no longer exists
+      yearFilterSelect.value = currentSelected;
+      if (!yearFilterSelect.value) {
+        yearFilterSelect.value = 'all';
+      }
+      selectedYear = yearFilterSelect.value;
+    }
+
+    // Show all local students (matched and unmatched) filtered and sorted: unmatched first, then alphabetically
+    let myStudents = students.filter(s => s.schoolId === schoolId);
+    if (selectedYear !== 'all') {
+      myStudents = myStudents.filter(s => s.yearGroup === selectedYear);
+    }
+    myStudents.sort((a, b) => {
       const aUnmatched = a.matchStatus === 'unmatched';
       const bUnmatched = b.matchStatus === 'unmatched';
       if (aUnmatched && !bUnmatched) return -1;

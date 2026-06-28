@@ -1003,8 +1003,11 @@
           <div class="matching-container">
             <!-- English/UK Students list -->
             <div class="panel">
-              <div class="panel-header">
+              <div class="panel-header" style="flex-wrap: wrap; gap: 0.5rem; justify-content: space-between; align-items: center;">
                 <h3 class="panel-title" id="matching-own-school-title">🏫 Leicester High School (UK)</h3>
+                <select id="match-year-filter" class="form-control" style="width: auto; padding: 0.25rem 0.5rem; font-size: 0.8rem; height: auto;" onchange="app.renderTeacherMatching()">
+                  <!-- Populated by JS -->
+                </select>
               </div>
               <div class="match-list-col" id="match-col-en">
                 <!-- Loaded dynamically -->
