@@ -2379,6 +2379,15 @@ class App {
 
   // Renders teacher list of students
   renderStudentRoster() {
+    // Reset selection list on re-render to prevent off-screen stale selections
+    this.selectedRosterStudentIds = [];
+    const masterCheckbox = document.getElementById('roster-select-all');
+    if (masterCheckbox) {
+      masterCheckbox.checked = false;
+      masterCheckbox.indeterminate = false;
+    }
+    this.updateRosterSelectionUI();
+
     const tbody = document.getElementById('student-roster-tbody');
     const teacher = this.getLoggedTeacher();
     const schoolId = teacher ? teacher.schoolId : 'school_1';
@@ -2426,22 +2435,26 @@ class App {
       let activeBadge = '';
       if (stud.invitationStatus === 'Active') activeBadge = `<span class="badge badge-success">${this.translate('active_status', 'Active')}</span>`;
       else if (stud.invitationStatus === 'Archived') activeBadge = `<span class="badge badge-danger">${this.translate('archived_status', 'Archived')}</span>`;
+      else if (stud.invitationStatus === 'Suspended') activeBadge = `<span class="badge badge-warning" style="background: #f59e0b; color: #0b0f19;">${this.translate('suspended_status', 'Suspended')}</span>`;
       else activeBadge = `<span class="badge badge-info">${this.translate('invited_status', 'Invited')}</span>`;
 
       const row = document.createElement('tr');
       row.innerHTML = `
-        <td style="font-weight: 600;">
+        <td style="width: 40px; text-align: center; vertical-align: middle; padding: 0.75rem 0.5rem;">
+          <input type="checkbox" class="roster-student-checkbox" value="${stud.id}" style="cursor: pointer; width: 16px; height: 16px; accent-color: var(--secondary);" onchange="app.handleRosterCheckboxChange(this)">
+        </td>
+        <td style="font-weight: 600; vertical-align: middle;">
           <span class="clickable-student-roster-name" style="cursor: pointer; text-decoration: underline; color: var(--secondary);" onclick="app.openTeacherStudentProfileModal('${stud.id}')">${stud.name}</span>
           <br><span style="font-size: 0.75rem; font-weight: normal; color: var(--text-secondary);">${stud.email}</span>
         </td>
-        <td>${stud.age} • ${this.translateGender(stud.gender)}</td>
-        <td>${this.translateYearGroup(stud.yearGroup)}</td>
-        <td>${statusBadge}</td>
-        <td>
+        <td style="vertical-align: middle;">${stud.age} • ${this.translateGender(stud.gender)}</td>
+        <td style="vertical-align: middle;">${this.translateYearGroup(stud.yearGroup)}</td>
+        <td style="vertical-align: middle;">${statusBadge}</td>
+        <td style="vertical-align: middle;">
           <span style="font-size: 0.85rem;">${this.getLogonDisplay(stud.activityLevel)}</span>
         </td>
-        <td>${activeBadge}</td>
-        <td style="min-width: 250px;">
+        <td style="vertical-align: middle;">${activeBadge}</td>
+        <td style="min-width: 250px; vertical-align: middle;">
           <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: flex-start; width: 100%;">
             ${stud.invitationStatus === 'Invited' 
               ? `<button class="btn btn-secondary" style="width: 125px; justify-content: center; text-align: center; white-space: nowrap; padding: 0.45rem 0.2rem; font-size: 1rem;" onclick="app.simulateInviteResend('${stud.id}')" title="${this.translate('resend_invite_code_title', 'Resend Invite Code')}">${this.translate('resend_invite_btn', 'Resend invite')}</button>` 
@@ -2604,6 +2617,187 @@ class App {
       activeMatches.forEach(m => window.db.deleteMatch(m.id));
 
       window.db.addLog('Student Archived', `Archived account of student ${stud.name}.`, 'Teacher');
+      this.refreshUI();
+    }
+  }
+
+  handleRosterCheckboxChange(checkbox) {
+    if (!this.selectedRosterStudentIds) {
+      this.selectedRosterStudentIds = [];
+    }
+    const studentId = checkbox.value;
+    if (checkbox.checked) {
+      if (!this.selectedRosterStudentIds.includes(studentId)) {
+        this.selectedRosterStudentIds.push(studentId);
+      }
+    } else {
+      this.selectedRosterStudentIds = this.selectedRosterStudentIds.filter(id => id !== studentId);
+    }
+    this.updateRosterSelectionUI();
+  }
+
+  toggleSelectAllRoster(masterCheckbox) {
+    this.selectedRosterStudentIds = [];
+    const checkboxes = document.querySelectorAll('.roster-student-checkbox');
+    checkboxes.forEach(cb => {
+      cb.checked = masterCheckbox.checked;
+      if (cb.checked) {
+        this.selectedRosterStudentIds.push(cb.value);
+      }
+    });
+    this.updateRosterSelectionUI();
+  }
+
+  updateRosterSelectionUI() {
+    if (!this.selectedRosterStudentIds) {
+      this.selectedRosterStudentIds = [];
+    }
+    const count = this.selectedRosterStudentIds.length;
+    const standardActions = document.getElementById('roster-standard-actions');
+    const bulkActions = document.getElementById('roster-bulk-actions');
+    const selectedCountLabel = document.getElementById('roster-selected-count');
+    const masterCheckbox = document.getElementById('roster-select-all');
+
+    if (selectedCountLabel) {
+      selectedCountLabel.textContent = count;
+    }
+
+    if (count > 0) {
+      if (standardActions) standardActions.style.display = 'none';
+      if (bulkActions) bulkActions.style.display = 'flex';
+    } else {
+      if (standardActions) standardActions.style.display = 'flex';
+      if (bulkActions) bulkActions.style.display = 'none';
+    }
+
+    // Update master checkbox check state
+    if (masterCheckbox) {
+      const checkboxes = document.querySelectorAll('.roster-student-checkbox');
+      if (checkboxes.length > 0) {
+        masterCheckbox.checked = (count === checkboxes.length);
+        masterCheckbox.indeterminate = (count > 0 && count < checkboxes.length);
+      } else {
+        masterCheckbox.checked = false;
+        masterCheckbox.indeterminate = false;
+      }
+    }
+  }
+
+  openRosterBulkMessageModal() {
+    if (!this.selectedRosterStudentIds || this.selectedRosterStudentIds.length === 0) return;
+    
+    const namesContainer = document.getElementById('roster-bulk-message-recipients');
+    if (namesContainer) {
+      const names = this.selectedRosterStudentIds.map(id => {
+        const s = window.db.getStudent(id);
+        return s ? s.name : 'Unknown';
+      }).join(', ');
+      namesContainer.textContent = names;
+    }
+    
+    const textarea = document.getElementById('roster-bulk-message-text');
+    if (textarea) textarea.value = '';
+
+    this.openModal('roster-bulk-message-modal');
+  }
+
+  handleRosterBulkMessageSubmit(event) {
+    event.preventDefault();
+    if (!this.selectedRosterStudentIds || this.selectedRosterStudentIds.length === 0) return;
+
+    const textarea = document.getElementById('roster-bulk-message-text');
+    if (!textarea) return;
+    
+    const text = textarea.value.trim();
+    if (!text) return;
+
+    this.sendRosterBulkMessage(this.selectedRosterStudentIds, text);
+    this.closeModal('roster-bulk-message-modal');
+    
+    // Clear selection
+    this.selectedRosterStudentIds = [];
+    const masterCheckbox = document.getElementById('roster-select-all');
+    if (masterCheckbox) masterCheckbox.checked = false;
+    this.updateRosterSelectionUI();
+    this.refreshUI();
+  }
+
+  sendRosterBulkMessage(studentIds, text) {
+    const teacher = this.getLoggedTeacher();
+    const senderId = teacher ? teacher.id : 'coord_1';
+    const senderName = teacher ? teacher.name : 'Teacher';
+    const list = window.db.getStaffStudentMessages();
+
+    studentIds.forEach((studentId, index) => {
+      const newMsg = {
+        id: 'ssm_' + (Date.now() + index),
+        senderId,
+        senderName,
+        recipientId: studentId,
+        text,
+        timestamp: new Date().toISOString(),
+        requireAgreement: false,
+        status: 'Unread',
+        agreedAt: null
+      };
+      list.push(newMsg);
+
+      const student = window.db.getStudent(studentId);
+      const name = student ? student.name : 'Student';
+      window.db.addLog('Staff Notice Sent', `Teacher ${senderName} sent bulk notice to student ${name}.`, senderName);
+    });
+
+    window.db.saveTable('staffStudentMessages', list);
+    alert(this.translate('bulk_message_sent_success', 'Bulk message sent to selected students successfully.'));
+  }
+
+  suspendSelectedStudents() {
+    if (!this.selectedRosterStudentIds || this.selectedRosterStudentIds.length === 0) return;
+    
+    const count = this.selectedRosterStudentIds.length;
+    if (confirm(this.translate('suspend_selected_students_prompt', 'Are you sure you want to suspend the {count} selected student accounts?').replace('{count}', count))) {
+      const teacher = this.getLoggedTeacher();
+      const senderName = teacher ? teacher.name : 'Teacher';
+
+      this.selectedRosterStudentIds.forEach(studentId => {
+        window.db.updateStudent(studentId, { invitationStatus: 'Suspended' });
+        const student = window.db.getStudent(studentId);
+        const name = student ? student.name : 'Student';
+        window.db.addLog('Student Suspended', `Suspended account of student ${name}.`, senderName);
+      });
+
+      this.selectedRosterStudentIds = [];
+      const masterCheckbox = document.getElementById('roster-select-all');
+      if (masterCheckbox) masterCheckbox.checked = false;
+      this.updateRosterSelectionUI();
+      this.refreshUI();
+    }
+  }
+
+  archiveSelectedStudents() {
+    if (!this.selectedRosterStudentIds || this.selectedRosterStudentIds.length === 0) return;
+
+    const count = this.selectedRosterStudentIds.length;
+    if (confirm(this.translate('archive_selected_students_prompt', 'Are you sure you want to delete / archive the {count} selected student accounts? This will end their matches.').replace('{count}', count))) {
+      const teacher = this.getLoggedTeacher();
+      const senderName = teacher ? teacher.name : 'Teacher';
+
+      this.selectedRosterStudentIds.forEach(studentId => {
+        window.db.updateStudent(studentId, { active: false, invitationStatus: 'Archived', matchStatus: 'unmatched' });
+        
+        // Cleanup matches
+        const activeMatches = window.db.getMatches().filter(m => m.active && m.studentIds.includes(studentId));
+        activeMatches.forEach(m => window.db.deleteMatch(m.id));
+
+        const student = window.db.getStudent(studentId);
+        const name = student ? student.name : 'Student';
+        window.db.addLog('Student Archived', `Archived account of student ${name}.`, senderName);
+      });
+
+      this.selectedRosterStudentIds = [];
+      const masterCheckbox = document.getElementById('roster-select-all');
+      if (masterCheckbox) masterCheckbox.checked = false;
+      this.updateRosterSelectionUI();
       this.refreshUI();
     }
   }

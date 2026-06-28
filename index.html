@@ -942,9 +942,21 @@
       <!-- Teacher Roster / Student management Tab -->
       <section class="tab-view-panel" id="view-teach-students" style="display: none;">
         <div class="panel">
-          <div class="panel-header">
-            <h2 class="panel-title">👥 <span data-localize="teach_students">Student List</span></h2>
-            <div style="display: flex; gap: 0.75rem;">
+          <div class="panel-header" style="padding-bottom: 0.75rem; border-bottom: 1px solid var(--panel-border); margin-bottom: 1rem;">
+            <!-- Roster bulk actions (toggled in JS) -->
+            <div id="roster-bulk-actions" style="display: none; justify-content: space-between; align-items: center; width: 100%; background: rgba(59, 130, 246, 0.08); padding: 0.6rem 1rem; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.25); box-sizing: border-box; flex-wrap: wrap; gap: 0.5rem;">
+              <div style="font-size: 0.95rem; font-weight: 600; color: var(--text-primary);">
+                <span id="roster-selected-count">0</span> <span data-localize="selected_students_count">students selected</span>
+              </div>
+              <div style="display: flex; gap: 0.55rem; flex-wrap: wrap;">
+                <button type="button" class="btn btn-secondary btn-small" onclick="app.openRosterBulkMessageModal()" style="font-size: 0.9rem; padding: 0.45rem 0.9rem; font-weight: 600; white-space: nowrap;">💬 <span data-localize="bulk_message_btn">Bulk Message</span></button>
+                <button type="button" class="btn btn-secondary btn-small" onclick="app.suspendSelectedStudents()" style="font-size: 0.9rem; padding: 0.45rem 0.9rem; font-weight: 600; color: #f59e0b; border-color: rgba(245, 158, 11, 0.25); white-space: nowrap;">⏸️ <span data-localize="suspend_selected_btn">Suspend</span></button>
+                <button type="button" class="btn btn-danger btn-small" onclick="app.archiveSelectedStudents()" style="font-size: 0.9rem; padding: 0.45rem 0.9rem; font-weight: 600; white-space: nowrap;">🗑️ <span data-localize="archive_selected_btn">Delete Accounts</span></button>
+              </div>
+            </div>
+            
+            <!-- Standard actions (toggled in JS) -->
+            <div id="roster-standard-actions" style="display: flex; justify-content: flex-end; width: 100%; gap: 0.75rem;">
               <button class="btn btn-secondary btn-small" id="bulk-upload-btn" data-localize="bulk_upload">📥 Bulk Upload</button>
               <button class="btn btn-primary btn-small" id="invite-student-btn" data-localize="invite_student">+ Add Student</button>
             </div>
@@ -954,6 +966,9 @@
             <table>
               <thead>
                 <tr>
+                  <th style="width: 40px; text-align: center; vertical-align: middle;">
+                    <input type="checkbox" id="roster-select-all" onclick="app.toggleSelectAllRoster(this)" style="cursor: pointer; width: 16px; height: 16px; accent-color: var(--secondary);">
+                  </th>
                   <th data-localize="th_student_name">Student Name</th>
                   <th data-localize="th_age_gender">Age / Gender</th>
                   <th data-localize="th_class">Class</th>
@@ -1964,6 +1979,33 @@
           <button class="btn btn-secondary btn-small" onclick="app.copyInviteLink()" data-localize="copy_btn">Copy</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Roster Bulk Message Modal -->
+  <div class="modal-overlay" id="roster-bulk-message-modal">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3 class="panel-title" data-localize="roster_bulk_message_modal_title">Send Message to Selected Students</h3>
+        <button class="modal-close" onclick="app.closeModal('roster-bulk-message-modal')">&times;</button>
+      </div>
+      <form id="roster-bulk-message-form" onsubmit="app.handleRosterBulkMessageSubmit(event)">
+        <div class="form-group">
+          <label style="font-weight: 600; margin-bottom: 0.5rem; display: block; font-size: 0.85rem;" data-localize="recipients_label">Recipients</label>
+          <div id="roster-bulk-message-recipients" style="font-size: 0.85rem; color: var(--text-secondary); max-height: 80px; overflow-y: auto; background: rgba(0,0,0,0.15); padding: 0.5rem; border-radius: 8px; border: 1px solid var(--panel-border); line-height: 1.4;">
+            <!-- Student names populated by JS -->
+          </div>
+        </div>
+        <div class="form-group" style="margin-top: 1rem;">
+          <label for="roster-bulk-message-text" style="font-weight: 600; margin-bottom: 0.5rem; display: block; font-size: 0.85rem;" data-localize="message_text_label">Message Text</label>
+          <textarea id="roster-bulk-message-text" class="form-control" style="height: 120px; resize: vertical; font-size: 0.95rem;" placeholder="Type your message to selected students here..." required data-localize="roster_bulk_message_placeholder"></textarea>
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+          <button type="button" class="btn btn-secondary" onclick="app.closeModal('roster-bulk-message-modal')" data-localize="cancel_btn">Cancel</button>
+          <button type="submit" class="btn btn-primary" data-localize="send_message_btn">Send Message</button>
+        </div>
+      </form>
     </div>
   </div>
 
