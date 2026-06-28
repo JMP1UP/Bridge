@@ -1035,6 +1035,7 @@ class App {
       this.renderTeacherEditorDesk();
       this.populateTeacherSettings();
       this.renderTeacherMessages();
+      this.updateStaffUnreadBadge();
       this.renderTeacherProjects();
       this.renderSchoolConnections();
     } else if (this.currentRole === 'admin') {
@@ -1042,6 +1043,25 @@ class App {
       this.renderAdminSchools();
     } else if (this.currentRole === 'new-coordinator') {
       this.renderNewCoordinatorOnboarding();
+    }
+  }
+
+  updateStaffUnreadBadge() {
+    const teacher = this.getLoggedTeacher();
+    if (!teacher) return;
+    const myId = teacher.id;
+    const unreadCount = window.db.getCoordinatorMessages().filter(m => 
+      m.receiverId === myId && !m.read
+    ).length;
+
+    const badge = document.getElementById('staff-unread-message-count');
+    if (badge) {
+      if (unreadCount > 0) {
+        badge.style.display = 'inline-flex';
+        badge.textContent = unreadCount;
+      } else {
+        badge.style.display = 'none';
+      }
     }
   }
 
@@ -7028,6 +7048,22 @@ class App {
       this.activeCoordinatorId = messagePartners[0].id;
     }
 
+    // Auto-mark unread messages as read for active coordinator
+    if (this.activeCoordinatorId) {
+      const allMsgs = window.db.getCoordinatorMessages();
+      let changed = false;
+      allMsgs.forEach(m => {
+        if (m.senderId === this.activeCoordinatorId && m.receiverId === myId && !m.read) {
+          m.read = true;
+          changed = true;
+        }
+      });
+      if (changed) {
+        window.db.saveTable('coordinatorMessages', allMsgs);
+        this.updateStaffUnreadBadge();
+      }
+    }
+
     messagePartners.forEach(coord => {
       const msgs = window.db.getCoordinatorMessages().filter(m => 
         (m.senderId === myId && m.receiverId === coord.id) || 
@@ -7035,19 +7071,28 @@ class App {
       );
       const lastMsg = msgs[msgs.length - 1];
       const school = window.db.getSchool(coord.schoolId);
+      const flag = school ? this.getSchoolFlag(school.country) : '';
+      const unreadCount = window.db.getCoordinatorMessages().filter(m => 
+        m.senderId === coord.id && m.receiverId === myId && !m.read
+      ).length;
 
       const item = document.createElement('div');
       item.className = `chat-item ${this.activeCoordinatorId === coord.id ? 'active' : ''}`;
       
       item.innerHTML = `
-        <div class="user-avatar" style="width: 32px; height: 32px; font-size: 0.8rem; background: var(--accent);">
+        <div class="user-avatar" style="width: 32px; height: 32px; font-size: 0.8rem; background: var(--accent); flex-shrink: 0;">
           ${coord.name.split(' ').map(n => n[0]).join('') || '?'}
         </div>
-        <div class="chat-item-meta">
-          <div class="chat-item-name">
-            <span>${coord.name} (${school?.code || this.translate('staff_label', 'Staff')})</span>
+        <div class="chat-item-meta" style="flex: 1; min-width: 0;">
+          <div class="chat-item-name" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <span style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 130px;">${coord.name}</span>
+            ${unreadCount > 0 ? `<span class="badge badge-danger alert-pulse" style="font-size: 0.75rem; padding: 0.15rem 0.35rem; border-radius: 10px; margin-left: auto; flex-shrink: 0; line-height: 1;">${unreadCount}</span>` : ''}
           </div>
-          <div class="chat-item-preview">${lastMsg ? lastMsg.text : this.translate('start_chatting_placeholder', 'Start chatting...')}</div>
+          <div style="font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.25rem; margin-top: 0.15rem; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            <span>${flag}</span>
+            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${school ? school.name : this.translate('staff_label', 'Staff')}</span>
+          </div>
+          <div class="chat-item-preview" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">${lastMsg ? lastMsg.text : this.translate('start_chatting_placeholder', 'Start chatting...')}</div>
         </div>
       `;
 
@@ -7080,11 +7125,12 @@ class App {
       }
 
       const partnerSchool = window.db.getSchool(activeCoord.schoolId);
+      const partnerFlag = partnerSchool ? this.getSchoolFlag(partnerSchool.country) : '';
       document.getElementById('teacher-chat-partner-avatar').textContent = activeCoord.name.split(' ').map(n => n[0]).join('') || '?';
       document.getElementById('teacher-chat-partner-name').textContent = activeCoord.name;
       
       const schoolEl = document.getElementById('teacher-chat-partner-school');
-      schoolEl.textContent = partnerSchool ? `${partnerSchool.name} • ${partnerSchool.country}` : 'Unknown School';
+      schoolEl.textContent = partnerSchool ? `${partnerFlag} ${partnerSchool.name} • ${partnerSchool.country}` : 'Unknown School';
       if (partnerSchool) {
         schoolEl.style.cursor = 'pointer';
         schoolEl.style.textDecoration = 'underline';
