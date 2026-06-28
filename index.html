@@ -723,13 +723,10 @@
                     font-family: var(--font-title);
                     font-weight: 800;
                     color: var(--text-primary);
-                    margin: 0 0 0.5rem 0;
-                  }
-                </style>
-                <div style="display: flex; background: var(--bg-color); border: 1px solid var(--panel-border); padding: 0.25rem; border-radius: 12px; width: 100%; max-width: 480px; box-shadow: inset 0 2px 8px rgba(0,0,0,0.1);">
+                        <div style="display: flex; background: var(--bg-color); border: 1px solid var(--panel-border); padding: 0.25rem; border-radius: 12px; width: 100%; max-width: 480px; box-shadow: inset 0 2px 8px rgba(0,0,0,0.1);">
                   <button class="subtab-pill active" id="proj-subtab-article" onclick="app.switchProjectSubtab('article')">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                    Article
+                    Workspace
                   </button>
                   <button class="subtab-pill" id="proj-subtab-chat" onclick="app.switchProjectSubtab('chat')">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
@@ -741,69 +738,73 @@
                   </button>
                 </div>
               </div>
-
+ 
               <!-- Content Scroll Area -->
               <div style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; position: relative;">
                 
                 <!-- Article Workspace Panel (Slides Editor & Carousel Viewport) -->
-                <div id="proj-panel-article" style="display: flex; flex-direction: column; gap: 1rem; padding: 1.25rem; overflow-y: auto; height: 100%;">
+                <div id="proj-panel-article" style="display: flex; flex-direction: column; gap: 1.25rem; padding: 1.25rem; overflow-y: auto; height: 100%;">
                   
                   <!-- Populated dynamically: slide buttons plus [+] Add Card button -->
                   <div style="display: flex; align-items: center; gap: 0.5rem; overflow-x: auto; overflow-y: hidden; padding-bottom: 0.75rem; min-height: 52px; flex-shrink: 0;" id="proj-slides-carousel-bar">
                     <!-- Populated dynamically: slide buttons plus [+] Add Card button -->
                   </div>
-
-                  <!-- Slide Layout Picker -->
-                  <div class="form-group" style="margin-bottom: 0.5rem;" id="proj-slide-layout-group">
-                    <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem; display: block;">Slide Layout</label>
-                    <div style="display: flex; background: rgba(0,0,0,0.25); padding: 0.2rem; border-radius: 8px; width: fit-content; gap: 0.25rem;">
-                      <button type="button" class="btn btn-secondary btn-small active-layout" id="layout-split-btn" onclick="app.setProjectSlideLayout('split')" style="padding: 0.35rem 0.85rem; font-size: 0.85rem; font-weight: 600; border-radius: 6px; border: none; background: transparent; cursor: pointer; transition: all 0.2s;">
-                        📷 Photo + Text
-                      </button>
-                      <button type="button" class="btn btn-secondary btn-small" id="layout-text-btn" onclick="app.setProjectSlideLayout('text-only')" style="padding: 0.35rem 0.85rem; font-size: 0.85rem; font-weight: 600; border-radius: 6px; border: none; background: transparent; cursor: pointer; transition: all 0.2s;">
-                        📝 Text Only
-                      </button>
+ 
+                  <!-- Editor Panel Card Container -->
+                  <div class="panel" style="background: rgba(255, 255, 255, 0.015); border: 1px solid var(--panel-border); padding: 1.25rem; border-radius: 12px; display: flex; flex-direction: column; gap: 1.25rem;">
+                    
+                    <!-- Slide Layout Picker -->
+                    <div class="form-group" style="margin-bottom: 0;" id="proj-slide-layout-group">
+                      <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem; display: block;">Slide Layout</label>
+                      <div style="display: flex; background: rgba(0,0,0,0.25); padding: 0.2rem; border-radius: 8px; width: fit-content; gap: 0.25rem;">
+                        <button type="button" class="btn btn-secondary btn-small active-layout" id="layout-split-btn" onclick="app.setProjectSlideLayout('split')" style="padding: 0.35rem 0.85rem; font-size: 0.85rem; font-weight: 600; border-radius: 6px; border: none; background: transparent; cursor: pointer; transition: all 0.2s;">
+                          📷 Photo + Text
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-small" id="layout-text-btn" onclick="app.setProjectSlideLayout('text-only')" style="padding: 0.35rem 0.85rem; font-size: 0.85rem; font-weight: 600; border-radius: 6px; border: none; background: transparent; cursor: pointer; transition: all 0.2s;">
+                          📝 Text Only
+                        </button>
+                      </div>
                     </div>
-                  </div>
-
-                  <!-- Editor Fields -->
-                  <div class="form-group" style="margin-bottom: 0.5rem;">
-                    <label for="proj-art-title" style="font-size: 0.85rem; font-weight: 600;">Slide Title</label>
-                    <input type="text" id="proj-art-title" class="form-control" style="font-size: 0.9rem;" placeholder="Give this slide a title..." required>
-                  </div>
-
-                  <!-- Slide Photo Group (Toggled by JS based on layout) -->
-                  <div class="form-group" style="margin-bottom: 0.5rem;" id="proj-slide-photo-group">
-                    <label for="proj-art-photo-input" style="font-size: 0.85rem; font-weight: 600;">Add Slide Photograph</label>
-                    <div style="display: flex; gap: 0.5rem; align-items: center;">
-                      <input type="file" id="proj-art-photo-input" class="form-control" accept="image/*" style="padding: 0.4rem 0.75rem; font-size: 0.9rem; flex-grow: 1;">
-                      <button type="button" id="proj-art-photo-remove-btn" class="btn btn-secondary btn-small" style="display: none; color: var(--danger); border-color: rgba(239, 68, 68, 0.2); padding: 0.45rem 0.75rem; font-weight: bold; border-radius: 8px;">Remove</button>
+ 
+                    <!-- Editor Fields -->
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label for="proj-art-title" style="font-size: 0.85rem; font-weight: 600;">Slide Title</label>
+                      <input type="text" id="proj-art-title" class="form-control" style="font-size: 0.9rem;" placeholder="Give this slide a title..." required>
                     </div>
-                    <div class="photo-preview-container" style="margin-top: 0.5rem; display: flex; align-items: center; justify-content: center; height: 110px; border: 1px dashed var(--panel-border); border-radius: 12px; overflow: hidden; background: rgba(0,0,0,0.15);">
-                      <img id="proj-article-photo-preview" src="" alt="Slide Photo Preview" style="height: 100%; width: 100%; object-fit: cover; display: none;">
-                      <span id="proj-article-photo-placeholder" style="font-size: 0.85rem; color: var(--text-muted);">No image uploaded</span>
+ 
+                    <!-- Slide Photo Group (Toggled by JS based on layout) -->
+                    <div class="form-group" style="margin-bottom: 0;" id="proj-slide-photo-group">
+                      <label for="proj-art-photo-input" style="font-size: 0.85rem; font-weight: 600;">Add Slide Photograph</label>
+                      <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <input type="file" id="proj-art-photo-input" class="form-control" accept="image/*" style="padding: 0.4rem 0.75rem; font-size: 0.9rem; flex-grow: 1;">
+                        <button type="button" id="proj-art-photo-remove-btn" class="btn btn-secondary btn-small" style="display: none; color: var(--danger); border-color: rgba(239, 68, 68, 0.2); padding: 0.45rem 0.75rem; font-weight: bold; border-radius: 8px;">Remove</button>
+                      </div>
+                      <div class="photo-preview-container" style="margin-top: 0.5rem; display: flex; align-items: center; justify-content: center; height: 110px; border: 1px dashed var(--panel-border); border-radius: 12px; overflow: hidden; background: rgba(0,0,0,0.15);">
+                        <img id="proj-article-photo-preview" src="" alt="Slide Photo Preview" style="height: 100%; width: 100%; object-fit: cover; display: none;">
+                        <span id="proj-article-photo-placeholder" style="font-size: 0.85rem; color: var(--text-muted);">No image uploaded</span>
+                      </div>
                     </div>
-                  </div>
-
-                  <div class="form-group" style="display: flex; flex-direction: column; flex-grow: 1; margin-bottom: 0.5rem; min-height: 160px;">
-                    <label for="proj-art-content" style="font-size: 0.85rem; font-weight: 600;">Slide Body Content</label>
-                    <textarea id="proj-art-content" class="form-control" style="font-size: 0.9rem; min-height: 140px; flex-grow: 1; resize: vertical;" placeholder="Explain your research or topic details for this slide..." required></textarea>
-                  </div>
-
-                  <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem; border-top: 1px solid var(--panel-border); padding-top: 0.75rem; padding-bottom: 0.5rem;">
-                    <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                      <span id="proj-article-last-updated" style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">Last updated: Not saved yet</span>
-                      <div id="proj-slide-author-display" style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">Author: Unknown</div>
-                      <label id="proj-slide-editable-label" style="display: none; align-items: center; gap: 0.35rem; font-size: 0.85rem; color: var(--text-secondary); cursor: pointer; user-select: none;">
-                        <input type="checkbox" id="proj-slide-editable-toggle" style="width: 14px; height: 14px; accent-color: var(--primary);">
-                        <span>Editable by others</span>
-                      </label>
+ 
+                    <div class="form-group" style="display: flex; flex-direction: column; flex-grow: 1; margin-bottom: 0; min-height: 160px;">
+                      <label for="proj-art-content" style="font-size: 0.85rem; font-weight: 600;">Slide Body Content</label>
+                      <textarea id="proj-art-content" class="form-control" style="font-size: 0.9rem; min-height: 140px; flex-grow: 1; resize: vertical;" placeholder="Explain your research or topic details for this slide..." required></textarea>
                     </div>
-                    <div style="display: flex; gap: 0.5rem; align-items: center;">
-                      <button class="btn btn-danger btn-small" id="proj-slide-delete-btn" onclick="app.deleteProjectSlide()" style="padding: 0.45rem 1rem; display: inline-flex; align-items: center; gap: 0.25rem;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg><span>Delete Slide</span></button>
-                      <button class="btn btn-secondary btn-small" id="proj-art-preview-btn" onclick="app.previewProjectDeck()" style="padding: 0.45rem 1rem; display: inline-flex; align-items: center; gap: 0.25rem;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg><span>Preview Deck</span></button>
-                      <button class="btn btn-secondary btn-small" id="proj-art-save-btn" style="padding: 0.45rem 1rem;">Save Draft</button>
-                      <button class="btn btn-primary btn-small" id="proj-art-publish-btn" style="padding: 0.45rem 1.25rem;">Publish Project</button>
+ 
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem; border-top: 1px solid var(--panel-border); padding-top: 1rem;">
+                      <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                        <span id="proj-article-last-updated" style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">Last updated: Not saved yet</span>
+                        <div id="proj-slide-author-display" style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">Author: Unknown</div>
+                        <label id="proj-slide-editable-label" style="display: none; align-items: center; gap: 0.35rem; font-size: 0.85rem; color: var(--text-secondary); cursor: pointer; user-select: none;">
+                          <input type="checkbox" id="proj-slide-editable-toggle" style="width: 14px; height: 14px; accent-color: var(--primary);">
+                          <span>Editable by others</span>
+                        </label>
+                      </div>
+                      <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <button class="btn btn-danger btn-small" id="proj-slide-delete-btn" onclick="app.deleteProjectSlide()" style="padding: 0.45rem 1rem; display: inline-flex; align-items: center; gap: 0.25rem;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg><span>Delete Slide</span></button>
+                        <button class="btn btn-secondary btn-small" id="proj-art-preview-btn" onclick="app.previewProjectDeck()" style="padding: 0.45rem 1rem; display: inline-flex; align-items: center; gap: 0.25rem;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg><span>Preview Deck</span></button>
+                        <button class="btn btn-secondary btn-small" id="proj-art-save-btn" style="padding: 0.45rem 1rem;">Save Draft</button>
+                        <button class="btn btn-primary btn-small" id="proj-art-publish-btn" style="padding: 0.45rem 1.25rem;">Publish Project</button>
+                      </div>
                     </div>
                   </div>
                 </div>
