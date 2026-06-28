@@ -7041,6 +7041,15 @@ class App {
         previewSpan.removeAttribute('data-draft');
       }
 
+      const settings = window.db.getSettings();
+      const translationEnabled = settings.translationEnabled !== false;
+
+      const composeArea = document.getElementById('teacher-chat-compose-area');
+      const translationBar = composeArea ? composeArea.querySelector('.translation-bar') : null;
+      if (translationBar) {
+        translationBar.style.display = translationEnabled ? 'flex' : 'none';
+      }
+
       const partnerSchool = window.db.getSchool(activeCoord.schoolId);
       document.getElementById('teacher-chat-partner-avatar').textContent = activeCoord.name.split(' ').map(n => n[0]).join('') || '?';
       document.getElementById('teacher-chat-partner-name').textContent = activeCoord.name;
@@ -7077,7 +7086,7 @@ class App {
         row.className = `message-row ${isSent ? 'sent' : 'received'}`;
         
         let transRow = '';
-        if (msg.translation) {
+        if (msg.translation && translationEnabled) {
           transRow = `<div class="message-translation" style="font-size: 0.82rem; color: var(--secondary); margin-top: 0.25rem; font-style: italic; border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 0.25rem;">📝 ${msg.translation}</div>`;
         }
 
