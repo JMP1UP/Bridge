@@ -3752,20 +3752,20 @@ class App {
             <img src="${campusPhoto}" alt="${s.name}" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.7;">
             <img src="${schoolLogo}" alt="${s.name} logo" style="position: absolute; bottom: -15px; left: 1rem; width: 44px; height: 44px; border-radius: 8px; border: 2px solid var(--panel-bg); object-fit: cover; background: var(--bg-dark);">
           </div>
-          <div style="padding: 1.25rem 1rem 1rem 1rem; flex-grow: 1; display: flex; flex-direction: column; gap: 0.6rem; margin-top: 5px; box-sizing: border-box;">
+          <div style="padding: 1.25rem 1rem 1rem 1rem; flex-grow: 1; display: flex; flex-direction: column; gap: 0.75rem; margin-top: 5px; box-sizing: border-box;">
             <div>
-              <h4 style="font-weight: 700; font-size: 0.95rem; margin: 0; color: var(--text-primary); display: flex; align-items: center; gap: 0.35rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">
+              <h4 style="font-weight: 700; font-size: 1.15rem; margin: 0; color: var(--text-primary); display: flex; align-items: center; gap: 0.35rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">
                 ${this.getSchoolFlag(s.country)} ${s.name}
               </h4>
-              <span style="font-size: 0.7rem; color: var(--text-secondary); font-weight: 500;">${s.city}, ${s.country}</span>
+              <span style="font-size: 0.95rem; color: var(--text-secondary); font-weight: 500;">${s.city}, ${s.country}</span>
             </div>
             
-            <p style="font-size: 0.8rem; line-height: 1.45; color: var(--text-muted); margin: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; height: 4.35em;">
+            <p style="font-size: 1rem; line-height: 1.5; color: var(--text-muted); margin: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; height: 4.5em;">
               ${this.translate(s.id + '_desc', s.description) || this.translate('no_description_available', 'No biography available for this school.')}
             </p>
             
-            <div style="margin-top: auto; border-top: 1px solid var(--panel-border); padding-top: 0.6rem; font-size: 0.72rem; color: var(--text-secondary); line-height: 1.3;">
-              <strong style="color: var(--text-primary);">${this.translate('coordinator_label', 'Coordinator')}:</strong><br>
+            <div style="margin-top: auto; border-top: 1px solid var(--panel-border); padding-top: 0.75rem; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.4;">
+              <strong style="color: var(--text-primary); font-size: 0.95rem;">${this.translate('coordinator_label', 'Coordinator')}:</strong><br>
               ${coordText}
             </div>
             
