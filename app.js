@@ -6369,19 +6369,30 @@ class App {
 
     chatListContainer.innerHTML = '';
     
-    if (otherCoordinators.length === 0) {
-      chatListContainer.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-muted); padding: 1rem; text-align: center;">${this.translate('no_coordinators_found', 'No other coordinators found.')}</p>`;
+    // Filter active chat partners: chatted with OR currently selected to start a new chat
+    const messages = window.db.getCoordinatorMessages();
+    const chattedCoordinatorIds = new Set(
+      messages.filter(m => m.senderId === myId || m.receiverId === myId)
+              .map(m => m.senderId === myId ? m.receiverId : m.senderId)
+    );
+
+    const messagePartners = otherCoordinators.filter(c => 
+      chattedCoordinatorIds.has(c.id) || c.id === this.activeCoordinatorId
+    );
+    
+    if (messagePartners.length === 0) {
+      chatListContainer.innerHTML = `<p style="font-size: 0.85rem; color: var(--text-muted); padding: 1.5rem; text-align: center; line-height: 1.4;">${this.translate('no_active_chats_yet', 'No active chats yet. Use the "Discover Schools" gallery to find connection partners and start a conversation!')}</p>`;
       chatEmptyState.style.display = 'flex';
       chatActiveState.style.display = 'none';
       return;
     }
 
-    // Set first partner as default if none active
-    if (!this.activeCoordinatorId) {
-      this.activeCoordinatorId = otherCoordinators[0].id;
+    // Set first partner as default if none active or active is not in messagePartners
+    if (!this.activeCoordinatorId || !messagePartners.some(p => p.id === this.activeCoordinatorId)) {
+      this.activeCoordinatorId = messagePartners[0].id;
     }
 
-    otherCoordinators.forEach(coord => {
+    messagePartners.forEach(coord => {
       const msgs = window.db.getCoordinatorMessages().filter(m => 
         (m.senderId === myId && m.receiverId === coord.id) || 
         (m.senderId === coord.id && m.receiverId === myId)
