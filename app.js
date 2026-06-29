@@ -4656,6 +4656,34 @@ class App {
       if (listContainer) {
         listContainer.innerHTML = activeSession.prompts.map(p => `<li style="margin-bottom: 0.35rem;">${p}</li>`).join('');
       }
+
+      // Render participating checklist in the active session view
+      const activePartSettings = document.getElementById('speed-active-participant-settings');
+      const activeStudentList = document.getElementById('speed-active-student-list');
+      if (activePartSettings && activeStudentList) {
+        activePartSettings.style.display = 'flex';
+        const localStudents = window.db.getStudents().filter(s => s.schoolId === schoolId);
+        
+        // Determine selected list depending on role (host vs partner)
+        const currentParticipants = activeSession.hostSchoolId === schoolId ? 
+          (activeSession.participantStudentIds || []) : 
+          (activeSession.partnerParticipantStudentIds || []);
+
+        if (localStudents.length === 0) {
+          activeStudentList.innerHTML = `<span style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">No students enrolled in your school yet.</span>`;
+        } else {
+          activeStudentList.innerHTML = localStudents.map(s => {
+            const isChecked = currentParticipants.includes(s.id) || 
+                              (activeSession.partnerSchoolId === schoolId && (!activeSession.partnerParticipantStudentIds || activeSession.partnerParticipantStudentIds.length === 0));
+            return `
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-secondary); cursor: pointer; user-select: none; margin: 0; padding: 0.15rem 0;">
+                <input type="checkbox" class="speed-active-student-checkbox" value="${s.id}" ${isChecked ? 'checked' : ''} style="cursor: pointer; width: 15px; height: 15px; accent-color: var(--secondary);">
+                <span>${s.name} (${s.gender} • Age ${s.age} • ${s.yearGroup || 'Year'})</span>
+              </label>
+            `;
+          }).join('');
+        }
+      }
     } else {
       if (createPanel) createPanel.style.display = 'block';
       if (activePanel) activePanel.style.display = 'none';
@@ -4675,6 +4703,22 @@ class App {
             }).join('');
         }
       }
+
+      // Populate student selection list for session creation
+      const studentsListEl = document.getElementById('speed-student-selection-list');
+      if (studentsListEl) {
+        const localStudents = window.db.getStudents().filter(s => s.schoolId === schoolId);
+        if (localStudents.length === 0) {
+          studentsListEl.innerHTML = `<span style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">No students enrolled in your school yet. Please add students first.</span>`;
+        } else {
+          studentsListEl.innerHTML = localStudents.map(s => `
+            <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-secondary); cursor: pointer; user-select: none; margin: 0; padding: 0.15rem 0;">
+              <input type="checkbox" class="speed-student-checkbox" value="${s.id}" checked style="cursor: pointer; width: 15px; height: 15px; accent-color: var(--secondary);">
+              <span>${s.name} (${s.gender} • Age ${s.age} • ${s.yearGroup || 'Year'})</span>
+            </label>
+          `).join('');
+        }
+      }
     }
   }
 
@@ -4692,6 +4736,13 @@ class App {
       return;
     }
 
+    const studentCheckboxes = document.querySelectorAll('.speed-student-checkbox:checked');
+    if (studentCheckboxes.length === 0) {
+      alert('Please select at least one participating student from your school roster.');
+      return;
+    }
+    const participantStudentIds = Array.from(studentCheckboxes).map(cb => cb.value);
+
     const prompts = promptsInput.value.split('\n').map(p => p.trim()).filter(p => p.length > 0);
     if (prompts.length === 0) {
       alert('Please enter at least one prompt question.');
@@ -4702,6 +4753,7 @@ class App {
       hostSchoolId: schoolId,
       partnerSchoolId: partnerSelect.value,
       roundDuration: parseInt(durationSelect.value, 10),
+      participantStudentIds: participantStudentIds,
       prompts: prompts,
       status: 'active'
     };
@@ -4709,7 +4761,45 @@ class App {
     window.db.addSpeedSession(session);
     this.renderSpeedExchangeDashboard();
     
-    alert('Speed Exchange Session has been launched! Students can now join the lobby.');
+    alert('Speed Exchange Session has been launched! Selected students can now join the lobby.');
+  }
+
+  toggleSpeedStudentSelection(isChecked) {
+    const checkboxes = document.querySelectorAll('.speed-student-checkbox');
+    checkboxes.forEach(cb => cb.checked = isChecked);
+  }
+
+  toggleSpeedActiveStudentSelection(isChecked) {
+    const checkboxes = document.querySelectorAll('.speed-active-student-checkbox');
+    checkboxes.forEach(cb => cb.checked = isChecked);
+  }
+
+  saveSpeedActiveParticipants() {
+    const teacher = this.getLoggedTeacher();
+    const schoolId = teacher ? teacher.schoolId : 'school_1';
+
+    const sessions = window.db.getSpeedSessions();
+    const active = sessions.find(s => 
+      s.status !== 'ended' && (s.hostSchoolId === schoolId || s.partnerSchoolId === schoolId)
+    );
+
+    if (!active) {
+      alert('No active speed session found.');
+      return;
+    }
+
+    const checkboxes = document.querySelectorAll('.speed-active-student-checkbox:checked');
+    const checkedIds = Array.from(checkboxes).map(cb => cb.value);
+
+    if (active.hostSchoolId === schoolId) {
+      window.db.updateSpeedSession(active.id, { participantStudentIds: checkedIds });
+    } else {
+      window.db.updateSpeedSession(active.id, { partnerParticipantStudentIds: checkedIds });
+    }
+
+    alert('Participating student roster updated successfully!');
+    this.renderSpeedExchangeDashboard();
+    this.refreshUI();
   }
 
   endActiveSpeedSession() {
@@ -4739,7 +4829,19 @@ class App {
 
     const banner = document.getElementById('live-speed-alert-banner');
     if (banner) {
-      banner.style.display = active ? 'flex' : 'none';
+      if (active) {
+        if (active.hostSchoolId === student.schoolId) {
+          const isAllowed = active.participantStudentIds && active.participantStudentIds.includes(student.id);
+          banner.style.display = isAllowed ? 'flex' : 'none';
+        } else {
+          const isAllowed = !active.partnerParticipantStudentIds || 
+                            active.partnerParticipantStudentIds.length === 0 || 
+                            active.partnerParticipantStudentIds.includes(student.id);
+          banner.style.display = isAllowed ? 'flex' : 'none';
+        }
+      } else {
+        banner.style.display = 'none';
+      }
     }
   }
 

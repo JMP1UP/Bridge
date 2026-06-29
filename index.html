@@ -1397,6 +1397,18 @@
                     <!-- Prompts rendered dynamically -->
                   </ol>
                 </div>
+
+                <div id="speed-active-participant-settings" style="border-top: 1px solid var(--panel-border); padding-top: 1rem; margin-top: 1rem; display: none; flex-direction: column; gap: 0.65rem;">
+                  <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 700; display: block;">Participating Students from Your School</span>
+                  <div style="display: flex; gap: 0.4rem;">
+                    <button type="button" class="btn btn-secondary btn-small" onclick="app.toggleSpeedActiveStudentSelection(true)" style="padding: 0.2rem 0.4rem; font-size: 0.7rem; font-weight: 600; cursor: pointer;">Select All</button>
+                    <button type="button" class="btn btn-secondary btn-small" onclick="app.toggleSpeedActiveStudentSelection(false)" style="padding: 0.2rem 0.4rem; font-size: 0.7rem; font-weight: 600; cursor: pointer;">Clear All</button>
+                  </div>
+                  <div id="speed-active-student-list" style="max-height: 120px; overflow-y: auto; border: 1px solid var(--panel-border); border-radius: 8px; padding: 0.5rem 0.75rem; background: rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 0.4rem;">
+                    <!-- Filled dynamically with checkboxes -->
+                  </div>
+                  <button type="button" class="btn btn-secondary btn-small" onclick="app.saveSpeedActiveParticipants()" style="align-self: flex-start; padding: 0.35rem 0.75rem; font-weight: 700; border-color: var(--secondary); color: var(--secondary); margin-top: 0.25rem; cursor: pointer;">💾 Update Participating Students</button>
+                </div>
               </div>
             </div>
 
@@ -1415,7 +1427,18 @@
                 </div>
 
                 <div class="form-group">
-                  <label for="speed-round-duration" style="font-weight: 700; font-size: 0.85rem; display: block; margin-bottom: 0.35rem;">2. Round Duration</label>
+                  <label style="font-weight: 700; font-size: 0.85rem; display: block; margin-bottom: 0.35rem;">2. Select Participating Students</label>
+                  <div style="display: flex; gap: 0.4rem; margin-bottom: 0.5rem;">
+                    <button type="button" class="btn btn-secondary btn-small" onclick="app.toggleSpeedStudentSelection(true)" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 600; cursor: pointer;">Select All</button>
+                    <button type="button" class="btn btn-secondary btn-small" onclick="app.toggleSpeedStudentSelection(false)" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 600; cursor: pointer;">Clear All</button>
+                  </div>
+                  <div id="speed-student-selection-list" style="max-height: 140px; overflow-y: auto; border: 1px solid var(--panel-border); border-radius: 8px; padding: 0.65rem 0.85rem; background: rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 0.45rem; width: 100%; box-sizing: border-box;">
+                    <!-- Populated dynamically with checkboxes -->
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="speed-round-duration" style="font-weight: 700; font-size: 0.85rem; display: block; margin-bottom: 0.35rem;">3. Round Duration</label>
                   <select id="speed-round-duration" class="form-control" style="background: rgba(0, 0, 0, 0.25); color: var(--text-primary);">
                     <option value="60">1 Minute (For quick review)</option>
                     <option value="120">2 Minutes</option>
@@ -1425,7 +1448,7 @@
                 </div>
 
                 <div class="form-group">
-                  <label for="speed-prompts-input" style="font-weight: 700; font-size: 0.85rem; display: block; margin-bottom: 0.35rem;">3. Round Prompt Questions (One per line)</label>
+                  <label for="speed-prompts-input" style="font-weight: 700; font-size: 0.85rem; display: block; margin-bottom: 0.35rem;">4. Round Prompt Questions (One per line)</label>
                   <textarea id="speed-prompts-input" class="form-control" style="height: 120px; font-family: inherit; font-size: 0.85rem; line-height: 1.5; background: rgba(0, 0, 0, 0.25); color: var(--text-primary); resize: vertical;" placeholder="Introduce yourself! Ask for their name and hobbies.
 Ask about their favorite food and what they eat for breakfast.
 Compare your daily school schedule. What subjects do you take?
