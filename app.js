@@ -4942,7 +4942,7 @@ class App {
 
       try {
         const student = window.db.getStudent(this.currentStudentId);
-        const domain = "meet.jit.si";
+        const domain = "meet.ffmuc.net";
         const options = {
           roomName: `BridgeSpeed-${this.currentSpeedSession.id}-R${this.currentSpeedRoundIndex}-${partner.name.replace(/\s+/g, '')}`,
           width: "100%",
@@ -5478,7 +5478,7 @@ class App {
       container.innerHTML = '';
       
       try {
-        const domain = "meet.jit.si";
+        const domain = "meet.ffmuc.net";
         const options = {
           roomName: `BridgeExchange-${match.id}`,
           width: "100%",
@@ -11653,7 +11653,9 @@ Our classroom is participating in a global cultural exchange program using the B
    - https://bridge-app-nine-liart.vercel.app (Default Vercel platform subdomain)
 
 2. WebRTC Video Servers (Jitsi Meet integration) to whitelist:
-   - meet.jit.si (Signaling server)
+   - meet.ffmuc.net (Signaling server)
+   - *.meet.ffmuc.net
+   - meet.jit.si (Backup server)
    - *.meet.jit.si
    - Ports: TCP 443 (HTTPS) & UDP 10000 (RTP Video/Audio stream media)
 
