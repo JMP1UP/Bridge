@@ -1280,6 +1280,10 @@ class App {
   // Main UI refresh selector
   refreshUI() {
     if (!this.isLoggedIn) return;
+
+    // Show floating help button
+    const helpBtn = document.getElementById('app-floating-help-btn');
+    if (helpBtn) helpBtn.style.display = 'flex';
     // Redraw based on role
     if (this.currentRole === 'student') {
       const student = window.db.getStudent(this.currentStudentId);
@@ -10903,6 +10907,13 @@ class App {
   logout() {
     this.isLoggedIn = false;
     this.currentRole = null;
+    
+    // Hide help button and close drawer
+    const helpBtn = document.getElementById('app-floating-help-btn');
+    if (helpBtn) helpBtn.style.display = 'none';
+    this.closeHelpDrawer();
+    this.endScreenTour();
+
     document.getElementById('login-screen').style.setProperty('display', 'flex', 'important');
     document.querySelector('.app-container').style.setProperty('display', 'none', 'important');
     const emailInput = document.getElementById('login-email');
@@ -11203,6 +11214,369 @@ class App {
     this.previewSlideIndex = 0;
     this.renderPreviewProjectSlide();
     this.openModal('project-deck-preview-modal');
+  }
+
+  // ==========================================
+  // HELP DRAWER & GUIDED TOURS ENGINE
+  // ==========================================
+
+  toggleHelpDrawer() {
+    const drawer = document.getElementById('app-help-drawer');
+    if (!drawer) return;
+    drawer.classList.toggle('open');
+    if (drawer.classList.contains('open')) {
+      this.updateHelpDrawerContent();
+    }
+  }
+
+  closeHelpDrawer() {
+    const drawer = document.getElementById('app-help-drawer');
+    if (drawer) drawer.classList.remove('open');
+  }
+
+  updateHelpDrawerContent() {
+    const content = document.getElementById('help-screen-content');
+    const whitelistSection = document.getElementById('help-it-whitelist-section');
+    if (!content) return;
+
+    const role = this.currentRole;
+    const activeTab = this.currentTab || 'dashboard';
+
+    let titleText = 'General Guide';
+    let bulletPoints = [];
+    let showWhitelist = false;
+
+    if (role === 'student') {
+      if (activeTab === 'dashboard') {
+        titleText = 'Student Dashboard';
+        bulletPoints = [
+          '🏡 **Welcome Banner:** Shows your active pen pal connection card.',
+          '📰 **School News:** Check notices shared directly by your classroom teacher.',
+          '⚡ **Speed Exchange Banner:** Displays a live alert when a speed session is active. Click to join the matching lobby.',
+          '📚 **Recent Discoveries:** Browse cultural stories written by partner school students.'
+        ];
+      } else if (activeTab === 'stud-chat') {
+        titleText = 'Student Chat & Video';
+        bulletPoints = [
+          '💬 **Connections Sidebar:** Click any partner in the list to select the chat conversation.',
+          '🎥 **Video Call Button:** Visible in the header *only* when allowed by your teacher. Timed calls display a countdown.',
+          '✍️ **Compose Area:** Type your text, select "Auto Translate" to translate foreign messages, or use the language helper panel.'
+        ];
+      } else if (activeTab === 'stud-discoveries') {
+        titleText = 'Discoveries Board';
+        bulletPoints = [
+          '🌍 **Browse Articles:** Read cultural stories published by other students and teachers.',
+          '✍️ **Write Article:** Create and submit your own cultural articles. They will go to your teacher for approval.',
+          '💖 **Like & Learn:** Click hearts to show appreciation for articles you find interesting.'
+        ];
+      } else if (activeTab === 'stud-projects') {
+        titleText = 'Group Projects';
+        bulletPoints = [
+          '👥 **Slide Deck Creator:** Collaborate on shared presentations with your partner.',
+          '🖼️ **Add Slides & Photos:** Select a split or single layout, upload images, and write card bodies.',
+          '📌 **Pinned Actions:** Save draft revisions or publish slides directly to the gallery using the bottom action bar.'
+        ];
+      } else if (activeTab === 'stud-speed-exchange') {
+        titleText = 'Live Speed Exchange';
+        bulletPoints = [
+          '⏳ **Lobby Waiting Room:** Wait here until the teacher shuffles you into a matched video room.',
+          '⚡ **Live Video Feed:** Talk with a random partner from the partner school using Jitsi Meet WebRTC.',
+          '🎯 **Round Prompt Card:** Check the teacher-populated prompt at the bottom for quick topics.'
+        ];
+      } else {
+        titleText = 'Student Hub';
+        bulletPoints = [
+          '⚙️ **Settings & Language:** Modify your display language or profile details.'
+        ];
+      }
+    } else if (role === 'teacher') {
+      showWhitelist = true;
+      if (activeTab === 'teach-dashboard') {
+        titleText = 'Teacher Dashboard';
+        bulletPoints = [
+          '📊 **Statistics Cards:** Quick overview of student rosters, connection ratios, and pending actions.',
+          '🚨 **Safeguarding Alerts:** Review flags raised by the automated content monitors.',
+          '📝 **Editorial Inbox:** Quickly approve or reject student bios and cultural articles.'
+        ];
+      } else if (activeTab === 'teach-students') {
+        titleText = 'Student Hub & Roster';
+        bulletPoints = [
+          '📋 **Student Roster:** Invite students, send secure activation links, and reset passwords.',
+          '📢 **Broadcasts / Announcements:** Publish school announcements shown on your students’ home screens.',
+          '⚙️ **Account Management:** Suspend or archive student records in bulk using row check selectors.'
+        ];
+      } else if (activeTab === 'teach-matching') {
+        const subtab = this.currentMatchingSubtab || 'pair';
+        if (subtab === 'pair') {
+          titleText = 'Connections Matching';
+          bulletPoints = [
+            '🤝 **Pairing Selectors:** Select local students on the left, choose a partner school, and send connection requests.',
+            '🔒 **Anonymized Bios:** GDPR-compliant matching displays only first names and bios to partner schools.'
+          ];
+        } else if (subtab === 'active') {
+          titleText = 'Active Matches & Video';
+          bulletPoints = [
+            '🎥 **Video Access Control:** Set video call permissions to *Always On*, *Disabled*, or *Timed* (15, 30, or 45 mins).',
+            '❌ **Break Connections:** Disband pairs in bulk. Unlinked students are returned to the unmatched pool.'
+          ];
+        } else if (subtab === 'speed') {
+          titleText = 'Class Speed Exchange';
+          bulletPoints = [
+            '⚡ **Live Event Creator:** Launch class-wide timed rotation sessions with custom partner schools.',
+            '✍️ **Pre-populate Prompts:** Write questions (one per line) that cycle automatically in matched video rooms.'
+          ];
+        } else {
+          titleText = 'Matching Center';
+          bulletPoints = [
+            '📥 **Requests Inbox:** Accept or decline connection proposals sent by partner school coordinators.'
+          ];
+        }
+      } else if (activeTab === 'teach-projects') {
+        titleText = 'Shared Projects Desk';
+        bulletPoints = [
+          '👥 **Gallery & Search:** Filter collaborations by Student/Staff type, status, and partner schools.',
+          '📤 **Sent Proposals:** Track outgoing projects awaiting partner school approval.',
+          '🛠️ **Workspace Modals:** Add slides, moderate content, or collaborate on coordinator-to-coordinator projects.'
+        ];
+      } else if (activeTab === 'teach-partnerships') {
+        titleText = 'School Partnerships';
+        bulletPoints = [
+          '🏫 **Connected Schools:** Review partner profiles, coordinator bio details, and active directory lists.',
+          '🔍 **Discover Gallery:** Open the discovery modal to browse all registered schools and propose new partnerships.'
+        ];
+      } else if (activeTab === 'teach-messages') {
+        titleText = 'Staff Messaging';
+        bulletPoints = [
+          '✉️ **Coordinator Chat:** Direct messaging with partner school coordinators.',
+          '🌐 **Safe Translation:** Toggle auto-translation to translate foreign staff messages on-the-fly.',
+          '🔴 **Unread Notification Badges:** Shows counts of unread messages next to contacts and sidebars.'
+        ];
+      } else {
+        titleText = 'School Administration';
+        bulletPoints = [
+          '⚙️ **Settings Subtabs:** Manage school profiles, safeguard keywords dictionaries, and register secondary staff.'
+        ];
+      }
+    } else if (role === 'admin') {
+      titleText = 'System Admin Dashboard';
+      bulletPoints = [
+        '🏢 **School Registration Requests:** Approve or deny registration requests for new school connections.',
+        '🛡️ **Safeguarding concern monitor:** Global audit desk showing flagged student messages.',
+        '📜 **System Audit Trail:** Immutable ledger of all match connections, registrations, and moderations.'
+      ];
+    }
+
+    if (whitelistSection) {
+      whitelistSection.style.display = showWhitelist ? 'flex' : 'none';
+    }
+
+    // Populate drawer HTML
+    content.innerHTML = `
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--panel-border); border-radius: 12px; padding: 1rem;">
+        <h4 style="font-family: var(--font-title); font-size: 1.05rem; font-weight: bold; color: var(--secondary); margin: 0 0 0.5rem 0; display: flex; align-items: center; gap: 0.35rem;">
+          <span>📌</span> ${titleText} Tips
+        </h4>
+        <ul style="margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.85rem; line-height: 1.45; color: var(--text-secondary);">
+          ${bulletPoints.map(p => `<li>${p}</li>`).join('')}
+        </ul>
+      </div>
+    `;
+  }
+
+  startScreenTour() {
+    this.closeHelpDrawer();
+    const role = this.currentRole;
+    const activeTab = this.currentTab || 'dashboard';
+
+    this.tourSteps = [];
+    this.tourCurrentIndex = 0;
+
+    if (role === 'student') {
+      if (activeTab === 'dashboard') {
+        this.tourSteps = [
+          { elementSelector: '#student-school-banner', text: '🏫 **School Branding Banner:** Displays your school details, location, and campus photo.' },
+          { elementSelector: '#student-welcome-details', text: '🤝 **Connection Card:** Shows your matched partner student. Click the button to start messaging them!' },
+          { elementSelector: '#student-news-feed-panel', text: '📰 **School News:** Check announcements posted directly by your teacher here.' }
+        ];
+      } else if (activeTab === 'stud-chat') {
+        this.tourSteps = [
+          { elementSelector: '#student-chat-list', text: '💬 **Connections List:** Switch between your active conversations by clicking them here.' },
+          { elementSelector: '#student-video-call-btn', text: '🎥 **Join Video Call:** When your teacher enables access, click here to connect live via video.' },
+          { elementSelector: '#chat-compose-area', text: '✍️ **Compose Box:** Write messages, toggle automated translations, or open the language helper.' }
+        ];
+      }
+    } else if (role === 'teacher') {
+      if (activeTab === 'teach-dashboard') {
+        this.tourSteps = [
+          { elementSelector: '#stat-total-students', text: '👥 **Students Stat:** Quick link to view your school’s student roster.' },
+          { elementSelector: '#teach-flagged-concern-card', text: '🚨 **Safeguarding concerns:** Monitor flagged student messages and resolve safety incidents.' },
+          { elementSelector: '#editorial-inbox-header', text: '📝 **Editorial Desk:** Review student biographies and articles awaiting publication approval.' }
+        ];
+      } else if (activeTab === 'teach-students') {
+        this.tourSteps = [
+          { elementSelector: '#subtab-btn-students-roster', text: '📋 **Student Roster:** Invite students, send activation links, or manage passwords.' },
+          { elementSelector: '#subtab-btn-students-announcements', text: '📢 **School Announcements:** Post class announcements visible to all your students.' }
+        ];
+      } else if (activeTab === 'teach-matching') {
+        const subtab = this.currentMatchingSubtab || 'pair';
+        if (subtab === 'pair') {
+          this.tourSteps = [
+            { elementSelector: '#subtab-pair-btn', text: '🤝 **Connections Matching:** Pair students from your school with partner schools.' },
+            { elementSelector: '#propose-match-btn', text: '📤 **Match Request Action:** Select unmatched students, click this, and propose connections!' }
+          ];
+        } else if (subtab === 'active') {
+          this.tourSteps = [
+            { elementSelector: '#subtab-active-btn', text: '🟢 **Active Matches:** View currently linked pairs.' },
+            { elementSelector: '#active-matches-tbody select', text: '🎥 **Video Access:** Control student video call permissions (Disable, Always, or Timed).' }
+          ];
+        } else if (subtab === 'speed') {
+          this.tourSteps = [
+            { elementSelector: '#subtab-speed-btn', text: '⚡ **Speed Exchange:** Host live rotation class connection events.' },
+            { elementSelector: '#create-speed-session-form', text: '🛠️ **Lobby Creator:** Select duration, write prompt tasks, and click launch to start the lobby.' }
+          ];
+        }
+      }
+    }
+
+    // Filter out steps where elements are missing or invisible
+    this.tourSteps = this.tourSteps.filter(step => {
+      const el = document.querySelector(step.elementSelector);
+      return el && el.offsetWidth > 0 && el.offsetHeight > 0;
+    });
+
+    if (this.tourSteps.length === 0) {
+      alert('No tutorial steps available for this screen layout.');
+      return;
+    }
+
+    const overlay = document.getElementById('tour-dim-overlay');
+    if (overlay) overlay.style.display = 'block';
+
+    this.renderTourStep(0);
+  }
+
+  renderTourStep(index) {
+    this.tourCurrentIndex = index;
+    const step = this.tourSteps[index];
+
+    // Remove any previous highlights & bubbles
+    document.querySelectorAll('.tour-highlighted-element').forEach(el => {
+      el.classList.remove('tour-highlighted-element');
+    });
+    const oldBubble = document.getElementById('active-tour-bubble');
+    if (oldBubble) oldBubble.remove();
+
+    const targetEl = document.querySelector(step.elementSelector);
+    if (!targetEl) {
+      this.endScreenTour();
+      return;
+    }
+
+    // Highlight target element
+    targetEl.classList.add('tour-highlighted-element');
+    targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // Create and position tooltip bubble
+    const bubble = document.createElement('div');
+    bubble.id = 'active-tour-bubble';
+    bubble.className = 'tour-tooltip-bubble';
+    
+    const rect = targetEl.getBoundingClientRect();
+    const scrollY = window.scrollY || window.pageYOffset;
+    const scrollX = window.scrollX || window.pageXOffset;
+
+    // Calculate position (default: below element)
+    let top = rect.bottom + scrollY + 12;
+    let left = rect.left + scrollX + (rect.width / 2) - 160; // Center tooltip (width 320)
+
+    // Viewport boundaries adjustments
+    if (left < 10) left = 10;
+    if (left + 330 > window.innerWidth) left = window.innerWidth - 330;
+    if (rect.bottom + 250 > window.innerHeight) {
+      // Position above element instead
+      top = rect.top + scrollY - 210;
+    }
+
+    bubble.style.top = `${top}px`;
+    bubble.style.left = `${left}px`;
+
+    const isFirst = index === 0;
+    const isLast = index === this.tourSteps.length - 1;
+
+    bubble.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; margin-bottom: 0.25rem;">
+        <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: bold; color: var(--secondary);">Tutorial Step ${index + 1} of ${this.tourSteps.length}</span>
+        <button onclick="app.endScreenTour()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.1rem; line-height:1;">&times;</button>
+      </div>
+      <p style="font-size: 0.85rem; line-height: 1.45; color: var(--text-primary); margin: 0;">${step.text}</p>
+      <div style="display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.5rem; margin-top: 0.25rem;">
+        ${!isFirst ? `<button class="btn btn-secondary btn-small" onclick="app.renderTourStep(${index - 1})" style="padding: 0.25rem 0.55rem; font-size: 0.75rem; height: auto;">Back</button>` : ''}
+        ${!isLast ? 
+          `<button class="btn btn-primary btn-small" onclick="app.renderTourStep(${index + 1})" style="padding: 0.25rem 0.55rem; font-size: 0.75rem; height: auto; background: var(--secondary); border-color: var(--secondary); color:#0b0f19;">Next</button>` : 
+          `<button class="btn btn-primary btn-small" onclick="app.endScreenTour()" style="padding: 0.25rem 0.55rem; font-size: 0.75rem; height: auto; background: var(--success); border-color: var(--success); color:#fff;">Finish</button>`
+        }
+      </div>
+    `;
+
+    document.body.appendChild(bubble);
+  }
+
+  endScreenTour() {
+    // Clean overlay
+    const overlay = document.getElementById('tour-dim-overlay');
+    if (overlay) overlay.style.display = 'none';
+
+    // Remove classes & elements
+    document.querySelectorAll('.tour-highlighted-element').forEach(el => {
+      el.classList.remove('tour-highlighted-element');
+    });
+    const bubble = document.getElementById('active-tour-bubble');
+    if (bubble) bubble.remove();
+
+    this.tourSteps = [];
+  }
+
+  copyITWhitelistText() {
+    const teacher = this.getLoggedTeacher();
+    const school = teacher ? window.db.getSchool(teacher.schoolId) : null;
+    const schoolName = school ? school.name : 'our school';
+
+    const textTemplate = `Subject: Firewall Whitelist Request for Web-based Cultural Exchange Program (Bridge)
+
+Dear IT Administrator,
+
+Our classroom is participating in a global cultural exchange program using the Bridge platform. To ensure our students can access the collaborative tools and participate in supervised live video calls, we kindly request the following network configuration updates:
+
+1. Domains to Whitelist:
+   - https://school-bridge.org (Custom domain)
+   - https://www.school-bridge.org
+   - https://bridge-app-nine-liart.vercel.app (Default Vercel platform subdomain)
+
+2. WebRTC Video Servers (Jitsi Meet integration) to whitelist:
+   - meet.jit.si (Signaling server)
+   - *.meet.jit.si
+   - Ports: TCP 443 (HTTPS) & UDP 10000 (RTP Video/Audio stream media)
+
+3. SSL Interception / Decryption Bypass:
+   Please configure the filtering proxy/firewall (e.g. Zscaler, Smoothwall, Fortinet) to BYPASS SSL Inspection / decryption for:
+   - school-bridge.org
+   - *.school-bridge.org
+
+This bypass is critical to prevent Google Chrome certificate warning blocks caused by the Strict Transport Security (HSTS) settings configured on the Bridge web servers.
+
+Thank you for your assistance.
+
+Sincerely,
+Teacher ${teacher ? teacher.name : 'Coordinator'}
+${schoolName}`;
+
+    navigator.clipboard.writeText(textTemplate)
+      .then(() => {
+        alert('IT Whitelist Request Template copied to clipboard! You can now paste it directly into an email to your school IT admin.');
+      })
+      .catch(err => {
+        console.error('Failed to copy text template:', err);
+      });
   }
 }
 

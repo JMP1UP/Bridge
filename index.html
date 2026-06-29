@@ -3126,6 +3126,51 @@ Ask about their favorite pets and if they have animals at home.</textarea>
     </div>
   </div>
 
+  <!-- Floating Help Button -->
+  <button class="floating-help-btn" id="app-floating-help-btn" onclick="app.toggleHelpDrawer()" style="display: none;">
+    <span>❓</span> <span data-localize="help_guide_btn">Help & Guide</span>
+  </button>
+
+  <!-- Help & Guide Drawer -->
+  <div class="help-drawer" id="app-help-drawer">
+    <div class="help-drawer-header">
+      <div>
+        <h3 class="panel-title" style="margin: 0; font-size: 1.25rem; font-weight: bold; color: var(--secondary);">❓ Guide & Support</h3>
+        <p style="margin: 0.15rem 0 0 0; font-size: 0.75rem; color: var(--text-muted);" id="help-drawer-subtitle">Screen walkthrough and tips</p>
+      </div>
+      <button class="modal-close" onclick="app.toggleHelpDrawer()" style="background: none; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; padding: 0 0.5rem;">&times;</button>
+    </div>
+    
+    <div class="help-drawer-body">
+      <!-- Screen tips content populated dynamically -->
+      <div id="help-screen-content" style="display: flex; flex-direction: column; gap: 1rem;">
+        <!-- Filled by JS -->
+      </div>
+      
+      <!-- Interactive tour action -->
+      <div style="border-top: 1px solid var(--panel-border); padding-top: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+        <h4 style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 700; margin: 0;">Guided Tutorial</h4>
+        <button class="btn btn-primary" onclick="app.startScreenTour()" style="justify-content: center; display: flex; align-items: center; gap: 0.5rem; font-weight: bold; background: var(--secondary); border-color: var(--secondary); color: #0b0f19; box-shadow: 0 4px 12px rgba(6, 182, 212, 0.25); cursor: pointer;">
+          <span>🚀</span> Start Screen Tour
+        </button>
+      </div>
+
+      <!-- IT Whitelist Copy Card (Only shown to teachers) -->
+      <div id="help-it-whitelist-section" style="border-top: 1px solid var(--panel-border); padding-top: 1.25rem; display: none; flex-direction: column; gap: 0.75rem;">
+        <h4 style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 700; margin: 0;">School IT Whitelist</h4>
+        <p style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.4; margin: 0;">
+          If your school firewall blocks video calls or shows certificate warnings, copy this template and email it to your school's network administrator.
+        </p>
+        <button class="btn btn-secondary btn-small" onclick="app.copyITWhitelistText()" style="justify-content: center; font-weight: bold; border-color: var(--secondary); color: var(--secondary); cursor: pointer;">
+          📋 Copy IT Request Template
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tour Dim Overlay -->
+  <div id="tour-dim-overlay" onclick="app.endScreenTour()"></div>
+
   <!-- Core Scripts -->
   <script src="database.js?v=1.1.23"></script>
   <script src="translation.js?v=1.1.23"></script>
