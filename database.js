@@ -199,7 +199,8 @@ const defaultDatabase = {
       message: 'Bonjour! We would love to find a German partner school for our Year 10 students. We want to exchange recipes and write articles on gastronomy.', 
       createdAt: '2026-06-27T09:30:00Z' 
     }
-  ]
+  ],
+  speedSessions: []
 };
 
 class LocalDB {
@@ -230,8 +231,26 @@ class LocalDB {
       this.cachedData = defaultDatabase;
     } else {
       this.cachedData = data;
-      // Self-heal: ensure all user accounts have a password field
       let modified = false;
+
+      // Self-heal: ensure speedSessions table is defined
+      if (!this.cachedData.speedSessions) {
+        this.cachedData.speedSessions = [];
+        modified = true;
+      }
+
+      // Self-heal: ensure matches have videoChatStatus and videoChatExpiry
+      if (this.cachedData.matches) {
+        this.cachedData.matches.forEach(m => {
+          if (!m.videoChatStatus) {
+            m.videoChatStatus = 'disabled';
+            m.videoChatExpiry = null;
+            modified = true;
+          }
+        });
+      }
+
+      // Self-heal: ensure all user accounts have a password field
       if (this.cachedData.students) {
         this.cachedData.students.forEach(s => {
           if (!s.password) {
@@ -1032,6 +1051,55 @@ class LocalDB {
     }
     
     this.updateProject(projectId, project);
+  }
+
+  getSpeedSessions() {
+    return this.getTable('speedSessions');
+  }
+
+  addSpeedSession(session) {
+    const list = this.getSpeedSessions();
+    const newSession = {
+      id: 'session_' + Date.now(),
+      createdAt: new Date().toISOString(),
+      status: 'pending',
+      ...session
+    };
+    list.push(newSession);
+    this.saveTable('speedSessions', list);
+    this.addLog('Speed Session Created', `Class Speed Exchange session created between schools.`, 'Teacher');
+    return newSession;
+  }
+
+  updateSpeedSession(id, updates) {
+    const list = this.getSpeedSessions();
+    const index = list.findIndex(s => s.id === id);
+    if (index !== -1) {
+      list[index] = { ...list[index], ...updates };
+      this.saveTable('speedSessions', list);
+    }
+  }
+
+  deleteSpeedSession(id) {
+    let list = this.getSpeedSessions();
+    list = list.filter(s => s.id !== id);
+    this.saveTable('speedSessions', list);
+    this.addLog('Speed Session Deleted', `Class Speed Exchange session closed.`, 'Teacher');
+  }
+
+  updateMatchVideoSettings(matchId, status, durationMinutes) {
+    const matches = this.getMatches();
+    const index = matches.findIndex(m => m.id === matchId);
+    if (index !== -1) {
+      matches[index].videoChatStatus = status;
+      if (status === 'timed') {
+        matches[index].videoChatExpiry = Date.now() + durationMinutes * 60 * 1000;
+      } else {
+        matches[index].videoChatExpiry = null;
+      }
+      this.saveTable('matches', matches);
+      this.addLog('Video Settings Updated', `Updated video call access to ${status} for match ${matchId}.`, 'Teacher');
+    }
   }
 }
 

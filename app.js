@@ -1765,6 +1765,9 @@ class App {
         });
       }
     }
+    
+    // Check if there are active speed sessions
+    this.checkActiveSpeedSessionForStudent();
   }
 
   // Student agrees to a direct message from staff
@@ -1960,6 +1963,57 @@ class App {
       if (translationBar) translationBar.style.display = translationEnabled ? 'flex' : 'none';
       if (toggleAssistantBtn) toggleAssistantBtn.style.display = translationEnabled ? 'inline-block' : 'none';
       if (!translationEnabled && assistantPanel) assistantPanel.style.display = 'none';
+
+      // Configure 1-to-1 Video Chat Button visibility and timers
+      const videoBtn = document.getElementById('student-video-call-btn');
+      const videoTimer = document.getElementById('student-video-call-timer');
+      
+      if (videoBtn) {
+        // Clear any previous interval first!
+        if (this.studentVideoTimerInterval) {
+          clearInterval(this.studentVideoTimerInterval);
+          this.studentVideoTimerInterval = null;
+        }
+
+        const isVideoActive = currentMatch.videoChatStatus === 'always' || 
+          (currentMatch.videoChatStatus === 'timed' && currentMatch.videoChatExpiry && Date.now() < currentMatch.videoChatExpiry);
+
+        if (isVideoActive && !currentMatch.paused) {
+          videoBtn.style.display = 'inline-block';
+          
+          if (currentMatch.videoChatStatus === 'always') {
+            videoTimer.style.display = 'none';
+          } else {
+            videoTimer.style.display = 'inline-block';
+            
+            const updateTimer = () => {
+              const remaining = currentMatch.videoChatExpiry - Date.now();
+              if (remaining <= 0) {
+                videoBtn.style.display = 'none';
+                videoTimer.style.display = 'none';
+                if (this.studentVideoTimerInterval) {
+                  clearInterval(this.studentVideoTimerInterval);
+                  this.studentVideoTimerInterval = null;
+                }
+                // Hang up if modal is open
+                this.hangUpVideoCall();
+                alert('Your timed video call access has expired.');
+                this.renderStudentChat();
+              } else {
+                const mins = Math.floor(remaining / 60000);
+                const secs = Math.floor((remaining % 60000) / 1000);
+                videoTimer.textContent = `(${mins}:${secs < 10 ? '0' : ''}${secs} remaining)`;
+              }
+            };
+            
+            updateTimer();
+            this.studentVideoTimerInterval = setInterval(updateTimer, 1000);
+          }
+        } else {
+          videoBtn.style.display = 'none';
+          videoTimer.style.display = 'none';
+        }
+      }
 
       if (currentMatch.paused) {
         safetyBanner.style.display = 'flex';
@@ -4333,11 +4387,13 @@ class App {
     const reqBtn = document.getElementById('subtab-requests-btn');
     const activeBtn = document.getElementById('subtab-active-btn');
     const connBtn = document.getElementById('subtab-connections-btn');
+    const speedBtn = document.getElementById('subtab-speed-btn');
     
     const pairDiv = document.getElementById('matching-subtab-pair');
     const reqDiv = document.getElementById('matching-subtab-requests');
     const activeDiv = document.getElementById('matching-subtab-active');
     const connDiv = document.getElementById('matching-subtab-connections');
+    const speedDiv = document.getElementById('matching-subtab-speed');
     const metricsDiv = document.getElementById('matching-metrics-summary');
 
     if (!pairBtn || !reqBtn || !activeBtn || !pairDiv || !reqDiv || !activeDiv) return;
@@ -4346,11 +4402,13 @@ class App {
     reqBtn.classList.remove('active');
     activeBtn.classList.remove('active');
     if (connBtn) connBtn.classList.remove('active');
+    if (speedBtn) speedBtn.classList.remove('active');
     
     pairDiv.style.display = 'none';
     reqDiv.style.display = 'none';
     activeDiv.style.display = 'none';
     if (connDiv) connDiv.style.display = 'none';
+    if (speedDiv) speedDiv.style.display = 'none';
 
     if (subtab === 'pair') {
       pairBtn.classList.add('active');
@@ -4372,12 +4430,24 @@ class App {
         this.renderSchoolConnections();
       }
       if (metricsDiv) metricsDiv.style.display = 'none';
+    } else if (subtab === 'speed') {
+      if (speedBtn) speedBtn.classList.add('active');
+      if (speedDiv) {
+        speedDiv.style.display = 'block';
+        this.renderSpeedExchangeDashboard();
+      }
+      if (metricsDiv) metricsDiv.style.display = 'none';
     }
   }
 
   renderActiveMatches() {
     const tbody = document.getElementById('active-matches-tbody');
     if (!tbody) return;
+
+    if (this.coordinatorVideoTimerInterval) {
+      clearInterval(this.coordinatorVideoTimerInterval);
+      this.coordinatorVideoTimerInterval = null;
+    }
 
     const teacher = this.getLoggedTeacher();
     const ownSchoolId = teacher ? teacher.schoolId : 'school_1';
@@ -4396,6 +4466,26 @@ class App {
     if (activeMatches.length === 0) {
       tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">${this.translate('no_active_matches', 'No active matches connected yet.')}</td></tr>`;
       return;
+    }
+
+    const hasTimed = activeMatches.some(m => m.videoChatStatus === 'timed' && m.videoChatExpiry && Date.now() < m.videoChatExpiry);
+    if (hasTimed) {
+      this.coordinatorVideoTimerInterval = setInterval(() => {
+        activeMatches.forEach(match => {
+          if (match.videoChatStatus === 'timed' && match.videoChatExpiry) {
+            const labelEl = document.querySelector(`.remaining-label-${match.id}`);
+            if (labelEl) {
+              const remaining = match.videoChatExpiry - Date.now();
+              if (remaining <= 0) {
+                labelEl.textContent = 'Expired';
+                labelEl.style.color = 'var(--danger)';
+              } else {
+                labelEl.textContent = `⏳ ${Math.ceil(remaining / 60000)}m remaining`;
+              }
+            }
+          }
+        });
+      }, 10000); // Update every 10 seconds
     }
 
     activeMatches.forEach(match => {
@@ -4433,6 +4523,19 @@ class App {
         </td>
         <td style="vertical-align: middle; font-size: 1rem; color: var(--text-secondary);">${dateStr}</td>
         <td style="vertical-align: middle;">
+          <select class="form-control" onchange="app.changeMatchVideoAccess('${match.id}', this.value)" style="font-size: 0.85rem; padding: 0.25rem 0.5rem; background: rgba(0, 0, 0, 0.25); color: var(--text-primary); border-radius: 6px; border: 1px solid var(--panel-border); cursor: pointer;">
+            <option value="disabled" ${match.videoChatStatus === 'disabled' ? 'selected' : ''}>❌ Disabled</option>
+            <option value="always" ${match.videoChatStatus === 'always' ? 'selected' : ''}>🟢 Always On</option>
+            <option value="15" ${match.videoChatStatus === 'timed' && match.videoChatExpiry ? 'selected' : ''}>⏳ 15 Mins</option>
+            <option value="30" ${match.videoChatStatus === 'timed' && match.videoChatExpiry ? 'selected' : ''}>⏳ 30 Mins</option>
+            <option value="45" ${match.videoChatStatus === 'timed' && match.videoChatExpiry ? 'selected' : ''}>⏳ 45 Mins</option>
+          </select>
+          ${match.videoChatStatus === 'timed' && match.videoChatExpiry && Date.now() < match.videoChatExpiry ? 
+            `<span class="remaining-label-${match.id}" style="display: block; font-size: 0.75rem; color: var(--secondary); margin-top: 0.25rem; font-weight: bold;">⏳ ${Math.ceil((match.videoChatExpiry - Date.now()) / 60000)}m remaining</span>` : 
+            (match.videoChatStatus === 'always' ? `<span style="display: block; font-size: 0.75rem; color: #22c55e; margin-top: 0.25rem; font-weight: bold;">🟢 Enabled</span>` : '')
+          }
+        </td>
+        <td style="vertical-align: middle;">
           <button class="btn btn-secondary" onclick="app.deleteActiveMatch('${match.id}')" style="color: var(--danger); border-color: var(--danger); font-weight: 600; font-size: 0.95rem; padding: 0.4rem 0.75rem; white-space: nowrap;">${this.translate('disband_match_btn', 'Break Connection')}</button>
         </td>
       `;
@@ -4446,6 +4549,21 @@ class App {
       alert(this.translate('disband_success_msg', 'Match disbanded successfully.'));
       this.refreshUI();
     }
+  }
+
+  changeMatchVideoAccess(matchId, value) {
+    let status = 'disabled';
+    let duration = 0;
+    if (value === 'always') {
+      status = 'always';
+    } else if (value === 'disabled') {
+      status = 'disabled';
+    } else {
+      status = 'timed';
+      duration = parseInt(value, 10);
+    }
+    window.db.updateMatchVideoSettings(matchId, status, duration);
+    this.renderActiveMatches();
   }
 
   toggleSelectAllActiveMatches(masterCheckbox) {
@@ -4495,6 +4613,317 @@ class App {
       alert(this.translate('all_matches_disbanded_success', 'All active matches disbanded successfully.'));
       this.refreshUI();
     }
+  }
+
+  }
+
+  // ==========================================
+  // CLASSROOM SPEED EXCHANGE ENGINE
+  // ==========================================
+
+  renderSpeedExchangeDashboard() {
+    const teacher = this.getLoggedTeacher();
+    const schoolId = teacher ? teacher.schoolId : 'school_1';
+
+    const sessions = window.db.getSpeedSessions();
+    const activeSession = sessions.find(s => 
+      s.status !== 'ended' && (s.hostSchoolId === schoolId || s.partnerSchoolId === schoolId)
+    );
+
+    const createPanel = document.getElementById('create-speed-session-panel');
+    const activePanel = document.getElementById('active-speed-session-panel');
+
+    if (activeSession) {
+      if (createPanel) createPanel.style.display = 'none';
+      if (activePanel) activePanel.style.display = 'block';
+
+      // Populate details
+      const partnerId = activeSession.hostSchoolId === schoolId ? activeSession.partnerSchoolId : activeSession.hostSchoolId;
+      const partnerSchool = window.db.getSchool(partnerId);
+      const partnerName = partnerSchool ? `${this.getSchoolFlag(partnerSchool.country)} ${partnerSchool.name}` : 'Unknown School';
+
+      document.getElementById('speed-partner-school-name').innerHTML = partnerName;
+      document.getElementById('speed-round-duration-display').textContent = `${activeSession.roundDuration / 60} Minutes`;
+      
+      // Simulate joined student counts
+      const seedCount = activeSession.seedCount || Math.floor(Math.random() * 7) + 8;
+      activeSession.seedCount = seedCount; // Cache it
+      document.getElementById('speed-joined-count-display').textContent = `${seedCount} Students Online`;
+
+      const listContainer = document.getElementById('speed-prompts-list');
+      if (listContainer) {
+        listContainer.innerHTML = activeSession.prompts.map(p => `<li style="margin-bottom: 0.35rem;">${p}</li>`).join('');
+      }
+    } else {
+      if (createPanel) createPanel.style.display = 'block';
+      if (activePanel) activePanel.style.display = 'none';
+
+      // Populate partner school dropdown
+      const selectEl = document.getElementById('speed-partner-school-select');
+      if (selectEl) {
+        const connections = window.db.getSchoolConnections().filter(c => c.status === 'Connected' && (c.fromSchoolId === schoolId || c.toSchoolId === schoolId));
+        if (connections.length === 0) {
+          selectEl.innerHTML = `<option value="" disabled selected>No schools connected yet. Please establish a school connection first.</option>`;
+        } else {
+          selectEl.innerHTML = `<option value="" disabled selected>-- Select a partner school --</option>` +
+            connections.map(c => {
+              const partnerSchoolId = c.fromSchoolId === schoolId ? c.toSchoolId : c.fromSchoolId;
+              const school = window.db.getSchool(partnerSchoolId);
+              return `<option value="${partnerSchoolId}">${school.name} (${school.country})</option>`;
+            }).join('');
+        }
+      }
+    }
+  }
+
+  handleCreateSpeedSession(event) {
+    if (event) event.preventDefault();
+    const teacher = this.getLoggedTeacher();
+    const schoolId = teacher ? teacher.schoolId : 'school_1';
+
+    const partnerSelect = document.getElementById('speed-partner-school-select');
+    const durationSelect = document.getElementById('speed-round-duration');
+    const promptsInput = document.getElementById('speed-prompts-input');
+
+    if (!partnerSelect || !partnerSelect.value) {
+      alert('Please select a partner school.');
+      return;
+    }
+
+    const prompts = promptsInput.value.split('\n').map(p => p.trim()).filter(p => p.length > 0);
+    if (prompts.length === 0) {
+      alert('Please enter at least one prompt question.');
+      return;
+    }
+
+    const session = {
+      hostSchoolId: schoolId,
+      partnerSchoolId: partnerSelect.value,
+      roundDuration: parseInt(durationSelect.value, 10),
+      prompts: prompts,
+      status: 'active'
+    };
+
+    window.db.addSpeedSession(session);
+    this.renderSpeedExchangeDashboard();
+    
+    alert('Speed Exchange Session has been launched! Students can now join the lobby.');
+  }
+
+  endActiveSpeedSession() {
+    const teacher = this.getLoggedTeacher();
+    const schoolId = teacher ? teacher.schoolId : 'school_1';
+
+    const sessions = window.db.getSpeedSessions();
+    const active = sessions.find(s => 
+      s.status !== 'ended' && (s.hostSchoolId === schoolId || s.partnerSchoolId === schoolId)
+    );
+
+    if (active) {
+      window.db.updateSpeedSession(active.id, { status: 'ended' });
+      alert('Speed Exchange Session has been ended.');
+      this.renderSpeedExchangeDashboard();
+    }
+  }
+
+  checkActiveSpeedSessionForStudent() {
+    const student = window.db.getStudent(this.currentStudentId);
+    if (!student) return;
+
+    const sessions = window.db.getSpeedSessions();
+    const active = sessions.find(s => 
+      s.status !== 'ended' && (s.hostSchoolId === student.schoolId || s.partnerSchoolId === student.schoolId)
+    );
+
+    const banner = document.getElementById('live-speed-alert-banner');
+    if (banner) {
+      banner.style.display = active ? 'flex' : 'none';
+    }
+  }
+
+  joinSpeedLobby() {
+    // Navigate student to the live Speed Exchange View container
+    this.switchTab('stud-speed-exchange');
+    
+    const lobbyState = document.getElementById('speed-lobby-state');
+    const activeState = document.getElementById('speed-active-state');
+    if (lobbyState) lobbyState.style.display = 'flex';
+    if (activeState) activeState.style.display = 'none';
+
+    // Disconnect any active Jitsi calls
+    if (this.speedJitsiAPI) {
+      try { this.speedJitsiAPI.dispose(); } catch (e) {}
+      this.speedJitsiAPI = null;
+    }
+    if (this.speedTimerInterval) {
+      clearInterval(this.speedTimerInterval);
+      this.speedTimerInterval = null;
+    }
+  }
+
+  exitSpeedExchange() {
+    if (this.speedJitsiAPI) {
+      try { this.speedJitsiAPI.dispose(); } catch (e) {}
+      this.speedJitsiAPI = null;
+    }
+    if (this.speedTimerInterval) {
+      clearInterval(this.speedTimerInterval);
+      this.speedTimerInterval = null;
+    }
+    this.switchTab('stud-dashboard');
+  }
+
+  simulateSpeedPairing() {
+    const student = window.db.getStudent(this.currentStudentId);
+    if (!student) return;
+
+    const sessions = window.db.getSpeedSessions();
+    const activeSession = sessions.find(s => 
+      s.status !== 'ended' && (s.hostSchoolId === student.schoolId || s.partnerSchoolId === student.schoolId)
+    );
+
+    if (!activeSession) {
+      alert('No active class speed session found. Teachers must start a session first.');
+      return;
+    }
+
+    const lobbyState = document.getElementById('speed-lobby-state');
+    const activeState = document.getElementById('speed-active-state');
+    if (lobbyState) lobbyState.style.display = 'none';
+    if (activeState) activeState.style.display = 'grid';
+
+    // Cache the active speed session prompts
+    this.currentSpeedSession = activeSession;
+    this.currentSpeedRoundIndex = 0;
+
+    // Simulate partner selection from partner school
+    const partnerSchoolId = activeSession.hostSchoolId === student.schoolId ? activeSession.partnerSchoolId : activeSession.hostSchoolId;
+    const partnerSchoolStudents = window.db.getStudents().filter(s => s.schoolId === partnerSchoolId);
+    
+    // Choose a random partner
+    const randomPartner = partnerSchoolStudents[Math.floor(Math.random() * partnerSchoolStudents.length)] || {
+      name: 'Lukas Schmidt',
+      age: 14,
+      gender: 'Male',
+      yearGroup: 'Klasse 9',
+      schoolId: partnerSchoolId
+    };
+
+    this.currentSpeedPartner = randomPartner;
+    this.loadSpeedPartnerUI(randomPartner);
+    this.startSpeedRoundTimer(activeSession.roundDuration);
+  }
+
+  loadSpeedPartnerUI(partner) {
+    const school = window.db.getSchool(partner.schoolId);
+    
+    document.getElementById('speed-partner-avatar').textContent = partner.name.split(' ').map(n => n[0]).join('') || '?';
+    document.getElementById('speed-partner-fullname').textContent = partner.name;
+    document.getElementById('speed-partner-details-line').textContent = `${partner.gender} • Age ${partner.age} • ${partner.yearGroup || 'Year'}`;
+    document.getElementById('speed-partner-flag').textContent = school ? this.getSchoolFlag(school.country) : '🌍';
+    document.getElementById('speed-partner-schoolname').textContent = school ? school.name : 'Partner School';
+
+    // Load prompt
+    const prompts = this.currentSpeedSession.prompts;
+    const currentPrompt = prompts[this.currentSpeedRoundIndex % prompts.length] || 'Free Conversation';
+    document.getElementById('speed-round-task-prompt').textContent = currentPrompt;
+
+    // Load Jitsi room
+    const container = document.getElementById('speed-jitsi-container');
+    if (container) {
+      container.innerHTML = '';
+      if (this.speedJitsiAPI) {
+        try { this.speedJitsiAPI.dispose(); } catch (e) {}
+      }
+
+      try {
+        const student = window.db.getStudent(this.currentStudentId);
+        const domain = "meet.jit.si";
+        const options = {
+          roomName: `BridgeSpeed-${this.currentSpeedSession.id}-R${this.currentSpeedRoundIndex}-${partner.name.replace(/\s+/g, '')}`,
+          width: "100%",
+          height: "100%",
+          parentNode: container,
+          userInfo: {
+            displayName: student ? student.name : 'Student'
+          },
+          interfaceConfigOverwrite: {
+            TOOLBAR_BUTTONS: ['microphone', 'camera', 'hangup', 'chat', 'tileview']
+          }
+        };
+        this.speedJitsiAPI = new JitsiMeetExternalAPI(domain, options);
+      } catch (err) {
+        console.error("Failed to load speed Jitsi iframe:", err);
+      }
+    }
+  }
+
+  startSpeedRoundTimer(durationSeconds) {
+    if (this.speedTimerInterval) {
+      clearInterval(this.speedTimerInterval);
+    }
+
+    let remaining = durationSeconds;
+    const countdownEl = document.getElementById('speed-round-timer-countdown');
+    const progressBar = document.getElementById('speed-round-progress-bar');
+
+    const updateUI = () => {
+      const mins = Math.floor(remaining / 60);
+      const secs = remaining % 60;
+      if (countdownEl) {
+        countdownEl.textContent = `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+      }
+      if (progressBar) {
+        const pct = (remaining / durationSeconds) * 100;
+        progressBar.style.width = `${pct}%`;
+      }
+    };
+
+    updateUI();
+
+    this.speedTimerInterval = setInterval(() => {
+      remaining--;
+      updateUI();
+
+      if (remaining <= 0) {
+        clearInterval(this.speedTimerInterval);
+        this.speedTimerInterval = null;
+        // Auto rotate round
+        this.simulateNextRoundRotation();
+      }
+    }, 1000);
+  }
+
+  simulateNextRoundRotation() {
+    if (!this.currentSpeedSession) return;
+    
+    this.currentSpeedRoundIndex++;
+    
+    // Select new random partner (excluding the current one if possible)
+    const student = window.db.getStudent(this.currentStudentId);
+    const partnerSchoolId = this.currentSpeedSession.hostSchoolId === student.schoolId ? this.currentSpeedSession.partnerSchoolId : this.currentSpeedSession.hostSchoolId;
+    let pool = window.db.getStudents().filter(s => s.schoolId === partnerSchoolId);
+    if (pool.length > 1 && this.currentSpeedPartner) {
+      pool = pool.filter(p => p.id !== this.currentSpeedPartner.id);
+    }
+
+    const newPartner = pool[Math.floor(Math.random() * pool.length)] || this.currentSpeedPartner;
+    this.currentSpeedPartner = newPartner;
+
+    // Show a quick rotation animation / alert
+    const container = document.getElementById('speed-jitsi-container');
+    if (container) {
+      container.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--secondary); text-align: center; font-weight: bold; font-size: 1.25rem; animation: pulseGlow 1s infinite alternate;">
+          ⚡ Shuffling Partners... Get Ready for Round ${this.currentSpeedRoundIndex + 1}!
+        </div>
+      `;
+    }
+
+    setTimeout(() => {
+      this.loadSpeedPartnerUI(newPartner);
+      this.startSpeedRoundTimer(this.currentSpeedSession.roundDuration);
+    }, 1500);
   }
 
   // Renders the School Connections management tab for teachers
@@ -4917,6 +5346,78 @@ class App {
       bodyEl.textContent = `"${biog}"`;
       this.openModal('view-bio-modal');
     }
+  }
+
+  openVideoCallModal() {
+    const student = window.db.getStudent(this.currentStudentId);
+    if (!student) return;
+
+    const match = window.db.getMatches().find(m => m.id === this.activeMatchId);
+    if (!match) return;
+
+    this.openModal('video-call-modal');
+    
+    // Show timer badge if timed call
+    const timerBadge = document.getElementById('video-timer-badge');
+    if (timerBadge) {
+      if (match.videoChatStatus === 'timed') {
+        timerBadge.style.display = 'inline-block';
+        timerBadge.textContent = 'Timed Connection';
+      } else {
+        timerBadge.style.display = 'none';
+      }
+    }
+
+    // Instantiation Jitsi Meet external API
+    const container = document.getElementById('jitsi-iframe-container');
+    if (container) {
+      container.innerHTML = '';
+      
+      try {
+        const domain = "meet.jit.si";
+        const options = {
+          roomName: `BridgeExchange-${match.id}`,
+          width: "100%",
+          height: "100%",
+          parentNode: container,
+          userInfo: {
+            displayName: student.name
+          },
+          configOverwrite: {
+            startWithAudioMuted: false,
+            startWithVideoMuted: false
+          },
+          interfaceConfigOverwrite: {
+            TOOLBAR_BUTTONS: [
+              'microphone', 'camera', 'hangup', 'chat', 'tileview', 'settings', 'videoquality'
+            ]
+          }
+        };
+        this.jitsiAPI = new JitsiMeetExternalAPI(domain, options);
+      } catch (err) {
+        console.error("Failed to load Jitsi Meet iframe:", err);
+        container.innerHTML = `
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #fff; text-align: center; padding: 2rem;">
+            <span style="font-size: 2.5rem;">⚠️</span>
+            <h4 style="margin-top: 1rem;">Video Connection Unavailable</h4>
+            <p style="font-size: 0.85rem; max-width: 400px; color: var(--text-secondary);">Could not load Jitsi API. Please check your internet connection or try again later.</p>
+          </div>
+        `;
+      }
+    }
+  }
+
+  hangUpVideoCall() {
+    if (this.jitsiAPI) {
+      try {
+        this.jitsiAPI.dispose();
+      } catch (e) {}
+      this.jitsiAPI = null;
+    }
+    const container = document.getElementById('jitsi-iframe-container');
+    if (container) container.innerHTML = '';
+    
+    this.closeModal('video-call-modal');
   }
 
   // Renders safeguarding control table
