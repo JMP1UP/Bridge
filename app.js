@@ -2817,6 +2817,26 @@ class App {
     document.getElementById('stat-flagged-concerns').textContent = flags.length;
     document.getElementById('stat-pending-articles').textContent = pendingArticles.length + pendingBiogs.length;
 
+    // Check for active Speed Session and show banner
+    const speedBanner = document.getElementById('live-speed-alert-banner-teacher');
+    const speedText = document.getElementById('live-speed-banner-text-teacher');
+    if (speedBanner && speedText) {
+      const activeSession = window.db.getSpeedSessions().find(s => 
+        s.status !== 'ended' && (s.hostSchoolId === ownSchoolId || s.partnerSchoolId === ownSchoolId)
+      );
+
+      if (activeSession) {
+        const partnerSchoolId = activeSession.hostSchoolId === ownSchoolId ? activeSession.partnerSchoolId : activeSession.hostSchoolId;
+        const partnerSchool = window.db.getSchool(partnerSchoolId);
+        const partnerName = partnerSchool ? `${this.getSchoolFlag(partnerSchool.country)} ${partnerSchool.name}` : 'Partner School';
+        
+        speedText.innerHTML = `Live Speed Exchange Session Active with ${partnerName}!`;
+        speedBanner.style.display = 'flex';
+      } else {
+        speedBanner.style.display = 'none';
+      }
+    }
+
     // Programmatic translations for stats card labels (cache-safe overlay)
     const statTotalLabel = document.getElementById('stat-total-students').nextElementSibling;
     if (statTotalLabel) statTotalLabel.textContent = this.translate('total_students', 'Total Students');
@@ -4843,6 +4863,11 @@ class App {
         banner.style.display = 'none';
       }
     }
+  }
+
+  switchToSpeedExchangeSubtab() {
+    this.switchTab('teach-matching');
+    this.switchMatchingSubtab('speed');
   }
 
   joinSpeedLobby() {
