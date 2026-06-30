@@ -1490,10 +1490,10 @@ class App {
         <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.5rem;">
           <div style="display: flex; gap: 0.75rem; align-items: center;">
             <div class="user-avatar" style="width: 36px; height: 36px; font-size: 0.9rem; font-weight: 700; cursor: pointer;" onclick="app.openStudentDetailModal('${partner?.id}')" title="Click to view partner profile">
-              ${partner?.name.split(' ').map(n => n[0]).join('') || '?'}
+              ${this.getStudentDisplayName(partner)[0] || '?'}
             </div>
             <div style="min-width: 0; flex-grow: 1;">
-              <h4 style="font-size: 0.9rem; font-weight: 700; margin: 0; color: var(--text-color); cursor: pointer;" onclick="app.openStudentDetailModal('${partner?.id}')">${partner?.name}</h4>
+              <h4 style="font-size: 0.9rem; font-weight: 700; margin: 0; color: var(--text-color); cursor: pointer;" onclick="app.openStudentDetailModal('${partner?.id}')">${this.getStudentDisplayName(partner)}</h4>
               <div style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                 ${this.getSchoolFlag(school?.country)} <span class="clickable-school-link" onclick="app.openSchoolDetail('${school?.id}')" style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${school ? school.name : 'Unknown School'}</span>
               </div>
@@ -4920,14 +4920,7 @@ class App {
     this.switchTab('stud-dashboard');
   }
 
-  formatPartnerName(name) {
-    if (!name) return "Partner";
-    const parts = name.split(' ');
-    if (parts.length > 1) {
-      return `${parts[0]} ${parts[parts.length - 1][0]}.`; // e.g. "Lukas S."
-    }
-    return name;
-  }
+
 
   generateSecureRoomHash(baseString) {
     let hval = 0x811c9dc5;
@@ -5141,8 +5134,8 @@ class App {
   loadSpeedPartnerUI(partner) {
     const school = window.db.getSchool(partner.schoolId);
     
-    document.getElementById('speed-partner-avatar').textContent = partner.name.split(' ').map(n => n[0]).join('') || '?';
-    document.getElementById('speed-partner-fullname').textContent = this.formatPartnerName(partner.name);
+    document.getElementById('speed-partner-avatar').textContent = this.getStudentDisplayName(partner)[0] || '?';
+    document.getElementById('speed-partner-fullname').textContent = this.getStudentDisplayName(partner);
     document.getElementById('speed-partner-details-line').textContent = `${partner.gender} • Age ${partner.age} • ${partner.yearGroup || 'Year'}`;
     document.getElementById('speed-partner-flag').innerHTML = school ? this.getSchoolFlag(school.country) : '🌍';
     document.getElementById('speed-partner-schoolname').textContent = school ? school.name : 'Partner School';
@@ -5171,7 +5164,7 @@ class App {
           height: "100%",
           parentNode: container,
           userInfo: {
-            displayName: student ? this.formatPartnerName(student.name) : 'Student'
+            displayName: student ? this.getStudentDisplayName(student) : 'Student'
           },
           configOverwrite: {
             disableInviteFunctions: true,
@@ -5202,14 +5195,14 @@ class App {
             if (data.type === 'subtitle') {
               const display = document.getElementById('speed-subtitle-text');
               if (display) {
-                display.innerHTML = `<strong style="color: var(--secondary);">${this.formatPartnerName(partner.name)}:</strong> "${data.text}"`;
+                display.innerHTML = `<strong style="color: var(--secondary);">${this.getStudentDisplayName(partner)}:</strong> "${data.text}"`;
                 display.style.fontStyle = 'normal';
               }
             }
           } catch (e) {
             const display = document.getElementById('speed-subtitle-text');
             if (display) {
-              display.innerHTML = `<strong style="color: var(--secondary);">${this.formatPartnerName(partner.name)}:</strong> "${event.data.text}"`;
+              display.innerHTML = `<strong style="color: var(--secondary);">${this.getStudentDisplayName(partner)}:</strong> "${event.data.text}"`;
               display.style.fontStyle = 'normal';
             }
           }
@@ -5757,7 +5750,7 @@ class App {
         const domain = "fairmeeting.net";
         const partnerId = match.studentIds.find(id => id !== this.currentStudentId);
         const partnerObj = window.db.getStudent(partnerId);
-        const partnerName = partnerObj ? partnerObj.name : "Partner";
+        const partnerName = this.getStudentDisplayName(partnerObj);
 
         const roomSeed = `BridgeExchange-${match.id}`;
         const secureRoomName = `${roomSeed}-${this.generateSecureRoomHash(roomSeed)}`;
@@ -5767,7 +5760,7 @@ class App {
           height: "100%",
           parentNode: container,
           userInfo: {
-            displayName: this.formatPartnerName(student.name)
+            displayName: this.getStudentDisplayName(student)
           },
           configOverwrite: {
             disableInviteFunctions: true,
@@ -5798,14 +5791,14 @@ class App {
             if (data.type === 'subtitle') {
               const display = document.getElementById('chat-subtitle-text');
               if (display) {
-                display.innerHTML = `<strong style="color: var(--secondary);">${this.formatPartnerName(partnerName)}:</strong> "${data.text}"`;
+                display.innerHTML = `<strong style="color: var(--secondary);">${partnerName}:</strong> "${data.text}"`;
                 display.style.fontStyle = 'normal';
               }
             }
           } catch (e) {
             const display = document.getElementById('chat-subtitle-text');
             if (display) {
-              display.innerHTML = `<strong style="color: var(--secondary);">${this.formatPartnerName(partnerName)}:</strong> "${event.data.text}"`;
+              display.innerHTML = `<strong style="color: var(--secondary);">${partnerName}:</strong> "${event.data.text}"`;
               display.style.fontStyle = 'normal';
             }
           }
@@ -11450,7 +11443,7 @@ class App {
         if (!partner) return '';
         const partnerSchool = window.db.getSchool(partner.schoolId);
         const flag = this.getSchoolFlag(partnerSchool?.country);
-        return `${flag} ${partner.name}`;
+        return `${flag} ${this.getStudentDisplayName(partner)}`;
       }).filter(n => n !== '');
       
       const div = document.createElement('div');
