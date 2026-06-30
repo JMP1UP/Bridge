@@ -872,6 +872,12 @@
 
                     <!-- Scrollable Form Content Area -->
                     <div style="flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 1.25rem; padding-right: 0.5rem; min-height: 0;">
+                      <!-- Lock Warning Banner -->
+                      <div id="proj-slide-lock-banner" style="display: none; align-items: center; gap: 0.5rem; padding: 0.75rem 1rem; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; color: #f59e0b; font-size: 0.8rem; font-weight: 500; margin-bottom: 0.25rem;">
+                        <span>⚠️</span>
+                        <span id="proj-slide-lock-message">Another student is currently editing this slide. Your changes are locked.</span>
+                      </div>
+
                       <!-- Slide Layout Picker -->
                       <div class="form-group" style="margin-bottom: 0;" id="proj-slide-layout-group">
                         <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem; display: block;">Slide Layout</label>

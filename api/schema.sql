@@ -97,6 +97,9 @@ CREATE TABLE project_slides (
   author VARCHAR(255) NOT NULL,
   editable_by_others BOOLEAN DEFAULT TRUE NOT NULL,
   last_updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  locked_by_id VARCHAR(100) REFERENCES students(id) ON DELETE SET NULL,
+  locked_by_name VARCHAR(255),
+  locked_expires_at TIMESTAMP,
   CONSTRAINT unique_project_slide_index UNIQUE(project_id, slide_index)
 );
 

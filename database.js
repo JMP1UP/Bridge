@@ -389,7 +389,10 @@ class LocalDB {
                 content: slide.content,
                 photoUrl: slide.photo_url || '',
                 author: slide.author,
-                editableByOthers: slide.editable_by_others
+                editableByOthers: slide.editable_by_others,
+                lockedById: slide.locked_by_id || null,
+                lockedByName: slide.locked_by_name || null,
+                lockedExpiresAt: slide.locked_expires_at || null
               });
             }
           });
@@ -639,7 +642,7 @@ class LocalDB {
           const transformKeys = (obj) => {
             const result = {};
             Object.keys(obj).forEach(k => {
-              if (k === 'read' || k === 'authorStudent' || k === 'schoolDetails') return;
+              if (k === 'read' || k === 'authorStudent' || k === 'schoolDetails' || k === 'slides' || k === 'messages' || k === 'creatorSchoolApproved' || k === 'targetSchoolApproved') return;
               
               let pgKey = k;
               if (k === 'yearGroup') pgKey = 'year_group';
@@ -660,6 +663,11 @@ class LocalDB {
               else if (k === 'hostSchoolId') pgKey = 'host_school_id';
               else if (k === 'partnerSchoolId') pgKey = 'partner_school_id';
               else if (k === 'flagReason') pgKey = 'flag_reason';
+              else if (k === 'slideIndex') pgKey = 'slide_index';
+              else if (k === 'editableByOthers') pgKey = 'editable_by_others';
+              else if (k === 'lockedById') pgKey = 'locked_by_id';
+              else if (k === 'lockedByName') pgKey = 'locked_by_name';
+              else if (k === 'lockedExpiresAt') pgKey = 'locked_expires_at';
               
               result[pgKey] = obj[k];
             });

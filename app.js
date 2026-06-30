@@ -1358,7 +1358,10 @@ class App {
               content: data.content,
               photoUrl: data.photo_url || '',
               author: data.author,
-              editableByOthers: data.editable_by_others
+              editableByOthers: data.editable_by_others,
+              lockedById: data.locked_by_id || null,
+              lockedByName: data.locked_by_name || null,
+              lockedExpiresAt: data.locked_expires_at || null
             };
 
             if (slide) {
@@ -9513,8 +9516,25 @@ class App {
             authorDisplay.innerHTML = `<span style="display: flex; align-items: center; gap: 0.25rem;">Author: ${flagHtml} <strong>${authorName}</strong></span>`;
           }
 
+          // Check if slide is currently locked by another student
+          const isLocked = activeSlide.lockedById && 
+                           activeSlide.lockedById !== student.id && 
+                           activeSlide.lockedExpiresAt && 
+                           new Date(activeSlide.lockedExpiresAt) > new Date();
+
+          const lockBanner = document.getElementById('proj-slide-lock-banner');
+          const lockMessage = document.getElementById('proj-slide-lock-message');
+          if (lockBanner && lockMessage) {
+            if (isLocked) {
+              lockMessage.textContent = `${activeSlide.lockedByName || 'Another student'} is currently editing this slide. Your changes are locked.`;
+              lockBanner.style.display = 'flex';
+            } else {
+              lockBanner.style.display = 'none';
+            }
+          }
+
           const isAuthor = activeSlide.author === student.name;
-          const isEditable = isAuthor || activeSlide.editableByOthers !== false;
+          const isEditable = (isAuthor || activeSlide.editableByOthers !== false) && !isLocked;
 
           if (editableLabel && editableToggle) {
             if (isAuthor && activeProject.status !== 'Published' && activeProject.status !== 'PendingPublish') {
@@ -9534,6 +9554,36 @@ class App {
           if (saveBtn) {
             saveBtn.disabled = !isEditable;
             saveBtn.style.opacity = isEditable ? '1' : '0.4';
+          }
+
+          // Setup slide locking focus listeners
+          if (!isReadOnly && !isLocked) {
+            const startEditing = () => {
+              this.acquireProjectSlideLock(activeProject.id, this.activeSlideIndex);
+              if (this.lockRenewalInterval) clearInterval(this.lockRenewalInterval);
+              this.lockRenewalInterval = setInterval(() => {
+                this.acquireProjectSlideLock(activeProject.id, this.activeSlideIndex);
+              }, 20000);
+            };
+
+            const stopEditing = () => {
+              if (this.lockRenewalInterval) {
+                clearInterval(this.lockRenewalInterval);
+                this.lockRenewalInterval = null;
+              }
+              this.saveProjectSlideStateSilent();
+              this.releaseProjectSlideLock(activeProject.id, this.activeSlideIndex);
+            };
+
+            titleInput.onfocus = startEditing;
+            contentInput.onfocus = startEditing;
+            titleInput.onblur = stopEditing;
+            contentInput.onblur = stopEditing;
+          } else {
+            titleInput.onfocus = null;
+            contentInput.onfocus = null;
+            titleInput.onblur = null;
+            contentInput.onblur = null;
           }
           if (publishBtn) {
             publishBtn.disabled = !isEditable;
@@ -9894,7 +9944,62 @@ class App {
     }
   }
 
+  acquireProjectSlideLock(projectId, slideIndex) {
+    if (!projectId) return;
+    const project = window.db.getProject(projectId);
+    if (!project || project.status === 'Published' || project.status === 'PendingPublish' || project.paused) return;
+
+    const activeSlide = project.slides[slideIndex];
+    if (!activeSlide) return;
+
+    const student = window.db.getStudent(this.currentStudentId);
+    if (!student) return;
+
+    if (activeSlide.lockedById && 
+        activeSlide.lockedById !== student.id && 
+        activeSlide.lockedExpiresAt && 
+        new Date(activeSlide.lockedExpiresAt) > new Date()) {
+      return;
+    }
+
+    const newExpiry = new Date(Date.now() + 60 * 1000).toISOString();
+    
+    if (activeSlide.lockedById !== student.id || 
+        !activeSlide.lockedExpiresAt || 
+        new Date(activeSlide.lockedExpiresAt) - new Date() < 40 * 1000) {
+      
+      activeSlide.lockedById = student.id;
+      activeSlide.lockedByName = student.name;
+      activeSlide.lockedExpiresAt = newExpiry;
+
+      window.db.updateProject(projectId, { slides: project.slides });
+    }
+  }
+
+  releaseProjectSlideLock(projectId, slideIndex) {
+    if (!projectId) return;
+    const project = window.db.getProject(projectId);
+    if (!project) return;
+
+    const activeSlide = project.slides[slideIndex];
+    if (!activeSlide) return;
+
+    const student = window.db.getStudent(this.currentStudentId);
+    if (!student) return;
+
+    if (activeSlide.lockedById === student.id) {
+      activeSlide.lockedById = null;
+      activeSlide.lockedByName = null;
+      activeSlide.lockedExpiresAt = null;
+
+      window.db.updateProject(projectId, { slides: project.slides });
+    }
+  }
+
   switchProjectSlide(index) {
+    if (this.activeProjectId) {
+      this.releaseProjectSlideLock(this.activeProjectId, this.activeSlideIndex);
+    }
     this.saveProjectSlideStateSilent();
     this.activeSlideIndex = index;
     const project = window.db.getProject(this.activeProjectId);
@@ -11629,6 +11734,9 @@ class App {
   }
 
   logout() {
+    if (this.activeProjectId) {
+      this.releaseProjectSlideLock(this.activeProjectId, this.activeSlideIndex);
+    }
     this.isLoggedIn = false;
     this.currentRole = null;
     localStorage.removeItem('bridge_remember_me');
