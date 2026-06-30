@@ -8993,6 +8993,10 @@ class App {
       chatListContainer.appendChild(item);
     });
 
+    // Hide active project info sidebar container by default
+    const sidebarInfo = document.getElementById('active-project-info-sidebar');
+    if (sidebarInfo) sidebarInfo.style.display = 'none';
+
     const activeProject = projects.find(p => p.id === this.activeProjectId);
     if (activeProject) {
       projectEmptyState.style.display = 'none';
@@ -9000,6 +9004,10 @@ class App {
 
       // Set Title
       document.getElementById('project-title').textContent = activeProject.title;
+      
+      // Hide cluttered header meta to maximize vertical space and reduce scrolling
+      const projMetaEl = document.getElementById('project-meta');
+      if (projMetaEl) projMetaEl.style.display = 'none';
 
       // Resolve schools & members
       const targets = activeProject.targetSchoolIds || (activeProject.targetSchoolId ? [activeProject.targetSchoolId] : []);
@@ -9008,8 +9016,11 @@ class App {
         .filter(Boolean);
       const schoolBadges = allSchools.map(sch => {
         const flag = this.getSchoolFlag(sch.country);
-        return `<span style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.65rem; background: rgba(255,255,255,0.03); border: 1px solid var(--panel-border); border-radius: 8px; font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">${flag} ${sch.name}</span>`;
-      }).join('<span style="color: var(--text-muted); font-size: 0.8rem; margin: 0 0.25rem;">✕</span>');
+        return `<div style="display: flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.55rem; background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border); border-radius: 6px; font-size: 0.75rem; color: var(--text-secondary); width: 100%; font-weight: 600; box-sizing: border-box;">
+          <span>${flag}</span>
+          <span style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="${sch.name}">${sch.name}</span>
+        </div>`;
+      }).join('');
 
       // Get member names
       const allStudentIds = [...activeProject.creatorSchoolStudentIds, ...activeProject.targetSchoolStudentIds];
@@ -9019,23 +9030,30 @@ class App {
         const school = window.db.getSchool(s.schoolId);
         const flag = this.getSchoolFlag(school?.country);
         const displayName = this.getStudentDisplayName(s);
-        return `<span class="collab-badge" style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.65rem; background: rgba(255,255,255,0.05); border: 1px solid var(--panel-border); border-radius: 20px; font-size: 0.75rem; color: var(--text-primary); font-weight: 500;">
-          <span style="font-size: 0.9rem; line-height: 1;">${flag}</span>
+        return `<div class="collab-badge" style="display: flex; align-items: center; gap: 0.45rem; padding: 0.35rem 0.55rem; background: rgba(255,255,255,0.03); border: 1px solid var(--panel-border); border-radius: 6px; font-size: 0.75rem; color: var(--text-primary); font-weight: 500; width: 100%; box-sizing: border-box;">
+          <span style="font-size: 0.95rem; line-height: 1;">${flag}</span>
           <span>${displayName}</span>
-        </span>`;
+        </div>`;
       }).filter(Boolean).join('');
 
-      document.getElementById('project-meta').innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 0.65rem; margin-top: 0.5rem;">
-          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-            ${schoolBadges}
+      // Populate left sidebar with project partnership & co-creators info to clean up active area
+      if (sidebarInfo) {
+        sidebarInfo.style.display = 'flex';
+        sidebarInfo.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+            <span style="font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); font-weight: 800; letter-spacing: 0.5px;">Schools Connected</span>
+            <div style="display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.15rem;">
+              ${schoolBadges}
+            </div>
           </div>
-          <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
-            <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px; margin-right: 0.25rem;">Co-creators:</span>
-            ${memberBadges}
+          <div style="display: flex; flex-direction: column; gap: 0.4rem; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 0.65rem;">
+            <span style="font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); font-weight: 800; letter-spacing: 0.5px;">Co-creators</span>
+            <div style="display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.15rem;">
+              ${memberBadges}
+            </div>
           </div>
-        </div>
-      `;
+        `;
+      }
 
       // Status badge
       const badgeEl = document.getElementById('project-status-badge');
@@ -9400,32 +9418,27 @@ class App {
 
           if (editorCard) {
             const isCardActive = !isReadOnly && isEditable;
+            const pulseDot = document.getElementById('proj-editor-header-pulse');
+            const headerText = document.getElementById('proj-editor-header-text');
+
             if (isCardActive) {
               editorCard.style.borderColor = 'rgba(6, 182, 212, 0.45)';
               editorCard.style.boxShadow = '0 0 16px rgba(6, 182, 212, 0.05), inset 0 0 12px rgba(6, 182, 212, 0.02)';
-              if (editorHeader) {
-                const pulseDot = editorHeader.querySelector('.alert-pulse');
-                if (pulseDot) {
-                  pulseDot.style.background = 'var(--primary)';
-                  pulseDot.style.display = 'block';
-                }
-                const headerText = editorHeader.querySelector('span:not(.badge) span');
-                if (headerText) {
-                  headerText.style.color = 'var(--primary)';
-                  headerText.textContent = this.translate('active_slide_workspace', 'Slide Workspace');
-                }
+              if (pulseDot) {
+                pulseDot.style.background = 'var(--primary)';
+                pulseDot.style.display = 'block';
+              }
+              if (headerText) {
+                headerText.style.color = 'var(--primary)';
+                headerText.textContent = this.translate('active_slide_workspace', 'Slide Workspace');
               }
             } else {
               editorCard.style.borderColor = 'var(--panel-border)';
               editorCard.style.boxShadow = 'none';
-              if (editorHeader) {
-                const pulseDot = editorHeader.querySelector('.alert-pulse');
-                if (pulseDot) pulseDot.style.display = 'none';
-                const headerText = editorHeader.querySelector('span:not(.badge) span');
-                if (headerText) {
-                  headerText.style.color = 'var(--text-muted)';
-                  headerText.textContent = this.translate('readonly_slide_workspace', 'Slide Workspace (Read-only)');
-                }
+              if (pulseDot) pulseDot.style.display = 'none';
+              if (headerText) {
+                headerText.style.color = 'var(--text-muted)';
+                headerText.textContent = this.translate('readonly_slide_workspace', 'Slide Workspace (Read-only)');
               }
             }
           }
