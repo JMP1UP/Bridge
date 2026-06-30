@@ -8966,15 +8966,14 @@ class App {
       }
 
       item.innerHTML = `
-        <div class="user-avatar" style="width: 32px; height: 32px; font-size: 0.8rem; background: var(--accent); display: flex; align-items: center; justify-content: center;">
+        <div class="user-avatar" style="width: 32px; height: 32px; font-size: 0.8rem; background: var(--accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
           📁
         </div>
-        <div class="chat-item-meta">
-          <div class="chat-item-name">
-            <span>${project.title}</span>
+        <div class="chat-item-meta" style="display: flex; flex-direction: column; justify-content: center; gap: 0.15rem; min-width: 0;">
+          <div class="chat-item-name" style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+            <span style="font-weight: 700; font-size: 0.85rem; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${project.title}</span>
             ${badgeStatus}
           </div>
-          <div class="chat-item-preview">${lastMsg ? lastMsg.text : 'Start collaborating...'}</div>
         </div>
       `;
 
@@ -9040,6 +9039,9 @@ class App {
       if (sidebarInfo) {
         sidebarInfo.style.display = 'flex';
         sidebarInfo.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 0.35rem; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 0.5rem; margin-bottom: 0.25rem;">
+            <span style="font-size: 0.65rem; text-transform: uppercase; color: var(--primary); font-weight: 800; letter-spacing: 0.5px;">Active Project Info</span>
+          </div>
           <div style="display: flex; flex-direction: column; gap: 0.4rem;">
             <span style="font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); font-weight: 800; letter-spacing: 0.5px;">Schools Connected</span>
             <div style="display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.15rem;">
