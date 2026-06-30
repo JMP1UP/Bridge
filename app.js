@@ -5124,7 +5124,7 @@ class App {
     document.getElementById('speed-partner-avatar').textContent = partner.name.split(' ').map(n => n[0]).join('') || '?';
     document.getElementById('speed-partner-fullname').textContent = partner.name;
     document.getElementById('speed-partner-details-line').textContent = `${partner.gender} • Age ${partner.age} • ${partner.yearGroup || 'Year'}`;
-    document.getElementById('speed-partner-flag').textContent = school ? this.getSchoolFlag(school.country) : '🌍';
+    document.getElementById('speed-partner-flag').innerHTML = school ? this.getSchoolFlag(school.country) : '🌍';
     document.getElementById('speed-partner-schoolname').textContent = school ? school.name : 'Partner School';
 
     // Load prompt
@@ -5156,13 +5156,23 @@ class App {
             doNotStoreRoom: true,
             startWithAudioMuted: false,
             startWithVideoMuted: false,
-            prejoinPageEnabled: false
+            prejoinPageEnabled: false,
+            toolbarButtons: ['microphone', 'camera', 'hangup']
           },
           interfaceConfigOverwrite: {
             TOOLBAR_BUTTONS: ['microphone', 'camera', 'hangup']
           }
         };
         this.speedJitsiAPI = new JitsiMeetExternalAPI(domain, options);
+
+        this.speedJitsiAPI.addEventListener('videoConferenceLeft', () => {
+          this.exitSpeedExchange();
+        });
+
+        this.speedJitsiAPI.addEventListener('readyToClose', () => {
+          const container = document.getElementById('speed-jitsi-container');
+          if (container) container.innerHTML = '';
+        });
 
         this.speedJitsiAPI.addEventListener('endpointTextMessageReceived', (event) => {
           try {
@@ -5740,13 +5750,23 @@ class App {
             doNotStoreRoom: true,
             startWithAudioMuted: false,
             startWithVideoMuted: false,
-            prejoinPageEnabled: false
+            prejoinPageEnabled: false,
+            toolbarButtons: ['microphone', 'camera', 'hangup']
           },
           interfaceConfigOverwrite: {
             TOOLBAR_BUTTONS: ['microphone', 'camera', 'hangup']
           }
         };
         this.jitsiAPI = new JitsiMeetExternalAPI(domain, options);
+
+        this.jitsiAPI.addEventListener('videoConferenceLeft', () => {
+          this.hangUpVideoCall();
+        });
+
+        this.jitsiAPI.addEventListener('readyToClose', () => {
+          const container = document.getElementById('jitsi-iframe-container');
+          if (container) container.innerHTML = '';
+        });
 
         this.jitsiAPI.addEventListener('endpointTextMessageReceived', (event) => {
           try {
