@@ -5157,10 +5157,10 @@ class App {
             startWithAudioMuted: false,
             startWithVideoMuted: false,
             prejoinPageEnabled: false,
-            toolbarButtons: ['microphone', 'camera', 'hangup']
+            toolbarButtons: ['microphone', 'camera']
           },
           interfaceConfigOverwrite: {
-            TOOLBAR_BUTTONS: ['microphone', 'camera', 'hangup']
+            TOOLBAR_BUTTONS: ['microphone', 'camera']
           }
         };
         this.speedJitsiAPI = new JitsiMeetExternalAPI(domain, options);
@@ -5751,10 +5751,10 @@ class App {
             startWithAudioMuted: false,
             startWithVideoMuted: false,
             prejoinPageEnabled: false,
-            toolbarButtons: ['microphone', 'camera', 'hangup']
+            toolbarButtons: ['microphone', 'camera']
           },
           interfaceConfigOverwrite: {
-            TOOLBAR_BUTTONS: ['microphone', 'camera', 'hangup']
+            TOOLBAR_BUTTONS: ['microphone', 'camera']
           }
         };
         this.jitsiAPI = new JitsiMeetExternalAPI(domain, options);
