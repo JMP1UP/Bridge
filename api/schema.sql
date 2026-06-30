@@ -78,7 +78,7 @@ CREATE TABLE projects (
   id VARCHAR(100) PRIMARY KEY,
   creator_school_id VARCHAR(100) REFERENCES schools(id) ON DELETE CASCADE NOT NULL,
   target_school_id VARCHAR(100) REFERENCES schools(id) ON DELETE CASCADE NOT NULL,
-  status VARCHAR(50) DEFAULT 'Draft' CHECK (status IN ('Draft', 'Proposed', 'PendingPublish', 'Published')) NOT NULL,
+  status VARCHAR(50) DEFAULT 'Draft' CHECK (status IN ('Draft', 'Active', 'Proposed', 'PendingPublish', 'Published', 'Cancelled')) NOT NULL,
   title VARCHAR(255) NOT NULL,
   brief TEXT NOT NULL,
   paused BOOLEAN DEFAULT FALSE NOT NULL,
