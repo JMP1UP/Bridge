@@ -296,13 +296,24 @@ class LocalDB {
     return data[name] || [];
   }
 
-  async syncFromServer(userId, role) {
+  async syncFromServer(userId, role, token) {
     if (!userId) return;
+    if (token) {
+      this.sessionToken = token;
+      localStorage.setItem('bridge_session_token', token);
+    } else {
+      this.sessionToken = this.sessionToken || localStorage.getItem('bridge_session_token') || JSON.parse(localStorage.getItem('bridge_remember_me') || '{}').token;
+    }
+
+    if (!this.sessionToken) {
+      console.warn('Sync cancelled: No active session token found');
+      return;
+    }
+
     try {
       const response = await fetch('/api/sync', {
         headers: {
-          'x-user-id': userId,
-          'x-user-role': role || 'admin'
+          'Authorization': `Bearer ${this.sessionToken}`
         }
       });
       if (!response.ok) {
@@ -682,12 +693,16 @@ class LocalDB {
     }
 
     if (updates.length > 0) {
+      const token = this.sessionToken || localStorage.getItem('bridge_session_token') || JSON.parse(localStorage.getItem('bridge_remember_me') || '{}').token;
+      if (!token) {
+        console.warn('Sync POST cancelled: No active token found');
+        return;
+      }
       fetch('/api/sync', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': userId,
-          'x-user-role': userRole
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ updates })
       }).catch(err => console.error("Database write-through sync failure:", err));

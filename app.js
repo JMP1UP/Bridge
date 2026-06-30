@@ -1014,7 +1014,7 @@ class App {
         const session = JSON.parse(savedSession);
         if (session && session.role && session.id) {
           this.isLoggedIn = true;
-          this.switchRole(session.role, session.role === 'student' ? session.id : null, session.role === 'teacher' ? session.id : null);
+          this.switchRole(session.role, session.role === 'student' ? session.id : null, session.role === 'teacher' ? session.id : null, session.token);
           document.getElementById('login-screen').style.display = 'none';
           document.querySelector('.app-container').style.setProperty('display', 'flex', 'important');
         }
@@ -1245,13 +1245,51 @@ class App {
     }
   }
 
+  async fetchSessionToken(userId, role) {
+    let email, password;
+    if (role === 'admin') {
+      email = 'admin';
+      password = 'admin123';
+    } else if (role === 'student') {
+      const student = window.db.getStudent(userId);
+      email = student?.email;
+      password = student?.password || 'password123';
+    } else {
+      const coord = window.db.getCoordinator(userId);
+      email = coord?.email;
+      password = coord?.password || 'password123';
+    }
+
+    if (!email) return null;
+
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      return data.token;
+    } catch (err) {
+      console.error("Auth token fetch failed:", err);
+      return null;
+    }
+  }
+
   // Developer switches roles
-  async switchRole(role, studentId, coordId) {
+  async switchRole(role, studentId, coordId, token) {
     this.currentRole = role;
     const activeUserId = studentId || coordId || (role === 'admin' ? 'admin' : null);
+    
+    let activeToken = token;
+    if (!activeToken && activeUserId) {
+      activeToken = await this.fetchSessionToken(activeUserId, role);
+    }
+
     if (activeUserId && window.db.syncFromServer) {
       try {
-        await window.db.syncFromServer(activeUserId, role);
+        await window.db.syncFromServer(activeUserId, role, activeToken);
       } catch (err) {
         console.error("Could not sync database state from server:", err);
       }
@@ -11433,35 +11471,54 @@ class App {
     document.querySelector('.app-container').style.setProperty('display', 'flex', 'important');
   }
 
-  handleUnifiedLogin(e) {
+  async handleUnifiedLogin(e) {
     if (e) e.preventDefault();
     const email = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-password').value;
 
     if (!email) return;
 
-    // Check if it's admin
-    if (email.toLowerCase() === 'admin' || email.toLowerCase() === 'admin@school-bridge.org') {
-      this.loginAsStaff(email, password);
-      return;
-    }
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
 
-    // Check if it's a coordinator
-    const coordinator = window.db.getCoordinators().find(c => c.email.toLowerCase() === email.toLowerCase());
-    if (coordinator) {
-      this.loginAsStaff(coordinator.id, password);
-      return;
-    }
+      if (!response.ok) {
+        const data = await response.json();
+        alert(this.translate('incorrect_password_alert', data.error || 'Authentication failed. Please check your credentials.'));
+        return;
+      }
 
-    // Check if it's a student
-    const student = window.db.getStudents().find(s => s.email.toLowerCase() === email.toLowerCase());
-    if (student) {
-      this.loginAsStudent(student.id, password);
-      return;
-    }
+      const data = await response.json();
+      const rememberMe = document.getElementById('login-remember-me')?.checked;
+      
+      const sessionPayload = { role: data.user.role, id: data.user.id, token: data.token };
+      if (rememberMe) {
+        localStorage.setItem('bridge_remember_me', JSON.stringify(sessionPayload));
+      } else {
+        localStorage.removeItem('bridge_remember_me');
+      }
+      localStorage.setItem('bridge_session_token', data.token);
 
-    // If none found
-    alert(this.translate('user_not_found_alert', 'No account found matching that email address.'));
+      this.isLoggedIn = true;
+      
+      if (data.user.role === 'student') {
+        await this.switchRole('student', data.user.id, null, data.token);
+      } else if (data.user.role === 'admin') {
+        await this.switchRole('admin', null, null, data.token);
+      } else {
+        await this.switchRole('teacher', null, data.user.id, data.token);
+      }
+
+      document.getElementById('login-screen').style.display = 'none';
+      document.querySelector('.app-container').style.setProperty('display', 'flex', 'important');
+
+    } catch (err) {
+      console.error('Login service failure:', err);
+      alert('Could not contact the authentication server. Please try again.');
+    }
   }
 
   devAutoLogin() {
