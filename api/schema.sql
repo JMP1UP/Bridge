@@ -1,5 +1,18 @@
 -- Bridge PostgreSQL Database Schema Creation Script
 
+-- Clean up existing tables
+DROP TABLE IF EXISTS flags CASCADE;
+DROP TABLE IF EXISTS news CASCADE;
+DROP TABLE IF EXISTS logs CASCADE;
+DROP TABLE IF EXISTS project_messages CASCADE;
+DROP TABLE IF EXISTS project_slides CASCADE;
+DROP TABLE IF EXISTS projects CASCADE;
+DROP TABLE IF EXISTS messages CASCADE;
+DROP TABLE IF EXISTS connections CASCADE;
+DROP TABLE IF EXISTS students CASCADE;
+DROP TABLE IF EXISTS coordinators CASCADE;
+DROP TABLE IF EXISTS schools CASCADE;
+
 -- 1. Schools Table
 CREATE TABLE schools (
   id VARCHAR(100) PRIMARY KEY,
