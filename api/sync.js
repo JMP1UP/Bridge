@@ -3,6 +3,7 @@
 
 const db = require('./db');
 const auth = require('./auth-helper');
+const pusher = require('./pusher-helper');
 
 module.exports = async function handler(req, res) {
   // CORS configuration
@@ -169,6 +170,12 @@ async function handleGetSync(userId, userRole, res) {
     snapshot.news = await db.select('news', `school_id=eq.${schoolId}`);
   }
 
+  // Include public Pusher configurations for real-time client subscription
+  snapshot.pusher = {
+    key: process.env.PUSHER_KEY || '',
+    cluster: process.env.PUSHER_CLUSTER || 'eu'
+  };
+
   return res.status(200).json(snapshot);
 }
 
@@ -200,6 +207,21 @@ async function handlePostSync(userId, userRole, payload, res) {
       throw new Error(`Unknown action: ${action}`);
     }
     results.push({ success: true, result });
+
+    // Trigger asynchronous real-time Pusher broadcasts
+    if (action === 'insert' || action === 'update') {
+      try {
+        if (table === 'messages' && data.connection_id) {
+          await pusher.trigger(`chat-${data.connection_id}`, 'new-message', data);
+        } else if (table === 'project_messages' && data.project_id) {
+          await pusher.trigger(`project-${data.project_id}`, 'new-project-message', data);
+        } else if (table === 'project_slides' && data.project_id) {
+          await pusher.trigger(`project-${data.project_id}`, 'slide-update', data);
+        }
+      } catch (pushErr) {
+        console.warn("Real-time Pusher trigger failed:", pushErr);
+      }
+    }
   }
 
   return res.status(200).json({ success: true, results });

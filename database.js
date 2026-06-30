@@ -414,8 +414,10 @@ class LocalDB {
       }
       
       this.save(data);
+      return snapshot;
     } catch (err) {
       console.error('Database server sync failure:', err);
+      return null;
     }
   }
 

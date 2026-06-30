@@ -1277,6 +1277,104 @@ class App {
     }
   }
 
+  initPusher(key, cluster, snapshot) {
+    if (typeof Pusher === 'undefined') {
+      console.warn("Pusher SDK not loaded in browser.");
+      return;
+    }
+
+    if (this.pusher) {
+      this.pusher.disconnect();
+    }
+
+    this.pusher = new Pusher(key, {
+      cluster: cluster,
+      forceTLS: true
+    });
+
+    console.log("Pusher real-time client connected successfully");
+
+    // 1. Subscribe to student chat connection channels
+    if (snapshot.connections) {
+      snapshot.connections.forEach(match => {
+        const channel = this.pusher.subscribe(`chat-${match.id}`);
+        channel.bind('new-message', (data) => {
+          const messages = window.db.getMessages();
+          if (!messages.some(m => m.id === data.id)) {
+            messages.push({
+              id: data.id,
+              matchId: data.connection_id,
+              senderId: data.sender_id,
+              text: data.text,
+              translation: data.translation,
+              flagged: data.flagged,
+              flagReason: data.flag_reason,
+              timestamp: data.timestamp,
+              read: true
+            });
+            window.db.saveTable('messages', messages);
+            this.refreshUI();
+          }
+        });
+      });
+    }
+
+    // 2. Subscribe to collaborative project channels
+    if (snapshot.projects) {
+      snapshot.projects.forEach(project => {
+        const channel = this.pusher.subscribe(`project-${project.id}`);
+        
+        channel.bind('new-project-message', (data) => {
+          const projects = window.db.getProjects();
+          const proj = projects.find(p => p.id === data.project_id);
+          if (proj) {
+            proj.messages = proj.messages || [];
+            if (!proj.messages.some(m => m.id === data.id)) {
+              proj.messages.push({
+                id: data.id,
+                projectId: data.project_id,
+                senderId: data.sender_id,
+                text: data.text,
+                timestamp: data.timestamp
+              });
+              window.db.saveTable('projects', projects);
+              this.refreshUI();
+            }
+          }
+        });
+
+        channel.bind('slide-update', (data) => {
+          const projects = window.db.getProjects();
+          const proj = projects.find(p => p.id === data.project_id);
+          if (proj) {
+            proj.slides = proj.slides || [];
+            const slideIndex = data.slide_index;
+            const slide = proj.slides.find(s => s.slideIndex === slideIndex);
+            const mappedSlide = {
+              id: data.id,
+              slideIndex: data.slide_index,
+              layout: data.layout,
+              title: data.title,
+              content: data.content,
+              photoUrl: data.photo_url || '',
+              author: data.author,
+              editableByOthers: data.editable_by_others
+            };
+
+            if (slide) {
+              Object.assign(slide, mappedSlide);
+            } else {
+              proj.slides.push(mappedSlide);
+              proj.slides.sort((a, b) => a.slideIndex - b.slideIndex);
+            }
+            window.db.saveTable('projects', projects);
+            this.refreshUI();
+          }
+        });
+      });
+    }
+  }
+
   // Developer switches roles
   async switchRole(role, studentId, coordId, token) {
     this.currentRole = role;
@@ -1287,12 +1385,17 @@ class App {
       activeToken = await this.fetchSessionToken(activeUserId, role);
     }
 
+    let snapshot = null;
     if (activeUserId && window.db.syncFromServer) {
       try {
-        await window.db.syncFromServer(activeUserId, role, activeToken);
+        snapshot = await window.db.syncFromServer(activeUserId, role, activeToken);
       } catch (err) {
         console.error("Could not sync database state from server:", err);
       }
+    }
+
+    if (snapshot && snapshot.pusher && snapshot.pusher.key) {
+      this.initPusher(snapshot.pusher.key, snapshot.pusher.cluster, snapshot);
     }
 
     if (studentId) {
