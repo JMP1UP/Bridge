@@ -4940,17 +4940,44 @@ class App {
   }
 
   reportMessage(messageId) {
-    const reason = prompt("Please enter the reason for reporting this message (e.g., inappropriate language, personal info sharing, bullying):");
-    if (!reason || !reason.trim()) return;
+    this.reportingMessageId = messageId;
+    
+    const titleEl = document.getElementById('report-msg-modal-title');
+    const descEl = document.getElementById('report-msg-modal-desc');
+    const reasonInput = document.getElementById('report-msg-reason');
+    
+    if (titleEl) titleEl.textContent = this.translate('report_message_title', 'Report Message');
+    if (descEl) descEl.textContent = this.translate('report_message_desc', 'Please enter the reason for reporting this message (e.g., inappropriate language, personal info sharing, bullying):');
+    if (reasonInput) {
+      reasonInput.placeholder = this.translate('report_message_placeholder', 'Reason for reporting...');
+      reasonInput.value = '';
+    }
+    
+    this.openModal('report-message-modal');
+  }
+
+  closeReportModal() {
+    this.reportingMessageId = null;
+    this.closeModal('report-message-modal');
+  }
+
+  submitReportMessage(event) {
+    if (event) event.preventDefault();
+    const reasonInput = document.getElementById('report-msg-reason');
+    const reason = reasonInput ? reasonInput.value.trim() : '';
+    if (!reason) return;
+
+    if (!this.reportingMessageId) return;
 
     const allMsgs = window.db.getMessages();
-    const msg = allMsgs.find(m => m.id === messageId);
+    const msg = allMsgs.find(m => m.id === this.reportingMessageId);
     if (msg) {
       msg.flagged = true;
       msg.flagReason = `Reported by student: ${reason}`;
       window.db.saveTable('messages', allMsgs);
+      this.closeReportModal();
       this.refreshUI();
-      alert("Message reported to your languages coordinator for review.");
+      alert(this.translate('report_message_success', 'Message reported to your languages coordinator for review.'));
     }
   }
 

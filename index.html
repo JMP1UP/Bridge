@@ -2389,6 +2389,26 @@ Ask about their favorite pets and if they have animals at home.</textarea>
     </div>
   </div>
 
+  <!-- Report Individual Message Modal -->
+  <div class="modal-overlay" id="report-message-modal">
+    <div class="modal-content" style="max-width: 450px;">
+      <div class="modal-header">
+        <h3 class="panel-title" id="report-msg-modal-title">🚩 Report Message</h3>
+        <button class="modal-close" onclick="app.closeReportModal()">&times;</button>
+      </div>
+      <p id="report-msg-modal-desc" style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem; line-height: 1.4;"></p>
+      <form id="report-message-form" onsubmit="app.submitReportMessage(event)">
+        <div class="form-group">
+          <textarea id="report-msg-reason" class="form-control" style="height: 100px; resize: none;" required></textarea>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button type="button" class="btn btn-secondary" onclick="app.closeReportModal()" data-localize="cancel_btn">Cancel</button>
+          <button type="submit" class="btn btn-danger" style="background: #ef4444; border-color: #ef4444; color: #fff;">Submit Report</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Report a Project Concern Modal -->
   <div class="modal-overlay" id="report-project-concern-modal">
     <div class="modal-content">
