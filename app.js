@@ -12135,6 +12135,64 @@ ${schoolName}`;
         console.error('Failed to copy text template:', err);
       });
   }
+
+  exportDatabaseToClipboard() {
+    const data = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('bridge_')) {
+        data[key] = localStorage.getItem(key);
+      }
+    }
+    const jsonStr = JSON.stringify(data);
+    navigator.clipboard.writeText(jsonStr)
+      .then(() => {
+        alert("Mock database state successfully copied to your clipboard! Paste this JSON string into the 'Import DB' prompt on your other computer.");
+      })
+      .catch(err => {
+        const textarea = document.createElement('textarea');
+        textarea.value = jsonStr;
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+          document.execCommand('copy');
+          alert("Mock database state copied to clipboard!");
+        } catch (e) {
+          prompt("Could not auto-copy. Please copy this text manually:", jsonStr);
+        }
+        document.body.removeChild(textarea);
+      });
+  }
+
+  importDatabaseFromClipboard() {
+    const jsonStr = prompt("Please paste the database JSON state exported from your other computer:");
+    if (!jsonStr || !jsonStr.trim()) return;
+
+    try {
+      const data = JSON.parse(jsonStr);
+      // Clear existing bridge keys
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('bridge_')) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+
+      // Restore new keys
+      Object.keys(data).forEach(key => {
+        if (key.startsWith('bridge_')) {
+          localStorage.setItem(key, data[key]);
+        }
+      });
+
+      alert("Database state successfully imported! The application will now reload to apply the active session.");
+      window.location.reload();
+    } catch (err) {
+      alert("Invalid database state. Please ensure you copied the entire JSON string from the other computer.");
+    }
+  }
 }
 
 // Global coordinator initialization

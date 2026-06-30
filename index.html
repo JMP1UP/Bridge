@@ -2372,8 +2372,10 @@ Ask about their favorite pets and if they have animals at home.</textarea>
       </button>
       
       <!-- System reset database button -->
-      <div class="dev-actions">
-        <button class="btn btn-secondary btn-small" id="dev-reset-db-btn" style="grid-column: span 2; font-size: 0.7rem; padding: 0.35rem 0;">Reset Local DB</button>
+      <div class="dev-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem; margin-top: 0.5rem;">
+        <button class="btn btn-secondary btn-small" id="dev-export-db-btn" onclick="app.exportDatabaseToClipboard()" style="font-size: 0.7rem; padding: 0.35rem 0;" title="Copy entire mock database to clipboard">📋 Export DB</button>
+        <button class="btn btn-secondary btn-small" id="dev-import-db-btn" onclick="app.importDatabaseFromClipboard()" style="font-size: 0.7rem; padding: 0.35rem 0;" title="Restore database from a pasted clipboard state">📥 Import DB</button>
+        <button class="btn btn-secondary btn-small" id="dev-reset-db-btn" style="grid-column: span 2; font-size: 0.7rem; padding: 0.35rem 0; background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); color: #f87171;">Reset Local DB</button>
       </div>
     </div>
   </div>
