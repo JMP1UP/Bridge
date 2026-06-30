@@ -1020,6 +1020,17 @@
               </div>
 
               <div id="speed-jitsi-container" style="width: 100%; flex: 1; background: #000;"></div>
+
+              <!-- Live Subtitles Display Bar -->
+              <div id="speed-subtitle-display-bar" style="background: rgba(11, 15, 25, 0.95); border-top: 1px solid rgba(255,255,255,0.08); padding: 0.65rem 1rem; min-height: 48px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem; color: var(--text-primary); font-size: 0.85rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 0;">
+                  <span style="font-size: 1.1rem; flex-shrink: 0;">💬</span>
+                  <div id="speed-subtitle-text" style="font-style: italic; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">
+                    Live Subtitles: Click the button to start real-time speech translation captions.
+                  </div>
+                </div>
+                <button type="button" class="btn btn-secondary btn-small" id="toggle-speed-subtitles-btn" onclick="app.toggleSpeedSubtitles()" style="flex-shrink: 0; padding: 0.3rem 0.6rem; font-size: 0.75rem; font-weight: 700; border-color: rgba(6, 182, 212, 0.3); color: var(--secondary); cursor: pointer;">🎙️ Turn On Captions</button>
+              </div>
             </div>
 
             <!-- Right Side: Partner card, Task and Timer -->
@@ -3155,6 +3166,18 @@ Ask about their favorite pets and if they have animals at home.</textarea>
         <span id="video-timer-badge" style="font-size: 0.8rem; background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); padding: 0.25rem 0.6rem; border-radius: 6px; font-weight: 700; display: none;">Timed Connection</span>
       </div>
       <div id="jitsi-iframe-container" style="width: 100%; height: 480px; background: #000; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08);"></div>
+      
+      <!-- 1-to-1 Live Subtitles Display Bar -->
+      <div id="chat-subtitle-display-bar" style="background: rgba(11, 15, 25, 0.95); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 0.65rem 1rem; min-height: 48px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem; color: var(--text-primary); font-size: 0.85rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 0;">
+          <span style="font-size: 1.1rem; flex-shrink: 0;">💬</span>
+          <div id="chat-subtitle-text" style="font-style: italic; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">
+            Live Subtitles: Click the button to start real-time speech translation captions.
+          </div>
+        </div>
+        <button type="button" class="btn btn-secondary btn-small" id="toggle-chat-subtitles-btn" onclick="app.toggleChatSubtitles()" style="flex-shrink: 0; padding: 0.3rem 0.6rem; font-size: 0.75rem; font-weight: 700; border-color: rgba(6, 182, 212, 0.3); color: var(--secondary); cursor: pointer;">🎙️ Turn On Captions</button>
+      </div>
+
       <div style="display: flex; justify-content: flex-end; padding-top: 0.5rem;">
         <button type="button" class="btn btn-primary" style="background: #ef4444; border-color: #ef4444; color: #fff; font-weight: 700;" onclick="app.hangUpVideoCall()">Hang Up Call</button>
       </div>

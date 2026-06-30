@@ -4891,6 +4891,24 @@ class App {
   }
 
   exitSpeedExchange() {
+    if (this.speedSpeechRec) {
+      try { this.speedSpeechRec.stop(); } catch (e) {}
+      this.speedSpeechRec = null;
+    }
+
+    const btn = document.getElementById('toggle-speed-subtitles-btn');
+    const textEl = document.getElementById('speed-subtitle-text');
+    if (btn) {
+      btn.classList.remove('subtitles-active');
+      btn.textContent = '🎙️ Turn On Captions';
+      btn.style.borderColor = 'rgba(6, 182, 212, 0.3)';
+      btn.style.color = 'var(--secondary)';
+    }
+    if (textEl) {
+      textEl.textContent = 'Live Subtitles: Click the button to start real-time speech translation captions.';
+      textEl.style.fontStyle = 'italic';
+    }
+
     if (this.speedJitsiAPI) {
       try { this.speedJitsiAPI.dispose(); } catch (e) {}
       this.speedJitsiAPI = null;
@@ -4900,6 +4918,163 @@ class App {
       this.speedTimerInterval = null;
     }
     this.switchTab('stud-dashboard');
+  }
+
+  toggleSpeedSubtitles() {
+    const btn = document.getElementById('toggle-speed-subtitles-btn');
+    const textEl = document.getElementById('speed-subtitle-text');
+    if (!btn || !textEl) return;
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Speech recognition is not supported in this browser. Please use Google Chrome or Microsoft Edge.");
+      return;
+    }
+
+    if (btn.classList.contains('subtitles-active')) {
+      btn.classList.remove('subtitles-active');
+      btn.textContent = '🎙️ Turn On Captions';
+      btn.style.borderColor = 'rgba(6, 182, 212, 0.3)';
+      btn.style.color = 'var(--secondary)';
+      textEl.textContent = 'Live Subtitles: Click the button to start real-time speech translation captions.';
+      textEl.style.fontStyle = 'italic';
+      
+      if (this.speedSpeechRec) {
+        try { this.speedSpeechRec.stop(); } catch (e) {}
+        this.speedSpeechRec = null;
+      }
+    } else {
+      btn.classList.add('subtitles-active');
+      btn.textContent = '⏹️ Stop Captions';
+      btn.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+      btn.style.color = 'var(--danger)';
+      textEl.textContent = 'Listening to your microphone... Start speaking to generate captions.';
+      textEl.style.fontStyle = 'normal';
+
+      const student = window.db.getStudent(this.currentStudentId);
+      const lang = student ? student.language : 'en';
+      const langMap = { 'en': 'en-GB', 'de': 'de-DE', 'fr': 'fr-FR', 'es': 'es-ES' };
+      const langCode = langMap[lang] || 'en-GB';
+
+      this.speedSpeechRec = this.startSpeechRecognition(this.speedJitsiAPI, 'speed-subtitle-text', 'toggle-speed-subtitles-btn', langCode);
+    }
+  }
+
+  toggleChatSubtitles() {
+    const btn = document.getElementById('toggle-chat-subtitles-btn');
+    const textEl = document.getElementById('chat-subtitle-text');
+    if (!btn || !textEl) return;
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Speech recognition is not supported in this browser. Please use Google Chrome or Microsoft Edge.");
+      return;
+    }
+
+    if (btn.classList.contains('subtitles-active')) {
+      btn.classList.remove('subtitles-active');
+      btn.textContent = '🎙️ Turn On Captions';
+      btn.style.borderColor = 'rgba(6, 182, 212, 0.3)';
+      btn.style.color = 'var(--secondary)';
+      textEl.textContent = 'Live Subtitles: Click the button to start real-time speech translation captions.';
+      textEl.style.fontStyle = 'italic';
+      
+      if (this.chatSpeechRec) {
+        try { this.chatSpeechRec.stop(); } catch (e) {}
+        this.chatSpeechRec = null;
+      }
+    } else {
+      btn.classList.add('subtitles-active');
+      btn.textContent = '⏹️ Stop Captions';
+      btn.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+      btn.style.color = 'var(--danger)';
+      textEl.textContent = 'Listening to your microphone... Start speaking to generate captions.';
+      textEl.style.fontStyle = 'normal';
+
+      const student = window.db.getStudent(this.currentStudentId);
+      const lang = student ? student.language : 'en';
+      const langMap = { 'en': 'en-GB', 'de': 'de-DE', 'fr': 'fr-FR', 'es': 'es-ES' };
+      const langCode = langMap[lang] || 'en-GB';
+
+      this.chatSpeechRec = this.startSpeechRecognition(this.jitsiAPI, 'chat-subtitle-text', 'toggle-chat-subtitles-btn', langCode);
+    }
+  }
+
+  startSpeechRecognition(apiInstance, targetTextId, buttonId, langCode) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return null;
+
+    try {
+      const rec = new SpeechRecognition();
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.lang = langCode || 'en-GB';
+
+      rec.onresult = (event) => {
+        let interimTranscript = '';
+        let finalTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+          }
+        }
+
+        const currentText = finalTranscript || interimTranscript;
+        if (currentText.trim()) {
+          const localDisplay = document.getElementById(targetTextId);
+          if (localDisplay) {
+            localDisplay.innerHTML = `<strong style="color: var(--primary);">You:</strong> "${currentText}"`;
+            localDisplay.style.fontStyle = 'normal';
+          }
+
+          if (apiInstance) {
+            try {
+              apiInstance.executeCommand('sendEndpointTextMessage', '', JSON.stringify({
+                type: 'subtitle',
+                text: currentText
+              }));
+            } catch (e) {
+              console.error("Failed to send Jitsi endpoint message:", e);
+            }
+          }
+        }
+      };
+
+      rec.onerror = (e) => {
+        console.error("Speech Recognition Error:", e);
+        if (e.error === 'not-allowed') {
+          alert("Microphone permission denied for speech captions. Please allow mic access in your browser address bar.");
+          const btn = document.getElementById(buttonId);
+          if (btn) {
+            btn.classList.remove('subtitles-active');
+            btn.textContent = '🎙️ Turn On Captions';
+            btn.style.borderColor = 'rgba(6, 182, 212, 0.3)';
+            btn.style.color = 'var(--secondary)';
+          }
+          const textEl = document.getElementById(targetTextId);
+          if (textEl) {
+            textEl.textContent = 'Live Subtitles: Click the button to start real-time speech translation captions.';
+            textEl.style.fontStyle = 'italic';
+          }
+        }
+      };
+
+      rec.onend = () => {
+        const btn = document.getElementById(buttonId);
+        if (btn && btn.classList.contains('subtitles-active')) {
+          try { rec.start(); } catch (err) {}
+        }
+      };
+
+      rec.start();
+      return rec;
+    } catch (err) {
+      console.error("Failed to start speech recognition:", err);
+      return null;
+    }
   }
 
   simulateSpeedPairing() {
@@ -4976,11 +5151,37 @@ class App {
           userInfo: {
             displayName: student ? student.name : 'Student'
           },
+          configOverwrite: {
+            disableInviteFunctions: true,
+            doNotStoreRoom: true,
+            startWithAudioMuted: false,
+            startWithVideoMuted: false,
+            prejoinPageEnabled: false
+          },
           interfaceConfigOverwrite: {
-            TOOLBAR_BUTTONS: ['microphone', 'camera', 'hangup', 'chat', 'tileview']
+            TOOLBAR_BUTTONS: ['microphone', 'camera', 'hangup']
           }
         };
         this.speedJitsiAPI = new JitsiMeetExternalAPI(domain, options);
+
+        this.speedJitsiAPI.addEventListener('endpointTextMessageReceived', (event) => {
+          try {
+            const data = JSON.parse(event.data.text);
+            if (data.type === 'subtitle') {
+              const display = document.getElementById('speed-subtitle-text');
+              if (display) {
+                display.innerHTML = `<strong style="color: var(--secondary);">${partner.name}:</strong> "${data.text}"`;
+                display.style.fontStyle = 'normal';
+              }
+            }
+          } catch (e) {
+            const display = document.getElementById('speed-subtitle-text');
+            if (display) {
+              display.innerHTML = `<strong style="color: var(--secondary);">${partner.name}:</strong> "${event.data.text}"`;
+              display.style.fontStyle = 'normal';
+            }
+          }
+        });
       } catch (err) {
         console.error("Failed to load speed Jitsi iframe:", err);
       }
@@ -5025,7 +5226,25 @@ class App {
 
   simulateNextRoundRotation() {
     if (!this.currentSpeedSession) return;
-    
+
+    if (this.speedSpeechRec) {
+      try { this.speedSpeechRec.stop(); } catch (e) {}
+      this.speedSpeechRec = null;
+    }
+
+    const btn = document.getElementById('toggle-speed-subtitles-btn');
+    const textEl = document.getElementById('speed-subtitle-text');
+    if (btn) {
+      btn.classList.remove('subtitles-active');
+      btn.textContent = '🎙️ Turn On Captions';
+      btn.style.borderColor = 'rgba(6, 182, 212, 0.3)';
+      btn.style.color = 'var(--secondary)';
+    }
+    if (textEl) {
+      textEl.textContent = 'Live Subtitles: Click the button to start real-time speech translation captions.';
+      textEl.style.fontStyle = 'italic';
+    }
+
     this.currentSpeedRoundIndex++;
     
     // Select new random partner (excluding the current one if possible)
@@ -5504,6 +5723,10 @@ class App {
       
       try {
         const domain = "fairmeeting.net";
+        const partnerId = match.studentIds.find(id => id !== this.currentStudentId);
+        const partnerObj = window.db.getStudent(partnerId);
+        const partnerName = partnerObj ? partnerObj.name : "Partner";
+
         const options = {
           roomName: `BridgeExchange-${match.id}`,
           width: "100%",
@@ -5513,16 +5736,36 @@ class App {
             displayName: student.name
           },
           configOverwrite: {
+            disableInviteFunctions: true,
+            doNotStoreRoom: true,
             startWithAudioMuted: false,
-            startWithVideoMuted: false
+            startWithVideoMuted: false,
+            prejoinPageEnabled: false
           },
           interfaceConfigOverwrite: {
-            TOOLBAR_BUTTONS: [
-              'microphone', 'camera', 'hangup', 'chat', 'tileview', 'settings', 'videoquality'
-            ]
+            TOOLBAR_BUTTONS: ['microphone', 'camera', 'hangup']
           }
         };
         this.jitsiAPI = new JitsiMeetExternalAPI(domain, options);
+
+        this.jitsiAPI.addEventListener('endpointTextMessageReceived', (event) => {
+          try {
+            const data = JSON.parse(event.data.text);
+            if (data.type === 'subtitle') {
+              const display = document.getElementById('chat-subtitle-text');
+              if (display) {
+                display.innerHTML = `<strong style="color: var(--secondary);">${partnerName}:</strong> "${data.text}"`;
+                display.style.fontStyle = 'normal';
+              }
+            }
+          } catch (e) {
+            const display = document.getElementById('chat-subtitle-text');
+            if (display) {
+              display.innerHTML = `<strong style="color: var(--secondary);">${partnerName}:</strong> "${event.data.text}"`;
+              display.style.fontStyle = 'normal';
+            }
+          }
+        });
       } catch (err) {
         console.error("Failed to load Jitsi Meet iframe:", err);
         container.innerHTML = `
@@ -5537,6 +5780,24 @@ class App {
   }
 
   hangUpVideoCall() {
+    if (this.chatSpeechRec) {
+      try { this.chatSpeechRec.stop(); } catch (e) {}
+      this.chatSpeechRec = null;
+    }
+
+    const btn = document.getElementById('toggle-chat-subtitles-btn');
+    const textEl = document.getElementById('chat-subtitle-text');
+    if (btn) {
+      btn.classList.remove('subtitles-active');
+      btn.textContent = '🎙️ Turn On Captions';
+      btn.style.borderColor = 'rgba(6, 182, 212, 0.3)';
+      btn.style.color = 'var(--secondary)';
+    }
+    if (textEl) {
+      textEl.textContent = 'Live Subtitles: Click the button to start real-time speech translation captions.';
+      textEl.style.fontStyle = 'italic';
+    }
+
     if (this.jitsiAPI) {
       try {
         this.jitsiAPI.dispose();
