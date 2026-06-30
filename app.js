@@ -2063,7 +2063,12 @@ class App {
 
         let flaggedMarkup = '';
         if (msg.flagged) {
-          flaggedMarkup = `<div style="font-size: 0.75rem; color: var(--danger); font-weight: bold; margin-top: 0.25rem;">[Flagged by SafeGuard: ${msg.flagReason}]</div>`;
+          flaggedMarkup = `<div style="font-size: 0.75rem; color: var(--danger); font-weight: bold; margin-top: 0.25rem;">[Flagged: ${msg.flagReason}]</div>`;
+        }
+
+        let reportBtn = '';
+        if (!isSent && !msg.flagged) {
+          reportBtn = `<button onclick="app.reportMessage('${msg.id}')" style="background: none; border: none; color: var(--danger); font-size: 0.72rem; cursor: pointer; padding: 0.15rem 0.35rem; display: inline-flex; align-items: center; gap: 0.2rem; opacity: 0.6; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'" title="Report this message to your teacher">🚩 Report</button>`;
         }
 
         row.innerHTML = `
@@ -2072,8 +2077,9 @@ class App {
             ${transRow}
           </div>
           ${flaggedMarkup}
-          <div class="message-meta">
-            ${new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          <div class="message-meta" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+            <span>${new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+            ${reportBtn}
           </div>
         `;
         feed.appendChild(row);
@@ -4931,6 +4937,21 @@ class App {
       hval += (hval << 1) + (hval << 4) + (hval << 7) + (hval << 8) + (hval << 24);
     }
     return Math.abs(hval).toString(16);
+  }
+
+  reportMessage(messageId) {
+    const reason = prompt("Please enter the reason for reporting this message (e.g., inappropriate language, personal info sharing, bullying):");
+    if (!reason || !reason.trim()) return;
+
+    const allMsgs = window.db.getMessages();
+    const msg = allMsgs.find(m => m.id === messageId);
+    if (msg) {
+      msg.flagged = true;
+      msg.flagReason = `Reported by student: ${reason}`;
+      window.db.saveTable('messages', allMsgs);
+      this.refreshUI();
+      alert("Message reported to your languages coordinator for review.");
+    }
   }
 
   toggleSpeedSubtitles() {
@@ -11330,6 +11351,7 @@ class App {
   logout() {
     this.isLoggedIn = false;
     this.currentRole = null;
+    localStorage.removeItem('bridge_remember_me');
     
     // Hide help button and close drawer
     const helpBtn = document.getElementById('app-floating-help-btn');
