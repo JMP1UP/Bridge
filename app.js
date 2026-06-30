@@ -9389,6 +9389,46 @@ class App {
           if (deleteBtn) {
             deleteBtn.style.display = (activeProject.slides.length > 1 && isAuthor) ? 'block' : 'none';
           }
+
+          // Update editor active state card outline and header details
+          const editorCard = document.getElementById('proj-deck-editor-card');
+          const editorHeader = document.getElementById('proj-editor-slide-badge')?.parentElement;
+          const slideBadge = document.getElementById('proj-editor-slide-badge');
+          if (slideBadge) {
+            slideBadge.textContent = `${this.translate('slide_label', 'Slide')} ${this.activeSlideIndex + 1}`;
+          }
+
+          if (editorCard) {
+            const isCardActive = !isReadOnly && isEditable;
+            if (isCardActive) {
+              editorCard.style.borderColor = 'rgba(6, 182, 212, 0.45)';
+              editorCard.style.boxShadow = '0 0 16px rgba(6, 182, 212, 0.05), inset 0 0 12px rgba(6, 182, 212, 0.02)';
+              if (editorHeader) {
+                const pulseDot = editorHeader.querySelector('.alert-pulse');
+                if (pulseDot) {
+                  pulseDot.style.background = 'var(--primary)';
+                  pulseDot.style.display = 'block';
+                }
+                const headerText = editorHeader.querySelector('span:not(.badge) span');
+                if (headerText) {
+                  headerText.style.color = 'var(--primary)';
+                  headerText.textContent = this.translate('active_slide_workspace', 'Slide Workspace');
+                }
+              }
+            } else {
+              editorCard.style.borderColor = 'var(--panel-border)';
+              editorCard.style.boxShadow = 'none';
+              if (editorHeader) {
+                const pulseDot = editorHeader.querySelector('.alert-pulse');
+                if (pulseDot) pulseDot.style.display = 'none';
+                const headerText = editorHeader.querySelector('span:not(.badge) span');
+                if (headerText) {
+                  headerText.style.color = 'var(--text-muted)';
+                  headerText.textContent = this.translate('readonly_slide_workspace', 'Slide Workspace (Read-only)');
+                }
+              }
+            }
+          }
         }
 
         // Render photo preview
