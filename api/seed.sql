@@ -16,30 +16,30 @@ TRUNCATE TABLE schools CASCADE;
 
 -- 1. Insert Schools
 INSERT INTO schools (id, name, city, country, logo_url, created_at) VALUES
-('d11b2490-0000-0000-0000-000000000001', 'Leicester High School', 'Leicester', 'United Kingdom', 'assets/leicester_logo.jpg', NOW()),
-('d11b2490-0000-0000-0000-000000000002', 'Goethe-Gymnasium', 'Munich', 'Germany', 'assets/goethe_logo.png', NOW()),
-('d11b2490-0000-0000-0000-000000000003', 'Lycée Saint-Exupéry', 'Lyon', 'France', '', NOW());
+('school_1', 'Leicester High School', 'Leicester', 'United Kingdom', 'assets/leicester_logo.jpg', NOW()),
+('school_2', 'Goethe-Gymnasium', 'Munich', 'Germany', 'assets/goethe_logo.png', NOW()),
+('school_3', 'Lycée Saint-Exupéry', 'Lyon', 'France', '', NOW());
 
 -- 2. Insert Coordinators (Teachers)
 INSERT INTO coordinators (id, school_id, name, email, password_hash, role, approved, created_at) VALUES
-('coord_1', 'd11b2490-0000-0000-0000-000000000001', 'Mrs. Smith', 'smith@leicesterhigh.edu', 'password123', 'Coordinator', TRUE, NOW()),
-('coord_2', 'd11b2490-0000-0000-0000-000000000002', 'Herr Wagner', 'wagner@goethe.edu', 'password123', 'Coordinator', TRUE, NOW()),
-('coord_3', 'd11b2490-0000-0000-0000-000000000003', 'M. Dupont', 'dupont@lycee.edu', 'password123', 'Coordinator', TRUE, NOW());
+('coord_1', 'school_1', 'Mrs. Smith', 'smith@leicesterhigh.edu', 'password123', 'Coordinator', TRUE, NOW()),
+('coord_2', 'school_2', 'Herr Wagner', 'wagner@goethe.edu', 'password123', 'Coordinator', TRUE, NOW()),
+('coord_3', 'school_3', 'M. Dupont', 'dupont@lycee.edu', 'password123', 'Coordinator', TRUE, NOW());
 
 -- 3. Insert Students
 INSERT INTO students (id, school_id, name, email, password_hash, year_group, gender, interests, bio, active, created_at) VALUES
-('stud_1', 'd11b2490-0000-0000-0000-000000000001', 'Harriet Potter', 'harriet@leicesterhigh.edu', 'password123', 'Year 9', 'Female', ARRAY['drawing', 'tennis', 'languages'], 'Hi! I am Harriet. I love drawing, playing tennis, and learning languages. I live in Leicester with my family.', TRUE, NOW()),
-('stud_2', 'd11b2490-0000-0000-0000-000000000001', 'Emily Watson', 'emily@leicesterhigh.edu', 'password123', 'Year 8', 'Female', ARRAY['baking', 'reading'], 'I love baking chocolate chip cookies and reading mystery novels.', TRUE, NOW()),
-('stud_3', 'd11b2490-0000-0000-0000-000000000001', 'Jessica Smith', 'jessica@leicesterhigh.edu', 'password123', 'Year 9', 'Female', ARRAY[]::VARCHAR[], '', TRUE, NOW()),
-('stud_4', 'd11b2490-0000-0000-0000-000000000001', 'Chloe Jones', 'chloe@leicesterhigh.edu', 'password123', 'Year 8', 'Female', ARRAY[]::VARCHAR[], '', TRUE, NOW()),
-('stud_5', 'd11b2490-0000-0000-0000-000000000001', 'Tabitha Brown', 'tabitha@leicesterhigh.edu', 'password123', 'Year 9', 'Female', ARRAY[]::VARCHAR[], '', FALSE, NOW()),
-('stud_6', 'd11b2490-0000-0000-0000-000000000001', 'Sophia Taylor', 'sophia@leicesterhigh.edu', 'password123', 'Year 10', 'Female', ARRAY[]::VARCHAR[], '', FALSE, NOW()),
-('stud_7', 'd11b2490-0000-0000-0000-000000000002', 'Lukas Schmidt', 'lukas@goethe.edu', 'password123', 'Klasse 9', 'Male', ARRAY['football', 'minecraft'], 'Hallo! Ich bin Lukas. Ich spiele gerne Fußball und zocke Minecraft. Ich freue mich auf den Austausch!', TRUE, NOW()),
-('stud_8', 'd11b2490-0000-0000-0000-000000000002', 'Hanna Müller', 'hanna@goethe.edu', 'password123', 'Klasse 8', 'Female', ARRAY[]::VARCHAR[], '', TRUE, NOW()),
-('stud_9', 'd11b2490-0000-0000-0000-000000000002', 'Jonas Wagner', 'jonas@goethe.edu', 'password123', 'Klasse 9', 'Male', ARRAY[]::VARCHAR[], '', TRUE, NOW()),
-('stud_10', 'd11b2490-0000-0000-0000-000000000002', 'Mia Fischer', 'mia@goethe.edu', 'password123', 'Klasse 8', 'Female', ARRAY[]::VARCHAR[], '', TRUE, NOW()),
-('stud_11', 'd11b2490-0000-0000-0000-000000000002', 'Sophie Weber', 'sophie@goethe.edu', 'password123', 'Klasse 8', 'Female', ARRAY[]::VARCHAR[], '', FALSE, NOW()),
-('stud_12', 'd11b2490-0000-0000-0000-000000000002', 'Leon Becker', 'leon@goethe.edu', 'password123', 'Klasse 10', 'Male', ARRAY[]::VARCHAR[], '', FALSE, NOW());
+('stud_1', 'school_1', 'Harriet Potter', 'harriet@leicesterhigh.edu', 'password123', 'Year 9', 'Female', ARRAY['drawing', 'tennis', 'languages'], 'Hi! I am Harriet. I love drawing, playing tennis, and learning languages. I live in Leicester with my family.', TRUE, NOW()),
+('stud_2', 'school_1', 'Emily Watson', 'emily@leicesterhigh.edu', 'password123', 'Year 8', 'Female', ARRAY['baking', 'reading'], 'I love baking chocolate chip cookies and reading mystery novels.', TRUE, NOW()),
+('stud_3', 'school_1', 'Jessica Smith', 'jessica@leicesterhigh.edu', 'password123', 'Year 9', 'Female', ARRAY[]::VARCHAR[], '', TRUE, NOW()),
+('stud_4', 'school_1', 'Chloe Jones', 'chloe@leicesterhigh.edu', 'password123', 'Year 8', 'Female', ARRAY[]::VARCHAR[], '', TRUE, NOW()),
+('stud_5', 'school_1', 'Tabitha Brown', 'tabitha@leicesterhigh.edu', 'password123', 'Year 9', 'Female', ARRAY[]::VARCHAR[], '', FALSE, NOW()),
+('stud_6', 'school_1', 'Sophia Taylor', 'sophia@leicesterhigh.edu', 'password123', 'Year 10', 'Female', ARRAY[]::VARCHAR[], '', FALSE, NOW()),
+('stud_7', 'school_2', 'Lukas Schmidt', 'lukas@goethe.edu', 'password123', 'Klasse 9', 'Male', ARRAY['football', 'minecraft'], 'Hallo! Ich bin Lukas. Ich spiele gerne Fußball und zocke Minecraft. Ich freue mich auf den Austausch!', TRUE, NOW()),
+('stud_8', 'school_2', 'Hanna Müller', 'hanna@goethe.edu', 'password123', 'Klasse 8', 'Female', ARRAY[]::VARCHAR[], '', TRUE, NOW()),
+('stud_9', 'school_2', 'Jonas Wagner', 'jonas@goethe.edu', 'password123', 'Klasse 9', 'Male', ARRAY[]::VARCHAR[], '', TRUE, NOW()),
+('stud_10', 'school_2', 'Mia Fischer', 'mia@goethe.edu', 'password123', 'Klasse 8', 'Female', ARRAY[]::VARCHAR[], '', TRUE, NOW()),
+('stud_11', 'school_2', 'Sophie Weber', 'sophie@goethe.edu', 'password123', 'Klasse 8', 'Female', ARRAY[]::VARCHAR[], '', FALSE, NOW()),
+('stud_12', 'school_2', 'Leon Becker', 'leon@goethe.edu', 'password123', 'Klasse 10', 'Male', ARRAY[]::VARCHAR[], '', FALSE, NOW());
 
 -- 4. Insert Connections (Matches)
 INSERT INTO connections (id, student_a_id, student_b_id, status, created_at) VALUES
@@ -63,7 +63,7 @@ INSERT INTO messages (id, connection_id, sender_id, text, translation, flagged, 
 
 -- 6. Insert Collaborative Projects
 INSERT INTO projects (id, creator_school_id, target_school_id, status, title, brief, paused, created_at) VALUES
-('proj_1', 'd11b2490-0000-0000-0000-000000000001', 'd11b2490-0000-0000-0000-000000000002', 'Active', 'Our Cultural Traditions', 'Compare and write about the traditional foods and celebrations in our countries. Gather materials, write sections together, and publish for approval.', FALSE, NOW() - INTERVAL '20 days');
+('proj_1', 'school_1', 'school_2', 'Active', 'Our Cultural Traditions', 'Compare and write about the traditional foods and celebrations in our countries. Gather materials, write sections together, and publish for approval.', FALSE, NOW() - INTERVAL '20 days');
 
 -- 7. Insert Project Slides
 INSERT INTO project_slides (id, project_id, slide_index, layout, title, content, photo_url, author, editable_by_others, last_updated_at) VALUES
@@ -73,8 +73,8 @@ INSERT INTO project_slides (id, project_id, slide_index, layout, title, content,
 
 -- 8. Insert School News
 INSERT INTO news (id, title, content, posted_by, school_id, timestamp) VALUES
-('news_1', 'Welcome to the 2026 Exchange!', 'We are thrilled to launch this exchange program between Leicester High School and Goethe-Gymnasium. Please remember to respect your pen pal and follow the safety guidelines. Have fun learning new languages and sharing traditions!', 'Teacher Mrs. Smith', 'd11b2490-0000-0000-0000-000000000001', NOW() - INTERVAL '30 days'),
-('news_2', 'Summer Cultural Festival Coming Up!', 'Next month, we will celebrate our annual Cultural Sharing Week. Get ready to write articles about your local festivals and share them with the partner school!', 'Teacher Herr Wagner', 'd11b2490-0000-0000-0000-000000000002', NOW() - INTERVAL '15 days');
+('news_1', 'Welcome to the 2026 Exchange!', 'We are thrilled to launch this exchange program between Leicester High School and Goethe-Gymnasium. Please remember to respect your pen pal and follow the safety guidelines. Have fun learning new languages and sharing traditions!', 'Teacher Mrs. Smith', 'school_1', NOW() - INTERVAL '30 days'),
+('news_2', 'Summer Cultural Festival Coming Up!', 'Next month, we will celebrate our annual Cultural Sharing Week. Get ready to write articles about your local festivals and share them with the partner school!', 'Teacher Herr Wagner', 'school_2', NOW() - INTERVAL '15 days');
 
 -- 9. Insert Safeguarding Flags
 INSERT INTO flags (id, message_id, project_id, status, flagged_at, reason, details, reported_by, reviewed_by, reviewed_at, action_taken) VALUES

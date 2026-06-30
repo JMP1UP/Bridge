@@ -1,11 +1,8 @@
 -- Bridge PostgreSQL Database Schema Creation Script
 
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 -- 1. Schools Table
 CREATE TABLE schools (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id VARCHAR(100) PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   city VARCHAR(100) NOT NULL,
   country VARCHAR(100) NOT NULL,
@@ -15,8 +12,8 @@ CREATE TABLE schools (
 
 -- 2. Coordinators (Teachers / Admin Staff)
 CREATE TABLE coordinators (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  school_id UUID REFERENCES schools(id) ON DELETE SET NULL,
+  id VARCHAR(100) PRIMARY KEY,
+  school_id VARCHAR(100) REFERENCES schools(id) ON DELETE SET NULL,
   name VARCHAR(255) NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
@@ -27,8 +24,8 @@ CREATE TABLE coordinators (
 
 -- 3. Students
 CREATE TABLE students (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  school_id UUID REFERENCES schools(id) ON DELETE CASCADE NOT NULL,
+  id VARCHAR(100) PRIMARY KEY,
+  school_id VARCHAR(100) REFERENCES schools(id) ON DELETE CASCADE NOT NULL,
   name VARCHAR(255) NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
@@ -42,9 +39,9 @@ CREATE TABLE students (
 
 -- 4. Student Connections (1-to-1 Matches)
 CREATE TABLE connections (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  student_a_id UUID REFERENCES students(id) ON DELETE CASCADE NOT NULL,
-  student_b_id UUID REFERENCES students(id) ON DELETE CASCADE NOT NULL,
+  id VARCHAR(100) PRIMARY KEY,
+  student_a_id VARCHAR(100) REFERENCES students(id) ON DELETE CASCADE NOT NULL,
+  student_b_id VARCHAR(100) REFERENCES students(id) ON DELETE CASCADE NOT NULL,
   status VARCHAR(50) DEFAULT 'Active' CHECK (status IN ('Active', 'Paused', 'Disbanded')) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
   CONSTRAINT unique_student_pair UNIQUE(student_a_id, student_b_id)
@@ -52,9 +49,9 @@ CREATE TABLE connections (
 
 -- 5. Chat Messages (1-to-1 Chat logs)
 CREATE TABLE messages (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  connection_id UUID REFERENCES connections(id) ON DELETE CASCADE NOT NULL,
-  sender_id UUID REFERENCES students(id) ON DELETE CASCADE NOT NULL,
+  id VARCHAR(100) PRIMARY KEY,
+  connection_id VARCHAR(100) REFERENCES connections(id) ON DELETE CASCADE NOT NULL,
+  sender_id VARCHAR(100) REFERENCES students(id) ON DELETE CASCADE NOT NULL,
   text TEXT NOT NULL,
   translation TEXT,
   flagged BOOLEAN DEFAULT FALSE NOT NULL,
@@ -64,9 +61,9 @@ CREATE TABLE messages (
 
 -- 6. Collaborative Group Projects
 CREATE TABLE projects (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  creator_school_id UUID REFERENCES schools(id) ON DELETE CASCADE NOT NULL,
-  target_school_id UUID REFERENCES schools(id) ON DELETE CASCADE NOT NULL,
+  id VARCHAR(100) PRIMARY KEY,
+  creator_school_id VARCHAR(100) REFERENCES schools(id) ON DELETE CASCADE NOT NULL,
+  target_school_id VARCHAR(100) REFERENCES schools(id) ON DELETE CASCADE NOT NULL,
   status VARCHAR(50) DEFAULT 'Draft' CHECK (status IN ('Draft', 'Proposed', 'PendingPublish', 'Published')) NOT NULL,
   title VARCHAR(255) NOT NULL,
   brief TEXT NOT NULL,
@@ -76,8 +73,8 @@ CREATE TABLE projects (
 
 -- 7. Collaborative Project Slides
 CREATE TABLE project_slides (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id UUID REFERENCES projects(id) ON DELETE CASCADE NOT NULL,
+  id VARCHAR(100) PRIMARY KEY,
+  project_id VARCHAR(100) REFERENCES projects(id) ON DELETE CASCADE NOT NULL,
   slide_index INT NOT NULL,
   layout VARCHAR(50) DEFAULT 'split' CHECK (layout IN ('split', 'text-only')) NOT NULL,
   title VARCHAR(255) NOT NULL,
@@ -91,25 +88,25 @@ CREATE TABLE project_slides (
 
 -- 8. Project Group Chat Messages
 CREATE TABLE project_messages (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id UUID REFERENCES projects(id) ON DELETE CASCADE NOT NULL,
-  sender_id UUID REFERENCES students(id) ON DELETE CASCADE NOT NULL,
+  id VARCHAR(100) PRIMARY KEY,
+  project_id VARCHAR(100) REFERENCES projects(id) ON DELETE CASCADE NOT NULL,
+  sender_id VARCHAR(100) REFERENCES students(id) ON DELETE CASCADE NOT NULL,
   text TEXT NOT NULL,
   timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 -- 9. Speed Exchange Live Sessions
 CREATE TABLE speed_sessions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  host_school_id UUID REFERENCES schools(id) ON DELETE CASCADE NOT NULL,
-  partner_school_id UUID REFERENCES schools(id) ON DELETE CASCADE NOT NULL,
+  id VARCHAR(100) PRIMARY KEY,
+  host_school_id VARCHAR(100) REFERENCES schools(id) ON DELETE CASCADE NOT NULL,
+  partner_school_id VARCHAR(100) REFERENCES schools(id) ON DELETE CASCADE NOT NULL,
   status VARCHAR(50) DEFAULT 'lobby' CHECK (status IN ('lobby', 'active', 'ended')) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 -- 10. Audit logs (GDPR & Safeguarding Auditing)
 CREATE TABLE logs (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id VARCHAR(100) PRIMARY KEY,
   type VARCHAR(100) NOT NULL,
   action TEXT NOT NULL,
   actor VARCHAR(255) NOT NULL,
@@ -137,6 +134,6 @@ CREATE TABLE news (
   title VARCHAR(255) NOT NULL,
   content TEXT NOT NULL,
   posted_by VARCHAR(255) NOT NULL,
-  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  school_id VARCHAR(100) REFERENCES schools(id) ON DELETE CASCADE,
   timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
