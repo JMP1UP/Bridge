@@ -24,13 +24,37 @@ module.exports = async function handler(req, res) {
   }
 
   const cleanInput = email.toLowerCase().trim();
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown-ip';
 
   try {
+    // Brute-force protection: check for failed attempts in last 15 minutes
+    const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    const recentFailures = await db.select('logs', `type=eq.Auth Failure&actor=eq.${cleanInput}&created_at=gte.${fifteenMinsAgo}`);
+    
+    if (recentFailures && recentFailures.length >= 5) {
+      return res.status(429).json({ 
+        error: 'Too many failed login attempts. This account is temporarily locked. Please try again in 15 minutes.' 
+      });
+    }
+
+    const logFailure = async () => {
+      try {
+        await db.insert('logs', {
+          id: 'log_' + Date.now(),
+          type: 'Auth Failure',
+          action: `Failed login attempt from IP ${ip}`,
+          actor: cleanInput
+        });
+      } catch (err) {
+        console.error('Failed to log auth failure:', err);
+      }
+    };
+
     // 1. Check Platform Administrator login
     if (cleanInput === 'admin' || cleanInput === 'admin@school-bridge.org') {
-      // Mock admin check (can be replaced by admin DB row password check later)
       const isAdminMatch = password === 'admin123';
       if (!isAdminMatch) {
+        await logFailure();
         return res.status(401).json({ error: 'Incorrect administrator password' });
       }
 
@@ -49,6 +73,7 @@ module.exports = async function handler(req, res) {
     if (coordinator) {
       const isPasswordMatch = await auth.verifyPassword(password, coordinator.password_hash);
       if (!isPasswordMatch) {
+        await logFailure();
         return res.status(401).json({ error: 'Incorrect password' });
       }
 
@@ -73,6 +98,7 @@ module.exports = async function handler(req, res) {
     if (student) {
       const isPasswordMatch = await auth.verifyPassword(password, student.password_hash);
       if (!isPasswordMatch) {
+        await logFailure();
         return res.status(401).json({ error: 'Incorrect password' });
       }
 
@@ -92,6 +118,7 @@ module.exports = async function handler(req, res) {
     }
 
     // No profile found matching email
+    await logFailure();
     return res.status(404).json({ error: 'No account found matching this email address' });
 
   } catch (error) {

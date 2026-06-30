@@ -27,7 +27,7 @@ CREATE TABLE schools (
 -- 2. Coordinators (Teachers / Admin Staff)
 CREATE TABLE coordinators (
   id VARCHAR(100) PRIMARY KEY,
-  school_id VARCHAR(100) REFERENCES schools(id) ON DELETE SET NULL,
+  school_id VARCHAR(100) REFERENCES schools(id) ON DELETE CASCADE,
   name VARCHAR(255) NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
@@ -133,8 +133,8 @@ CREATE TABLE logs (
 -- 11. Safeguarding Flags Table
 CREATE TABLE flags (
   id VARCHAR(100) PRIMARY KEY,
-  message_id VARCHAR(100),
-  project_id VARCHAR(100),
+  message_id VARCHAR(100) REFERENCES messages(id) ON DELETE CASCADE,
+  project_id VARCHAR(100) REFERENCES projects(id) ON DELETE CASCADE,
   status VARCHAR(50) DEFAULT 'Pending' CHECK (status IN ('Pending', 'Resolved')) NOT NULL,
   flagged_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
   reason TEXT,
