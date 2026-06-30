@@ -693,6 +693,7 @@ class App {
     if (projArtPhotoInput) {
       projArtPhotoInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
+        const uploadBoxText = document.getElementById('upload-box-text');
         if (file) {
           if (file.size > 1.5 * 1024 * 1024) {
             alert(this.translate('image_too_large_alert', 'Image file is too large. Please select an image smaller than 1.5MB.'));
@@ -701,6 +702,7 @@ class App {
             projArtPhotoPreview.style.display = 'none';
             projArtPhotoPlaceholder.style.display = 'block';
             if (projArtPhotoRemoveBtn) projArtPhotoRemoveBtn.style.display = 'none';
+            if (uploadBoxText) uploadBoxText.textContent = this.translate('upload_photograph_btn', 'Upload Photograph');
             return;
           }
           const reader = new FileReader();
@@ -710,6 +712,7 @@ class App {
             projArtPhotoPreview.style.display = 'block';
             projArtPhotoPlaceholder.style.display = 'none';
             if (projArtPhotoRemoveBtn) projArtPhotoRemoveBtn.style.display = 'block';
+            if (uploadBoxText) uploadBoxText.textContent = file.name;
 
             // Auto-switch layout to split if it was text-only
             const project = window.db.getProject(this.activeProjectId);
@@ -728,6 +731,7 @@ class App {
           projArtPhotoPreview.style.display = 'none';
           projArtPhotoPlaceholder.style.display = 'block';
           if (projArtPhotoRemoveBtn) projArtPhotoRemoveBtn.style.display = 'none';
+          if (uploadBoxText) uploadBoxText.textContent = this.translate('upload_photograph_btn', 'Upload Photograph');
         }
       });
     }
@@ -742,6 +746,8 @@ class App {
         }
         if (projArtPhotoPlaceholder) projArtPhotoPlaceholder.style.display = 'block';
         projArtPhotoRemoveBtn.style.display = 'none';
+        const uploadBoxText = document.getElementById('upload-box-text');
+        if (uploadBoxText) uploadBoxText.textContent = this.translate('upload_photograph_btn', 'Upload Photograph');
       });
     }
 
@@ -9000,23 +9006,36 @@ class App {
       const allSchools = [activeProject.creatorSchoolId, ...targets]
         .map(sid => window.db.getSchool(sid))
         .filter(Boolean);
-      const schoolText = allSchools.map(sch => {
+      const schoolBadges = allSchools.map(sch => {
         const flag = this.getSchoolFlag(sch.country);
-        return `${flag} ${sch.name}`;
-      }).join(' & ');
+        return `<span style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.65rem; background: rgba(255,255,255,0.03); border: 1px solid var(--panel-border); border-radius: 8px; font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">${flag} ${sch.name}</span>`;
+      }).join('<span style="color: var(--text-muted); font-size: 0.8rem; margin: 0 0.25rem;">✕</span>');
 
       // Get member names
       const allStudentIds = [...activeProject.creatorSchoolStudentIds, ...activeProject.targetSchoolStudentIds];
-      const memberNamesHtml = allStudentIds.map(sid => {
+      const memberBadges = allStudentIds.map(sid => {
         const s = window.db.getStudent(sid);
-        if (!s) return 'Unknown';
+        if (!s) return '';
         const school = window.db.getSchool(s.schoolId);
         const flag = this.getSchoolFlag(school?.country);
         const displayName = this.getStudentDisplayName(s);
-        return `<span style="display: inline-flex; align-items: center; gap: 0.25rem; vertical-align: middle;">${flag} ${displayName}</span>`;
-      }).join(', ');
+        return `<span class="collab-badge" style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.65rem; background: rgba(255,255,255,0.05); border: 1px solid var(--panel-border); border-radius: 20px; font-size: 0.75rem; color: var(--text-primary); font-weight: 500;">
+          <span style="font-size: 0.9rem; line-height: 1;">${flag}</span>
+          <span>${displayName}</span>
+        </span>`;
+      }).filter(Boolean).join('');
 
-      document.getElementById('project-meta').innerHTML = `${schoolText} • ${memberNamesHtml}`;
+      document.getElementById('project-meta').innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 0.65rem; margin-top: 0.5rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            ${schoolBadges}
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+            <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px; margin-right: 0.25rem;">Co-creators:</span>
+            ${memberBadges}
+          </div>
+        </div>
+      `;
 
       // Status badge
       const badgeEl = document.getElementById('project-status-badge');
@@ -9282,6 +9301,15 @@ class App {
         if (titleInput && contentInput && activeSlide) {
           titleInput.value = activeSlide.title || '';
           contentInput.value = activeSlide.content || '';
+          if (photoInput) photoInput.value = '';
+          const uploadBoxText = document.getElementById('upload-box-text');
+          if (uploadBoxText) {
+            if (activeSlide.photoUrl) {
+              uploadBoxText.textContent = this.translate('change_photograph_btn', 'Change Photograph');
+            } else {
+              uploadBoxText.textContent = this.translate('upload_photograph_btn', 'Upload Photograph');
+            }
+          }
 
           // Display Author Display text and Editable Toggle
           const authorDisplay = document.getElementById('proj-slide-author-display');
