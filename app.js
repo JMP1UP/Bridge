@@ -1246,8 +1246,17 @@ class App {
   }
 
   // Developer switches roles
-  switchRole(role, studentId, coordId) {
+  async switchRole(role, studentId, coordId) {
     this.currentRole = role;
+    const activeUserId = studentId || coordId || (role === 'admin' ? 'admin' : null);
+    if (activeUserId && window.db.syncFromServer) {
+      try {
+        await window.db.syncFromServer(activeUserId, role);
+      } catch (err) {
+        console.error("Could not sync database state from server:", err);
+      }
+    }
+
     if (studentId) {
       this.currentStudentId = studentId;
       // Auto-set translation language based on student origin
@@ -1281,6 +1290,7 @@ class App {
     this.activeProjectId = null;
     this.updateUserBadge();
     this.renderNavigation();
+    this.refreshUI();
   }
 
   // Main UI refresh selector

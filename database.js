@@ -296,10 +296,402 @@ class LocalDB {
     return data[name] || [];
   }
 
+  async syncFromServer(userId, role) {
+    if (!userId) return;
+    try {
+      const response = await fetch('/api/sync', {
+        headers: {
+          'x-user-id': userId,
+          'x-user-role': role || 'admin'
+        }
+      });
+      if (!response.ok) {
+        console.warn('Failed to sync from database server', response.status);
+        return;
+      }
+      const snapshot = await response.json();
+      
+      // Update local cache tables with server data
+      const data = this.get();
+      
+      // Direct mappings
+      if (snapshot.schools) data.schools = snapshot.schools;
+      if (snapshot.coordinators) data.coordinators = snapshot.coordinators;
+      if (snapshot.students) data.students = snapshot.students;
+      if (snapshot.logs) data.auditLogs = snapshot.logs;
+      if (snapshot.flags) data.flags = snapshot.flags;
+      if (snapshot.news) data.news = snapshot.news;
+      if (snapshot.speed_sessions) data.speedSessions = snapshot.speed_sessions;
+      
+      // Map connections to matches
+      if (snapshot.connections) {
+        data.matches = snapshot.connections.map(c => ({
+          id: c.id,
+          type: '1-to-1',
+          studentIds: [c.student_a_id, c.student_b_id],
+          active: c.status === 'Active',
+          status: c.status,
+          createdAt: c.created_at,
+          paused: c.status === 'Paused'
+        }));
+      }
+      
+      // Map chat messages
+      if (snapshot.messages) {
+        data.messages = snapshot.messages.map(m => ({
+          id: m.id,
+          matchId: m.connection_id,
+          senderId: m.sender_id,
+          text: m.text,
+          translation: m.translation,
+          timestamp: m.timestamp,
+          read: true,
+          flagged: m.flagged,
+          flagReason: m.flag_reason
+        }));
+      }
+
+      // Map projects & slides & messages
+      if (snapshot.projects) {
+        const projectsMap = new Map(snapshot.projects.map(p => [p.id, {
+          id: p.id,
+          title: p.title,
+          brief: p.brief,
+          status: p.status,
+          paused: p.paused,
+          creatorSchoolId: p.creator_school_id,
+          targetSchoolId: p.target_school_id,
+          creatorSchoolApproved: p.status !== 'Draft' && p.status !== 'Proposed',
+          targetSchoolApproved: p.status === 'Published',
+          slides: [],
+          messages: []
+        }]));
+
+        if (snapshot.project_slides) {
+          snapshot.project_slides.forEach(slide => {
+            const proj = projectsMap.get(slide.project_id);
+            if (proj) {
+              proj.slides.push({
+                id: slide.id,
+                layout: slide.layout,
+                title: slide.title,
+                content: slide.content,
+                photoUrl: slide.photo_url || '',
+                author: slide.author,
+                editableByOthers: slide.editable_by_others
+              });
+            }
+          });
+        }
+
+        if (snapshot.project_messages) {
+          snapshot.project_messages.forEach(msg => {
+            const proj = projectsMap.get(msg.project_id);
+            if (proj) {
+              proj.messages.push({
+                id: msg.id,
+                projectId: msg.project_id,
+                senderId: msg.sender_id,
+                text: msg.text,
+                timestamp: msg.timestamp
+              });
+            }
+          });
+        }
+
+        data.projects = Array.from(projectsMap.values());
+      }
+      
+      this.save(data);
+    } catch (err) {
+      console.error('Database server sync failure:', err);
+    }
+  }
+
   saveTable(name, list) {
     const data = this.get();
+    const oldList = data[name] || [];
     data[name] = list;
     this.save(data);
+
+    // Dynamic write-through update triggered in background
+    const userId = window.app?.currentRole === 'student' 
+      ? window.app?.currentStudentId 
+      : (window.app?.currentRole === 'teacher' ? window.app?.currentCoordinatorId : 'admin');
+    const userRole = window.app?.currentRole || 'admin';
+
+    if (!userId) return; // Wait for active user context to sync
+
+    const updates = [];
+
+    // Helper: transform list values
+    const diffLists = (oldL, newL) => {
+      const oldMap = new Map(oldL.map(item => [item.id, item]));
+      const newMap = new Map(newL.map(item => [item.id, item]));
+      
+      const inserted = [];
+      const updated = [];
+      const deleted = [];
+      
+      newL.forEach(item => {
+        const oldItem = oldMap.get(item.id);
+        if (!oldItem) {
+          inserted.push(item);
+        } else if (JSON.stringify(oldItem) !== JSON.stringify(item)) {
+          updated.push(item);
+        }
+      });
+      
+      oldL.forEach(item => {
+        if (!newMap.has(item.id)) {
+          deleted.push(item);
+        }
+      });
+      
+      return { inserted, updated, deleted };
+    };
+
+    // 1. Projects Diffing (Relational mapping for slides & nested data)
+    if (name === 'projects') {
+      list.forEach(newProj => {
+        const oldProj = oldList.find(p => p.id === newProj.id);
+        if (!oldProj) {
+          // New project insertion
+          updates.push({
+            action: 'insert',
+            table: 'projects',
+            data: {
+              id: newProj.id,
+              title: newProj.title,
+              brief: newProj.brief || '',
+              status: newProj.status || 'Draft',
+              paused: newProj.paused || false,
+              creator_school_id: newProj.creatorSchoolId,
+              target_school_id: newProj.targetSchoolId
+            }
+          });
+          if (newProj.slides) {
+            newProj.slides.forEach((slide, sIdx) => {
+              updates.push({
+                action: 'insert',
+                table: 'project_slides',
+                data: {
+                  id: slide.id,
+                  project_id: newProj.id,
+                  slide_index: sIdx,
+                  layout: slide.layout || 'split',
+                  title: slide.title || '',
+                  content: slide.content || '',
+                  photo_url: slide.photoUrl || '',
+                  author: slide.author || '',
+                  editable_by_others: slide.editableByOthers !== false
+                }
+              });
+            });
+          }
+        } else {
+          // Update project attributes
+          if (oldProj.title !== newProj.title || 
+              oldProj.brief !== newProj.brief || 
+              oldProj.status !== newProj.status || 
+              oldProj.paused !== newProj.paused) {
+            updates.push({
+              action: 'update',
+              table: 'projects',
+              data: {
+                title: newProj.title,
+                brief: newProj.brief,
+                status: newProj.status,
+                paused: newProj.paused
+              },
+              match: `id=eq.${newProj.id}`
+            });
+          }
+          // Diff slides
+          const oldSlides = oldProj.slides || [];
+          const newSlides = newProj.slides || [];
+          newSlides.forEach((slide, sIdx) => {
+            const oldSlide = oldSlides.find(s => s.id === slide.id);
+            if (!oldSlide) {
+              updates.push({
+                action: 'insert',
+                table: 'project_slides',
+                data: {
+                  id: slide.id,
+                  project_id: newProj.id,
+                  slide_index: sIdx,
+                  layout: slide.layout || 'split',
+                  title: slide.title || '',
+                  content: slide.content || '',
+                  photo_url: slide.photoUrl || '',
+                  author: slide.author || '',
+                  editable_by_others: slide.editableByOthers !== false
+                }
+              });
+            } else if (JSON.stringify(oldSlide) !== JSON.stringify(slide)) {
+              updates.push({
+                action: 'update',
+                table: 'project_slides',
+                data: {
+                  slide_index: sIdx,
+                  layout: slide.layout || 'split',
+                  title: slide.title || '',
+                  content: slide.content || '',
+                  photo_url: slide.photoUrl || '',
+                  author: slide.author || '',
+                  editable_by_others: slide.editableByOthers !== false
+                },
+                match: `id=eq.${slide.id}`
+              });
+            }
+          });
+          oldSlides.forEach(slide => {
+            if (!newSlides.some(s => s.id === slide.id)) {
+              updates.push({
+                action: 'delete',
+                table: 'project_slides',
+                match: `id=eq.${slide.id}`
+              });
+            }
+          });
+        }
+      });
+      oldList.forEach(oldProj => {
+        if (!list.some(p => p.id === oldProj.id)) {
+          updates.push({
+            action: 'delete',
+            table: 'projects',
+            match: `id=eq.${oldProj.id}`
+          });
+        }
+      });
+    }
+
+    // 2. Matches Diffing (Mapping to connections)
+    else if (name === 'matches') {
+      list.forEach(newMatch => {
+        const oldMatch = oldList.find(m => m.id === newMatch.id);
+        if (!oldMatch) {
+          updates.push({
+            action: 'insert',
+            table: 'connections',
+            data: {
+              id: newMatch.id,
+              student_a_id: newMatch.studentIds[0],
+              student_b_id: newMatch.studentIds[1],
+              status: newMatch.status || 'Active'
+            }
+          });
+        } else if (JSON.stringify(oldMatch) !== JSON.stringify(newMatch)) {
+          updates.push({
+            action: 'update',
+            table: 'connections',
+            data: {
+              status: newMatch.status || 'Active'
+            },
+            match: `id=eq.${newMatch.id}`
+          });
+        }
+      });
+      oldList.forEach(oldMatch => {
+        if (!list.some(m => m.id === oldMatch.id)) {
+          updates.push({
+            action: 'delete',
+            table: 'connections',
+            match: `id=eq.${oldMatch.id}`
+          });
+        }
+      });
+    }
+
+    // 3. General Table Diffing (Direct mapping tables: schools, students, coordinators, messages, news, flags, speed_sessions, logs)
+    else {
+      const tableMap = {
+        'schools': 'schools',
+        'coordinators': 'coordinators',
+        'students': 'students',
+        'messages': 'messages',
+        'projectMessages': 'project_messages',
+        'news': 'news',
+        'flags': 'flags',
+        'speedSessions': 'speed_sessions',
+        'auditLogs': 'logs'
+      };
+
+      const pgTable = tableMap[name];
+      if (pgTable) {
+        list.forEach(newItem => {
+          const oldItem = oldList.find(item => item.id === newItem.id);
+          
+          const transformKeys = (obj) => {
+            const result = {};
+            Object.keys(obj).forEach(k => {
+              if (k === 'read' || k === 'authorStudent' || k === 'schoolDetails') return;
+              
+              let pgKey = k;
+              if (k === 'yearGroup') pgKey = 'year_group';
+              else if (k === 'logoUrl') pgKey = 'logo_url';
+              else if (k === 'photoUrl') pgKey = 'photo_url';
+              else if (k === 'flaggedAt') pgKey = 'flagged_at';
+              else if (k === 'flaggedBy') pgKey = 'reported_by';
+              else if (k === 'reviewedBy') pgKey = 'reviewed_by';
+              else if (k === 'reviewedAt') pgKey = 'reviewed_at';
+              else if (k === 'actionTaken') pgKey = 'action_taken';
+              else if (k === 'postedBy') pgKey = 'posted_by';
+              else if (k === 'schoolId') pgKey = 'school_id';
+              else if (k === 'senderId') pgKey = 'sender_id';
+              else if (k === 'receiverId') pgKey = 'receiver_id';
+              else if (k === 'matchId') pgKey = 'connection_id';
+              else if (k === 'messageId') pgKey = 'message_id';
+              else if (k === 'projectId') pgKey = 'project_id';
+              else if (k === 'hostSchoolId') pgKey = 'host_school_id';
+              else if (k === 'partnerSchoolId') pgKey = 'partner_school_id';
+              else if (k === 'flagReason') pgKey = 'flag_reason';
+              
+              result[pgKey] = obj[k];
+            });
+            return result;
+          };
+
+          if (!oldItem) {
+            updates.push({
+              action: 'insert',
+              table: pgTable,
+              data: transformKeys(newItem)
+            });
+          } else if (JSON.stringify(oldItem) !== JSON.stringify(newItem)) {
+            updates.push({
+              action: 'update',
+              table: pgTable,
+              data: transformKeys(newItem),
+              match: `id=eq.${newItem.id}`
+            });
+          }
+        });
+
+        oldList.forEach(oldItem => {
+          if (!list.some(item => item.id === oldItem.id)) {
+            updates.push({
+              action: 'delete',
+              table: pgTable,
+              match: `id=eq.${oldItem.id}`
+            });
+          }
+        });
+      }
+    }
+
+    if (updates.length > 0) {
+      fetch('/api/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': userId,
+          'x-user-role': userRole
+        },
+        body: JSON.stringify({ updates })
+      }).catch(err => console.error("Database write-through sync failure:", err));
+    }
   }
 
   // Helper getters
