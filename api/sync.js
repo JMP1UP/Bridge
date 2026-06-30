@@ -46,7 +46,9 @@ async function handleGetSync(userId, userRole, res) {
     project_slides: [],
     project_messages: [],
     speed_sessions: [],
-    logs: []
+    logs: [],
+    flags: [],
+    news: []
   };
 
   if (userRole === 'admin') {
@@ -61,6 +63,8 @@ async function handleGetSync(userId, userRole, res) {
     snapshot.project_messages = await db.select('project_messages');
     snapshot.speed_sessions = await db.select('speed_sessions');
     snapshot.logs = await db.select('logs');
+    snapshot.flags = await db.select('flags');
+    snapshot.news = await db.select('news');
     return res.status(200).json(snapshot);
   }
 
@@ -100,8 +104,10 @@ async function handleGetSync(userId, userRole, res) {
       // 7. Fetch speed exchange sessions hosted or partnered by their school
       snapshot.speed_sessions = await db.select('speed_sessions', `or=(host_school_id.eq.${schoolId},partner_school_id.eq.${schoolId})`);
 
-      // 8. Fetch audit logs
+      // 8. Fetch audit logs & safeguarding flags
       snapshot.logs = await db.select('logs');
+      snapshot.flags = await db.select('flags');
+      snapshot.news = await db.select('news');
     }
 
     return res.status(200).json(snapshot);
@@ -150,8 +156,9 @@ async function handleGetSync(userId, userRole, res) {
       snapshot.project_messages = await db.select('project_messages', projFilter);
     }
 
-    // 7. Fetch speed sessions
+    // 7. Fetch speed sessions & school news feed
     snapshot.speed_sessions = await db.select('speed_sessions', `or=(host_school_id.eq.${schoolId},partner_school_id.eq.${schoolId})`);
+    snapshot.news = await db.select('news', `school_id=eq.${schoolId}`);
   }
 
   return res.status(200).json(snapshot);

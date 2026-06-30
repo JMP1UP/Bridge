@@ -115,3 +115,28 @@ CREATE TABLE logs (
   actor VARCHAR(255) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
+
+-- 11. Safeguarding Flags Table
+CREATE TABLE flags (
+  id VARCHAR(100) PRIMARY KEY,
+  message_id VARCHAR(100),
+  project_id VARCHAR(100),
+  status VARCHAR(50) DEFAULT 'Pending' CHECK (status IN ('Pending', 'Resolved')) NOT NULL,
+  flagged_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  reason TEXT,
+  details TEXT,
+  reported_by VARCHAR(255),
+  reviewed_by VARCHAR(255),
+  reviewed_at TIMESTAMP,
+  action_taken TEXT
+);
+
+-- 12. School News Table
+CREATE TABLE news (
+  id VARCHAR(100) PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  content TEXT NOT NULL,
+  posted_by VARCHAR(255) NOT NULL,
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
